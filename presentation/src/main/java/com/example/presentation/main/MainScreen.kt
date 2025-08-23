@@ -49,8 +49,8 @@ fun MainScreen() {
     }
 }
 
-//@Preview
-//@Composable
-//fun Preview() {
-//
-//}
+@Preview
+@Composable
+fun Preview() {
+
+}

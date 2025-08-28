@@ -1,7 +1,9 @@
 package com.example.presentation.main
 
+import android.graphics.Color.BLACK
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +20,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(BLACK))
         setContent {
             MainScreen()
         }
@@ -29,6 +31,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Preview() {
     CalcMoneyTheme {
-
+        MainScreen()
     }
 }

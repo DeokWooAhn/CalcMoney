@@ -2,6 +2,21 @@
 <resources>
 
     <style name="Theme.CalcMoney" parent="Theme.Material3.DayNight.NoActionBar">
-
+        <item name="colorPrimary">@color/primary_0</item>
+        <item name="colorPrimaryVariant">@color/primary_2</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <!-- Secondary brand color. -->
+        <item name="colorOnSecondary">@color/black</item>
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
     </style>
+
+    <style name="Theme.CalcMoney.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/neutral_0</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/img_logo</item>
+        <item name="windowSplashScreenAnimationDuration">1000</item>
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="postSplashScreenTheme">@style/Theme.CalcMoney</item>
+    </style>
+
 </resources>

@@ -1,4 +1,4 @@
-package com.ahn.presentation.screen.exchange
+package com.ahn.presentation.ui.screen.exchange
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

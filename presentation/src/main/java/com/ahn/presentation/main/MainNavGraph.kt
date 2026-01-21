@@ -5,10 +5,10 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.ahn.presentation.screen.calculator.CalculatorScreen
-import com.ahn.presentation.screen.exchange.ExchangeScreen
-import com.ahn.presentation.screen.favorite.FavoriteScreen
-import com.ahn.presentation.screen.setting.SettingScreen
+import com.ahn.presentation.ui.screen.calculator.CalculatorScreen
+import com.ahn.presentation.ui.screen.exchange.ExchangeScreen
+import com.ahn.presentation.ui.screen.favorite.FavoriteScreen
+import com.ahn.presentation.ui.screen.setting.SettingScreen
 
 @Composable
 fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier) {

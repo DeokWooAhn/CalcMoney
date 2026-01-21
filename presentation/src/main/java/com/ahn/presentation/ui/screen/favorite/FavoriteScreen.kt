@@ -1,4 +1,4 @@
-package com.ahn.presentation.screen.favorite
+package com.ahn.presentation.ui.screen.favorite
 
 import androidx.compose.runtime.Composable
 

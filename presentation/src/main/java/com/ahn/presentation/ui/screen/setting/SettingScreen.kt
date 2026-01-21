@@ -1,4 +1,4 @@
-package com.ahn.presentation.screen.setting
+package com.ahn.presentation.ui.screen.setting
 
 import androidx.compose.runtime.Composable
 

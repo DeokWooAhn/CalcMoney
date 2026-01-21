@@ -1,8 +1,10 @@
 package com.example.presentation.screen.calculator
 
-import android.annotation.SuppressLint
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,46 +12,306 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.presentation.R
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import java.text.DecimalFormat
+import java.text.NumberFormat
+import java.util.Locale
 
+class ThousandSeparatorTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val originalText = text.text
+        val formattedText = formatWithThousandSeparator(originalText)
+
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                // 원본 오프셋 -> 변환된 오프셋
+                val textBeforeOffset = originalText.take(offset)
+                val formattedBeforeOffset = formatWithThousandSeparator(textBeforeOffset)
+                return formattedBeforeOffset.length
+            }
+
+            override fun transformedToOriginal(offset: Int): Int {
+                // 변환된 오프셋 -> 원본 오프셋
+                // 쉼표 개수만큼 빼기
+                var commaCount = 0
+                var i = 0
+                while (i < offset && i < formattedText.length) {
+                    if (formattedText[i] == ',') commaCount++
+                    i++
+                }
+                return (offset - commaCount).coerceIn(0, originalText.length)
+            }
+        }
+
+        return TransformedText(AnnotatedString(formattedText), offsetMapping)
+    }
+}
+
+// 숫자 부분만 천 단위 쉼표 추가
+private fun formatWithThousandSeparator(text: String): String {
+    if (text.isEmpty()) return text
+
+    val result = StringBuilder()
+    var currentNumber = StringBuilder()
+
+    for (char in text) {
+        if (char.isDigit()) {
+            currentNumber.append(char)
+        } else {
+            // 숫자가 끝났으면 포맷팅해서 추가
+            if (currentNumber.isNotEmpty()) {
+                result.append(formatNumber(currentNumber.toString()))
+                currentNumber.clear()
+            }
+            // 연산자나 다른 문자 추가
+            result.append(char)
+        }
+    }
+
+    // 마지막 숫자 처리
+    if (currentNumber.isNotEmpty()) {
+        result.append(formatNumber(currentNumber.toString()))
+    }
+
+    return result.toString()
+}
+
+private fun formatNumber(numberStr: String): String {
+    return try {
+        // 소수점 처리
+        if (numberStr.contains(".")) {
+            val parts = numberStr.split(".")
+            val intPart = parts[0].toLongOrNull()?.let {
+                DecimalFormat("#,###").format(it)
+            } ?: parts[0]
+            if (parts.size > 1) "$intPart.${parts[1]}" else intPart
+        } else {
+            numberStr.toLongOrNull()?.let {
+                DecimalFormat("#,###").format(it)
+            } ?: numberStr
+        }
+    } catch (e: Exception) {
+        numberStr
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun CalculatorScreen(
     modifier: Modifier = Modifier
 ) {
-    var input by remember { mutableStateOf("0") }
+    val context = LocalContext.current
+    var currentToast by remember { mutableStateOf<Toast?>(null) }
+    val focusRequester = remember { FocusRequester() }
 
-    val previewResult = remember(input) {
-        if (input.isEmpty()) ""
+    var inputState by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = "0",
+                selection = TextRange(1)
+            )
+        )
+    }
+
+    val previewResult = remember(inputState.text) {
+        val text = inputState.text
+
+        if (text.isEmpty()) ""
         else {
-            val res = calculate(input)
-            if (res == "Error") "" else res
+            val lastChar = text.last()
+            val hasOperator = text.any { it in listOf('+', '-', '×', '÷') }
+            val isJustNegativeNumber =
+                text.startsWith("-") && text.count { it in listOf('+', '-', '×', '÷') } == 1
+
+            if (!hasOperator || lastChar in listOf('+', '-', '×', '÷') || isJustNegativeNumber) ""
+            else {
+                val res = calculate(text)
+                if (res == "Error") "" else res
+            }
         }
+    }
+
+    val dynamicFontSize = remember(inputState.text.length) {
+        when (inputState.text.length) {
+            in 0..9 -> 56.sp
+            in 10..12 -> 48.sp
+            else -> 40.sp
+        }
+    }
+
+    fun showToast(message: String) {
+        currentToast?.cancel()
+        val toast = Toast.makeText(context, message, Toast.LENGTH_SHORT)
+        toast.show()
+        currentToast = toast
+    }
+
+    fun canInsertNumber(currentText: String, cursorIndex: Int): Boolean {
+        // 전체 텍스트를 구분자로 쪼갰을 때 커서가 위치한 세그먼트 찾기
+        // (간단하게 구현하기 위해 커서 앞쪽의 마지막 구분자 이후부터 커서 뒤쪽 첫 구분자 전까지의 길이를 잰다)
+
+        // 1. 커서 앞부분 탐색
+        val textBeforeCursor = currentText.take(cursorIndex)
+        val lastSeparatorIndexBefore = textBeforeCursor.indexOfLast { it in "+-×÷\n()" }
+        val startOfNumber = if (lastSeparatorIndexBefore == -1) 0 else lastSeparatorIndexBefore + 1
+
+        // 2. 커서 뒷부분 탐색
+        val textAfterCursor = currentText.drop(cursorIndex)
+        val firstSeparatorIndexAfter = textAfterCursor.indexOfFirst { it in "+-×÷\n()" }
+        val endOfNumber =
+            if (firstSeparatorIndexAfter == -1) currentText.length else cursorIndex + firstSeparatorIndexAfter
+
+        // 3. 현재 숫자 블록 추출 및 길이 체크
+        val currentNumberPart = currentText.substring(startOfNumber, endOfNumber)
+
+        // 소수점(.)과 E 표기법 문자는 글자 수 제한에서 유연하게 처리할 수 있으나, 여기선 순수 숫자 길이만 체크하거나 전체 길이 체크
+        // 여기서는 E, -, . 을 포함한 전체 길이로 체크합니다.
+        return currentNumberPart.length < 15
+    }
+
+    fun insert(textToInsert: String) {
+        val currentText = inputState.text
+        val selection = inputState.selection
+
+        if (textToInsert.all { it.isDigit() || it == '.' }) {
+            if (!canInsertNumber(currentText, selection.min)) {
+                showToast("숫자는 최대 15자리까지 입력 가능합니다.")
+                return
+            }
+        }
+
+        val finalInsertText = if (textToInsert in listOf("+", "-", "×", "÷")) {
+            "\n$textToInsert"
+        } else {
+            textToInsert
+        }
+
+        if (currentText == "0" && !finalInsertText.startsWith("\n") && finalInsertText != ".") {
+            inputState = TextFieldValue(
+                text = finalInsertText,
+                selection = TextRange(finalInsertText.length)
+            )
+            return
+        }
+
+        val newText = StringBuilder(currentText)
+            .replace(selection.min, selection.max, textToInsert)
+            .toString()
+
+        val newCursorPosition = selection.min + textToInsert.length
+        inputState = TextFieldValue(
+            text = newText,
+            selection = TextRange(newCursorPosition)
+        )
+    }
+
+    fun delete() {
+        val currentText = inputState.text
+        val selection = inputState.selection
+
+        // 이미 비어있거나 "0"이면 무시
+        if (currentText == "0" || currentText.isEmpty()) {
+            inputState = TextFieldValue("0", selection = TextRange(1))
+            return
+        }
+
+        val cursor = selection.min
+        // 커서가 맨 앞에 있으면 지울게 없음 (단, 드래그 선택 상태면 지움)
+        if (cursor == 0 && selection.collapsed) return
+
+        val newText: String
+        val newCursorPos: Int
+
+        if (!selection.collapsed) {
+            // 1. 드래그 선택된 영역 삭제
+            newText = currentText.removeRange(selection.min, selection.max)
+            newCursorPos = selection.min
+        } else {
+            // 2. 커서 앞 한 글자 삭제
+            newText = currentText.removeRange(cursor - 1, cursor)
+            newCursorPos = cursor - 1
+        }
+
+        // 다 지웠으면 "0"으로
+        if (newText.isEmpty()) {
+            inputState = TextFieldValue("0", selection = TextRange(1))
+        } else {
+            inputState = TextFieldValue(text = newText, selection = TextRange(newCursorPos))
+        }
+    }
+
+    fun formatNumberWithCommas(text: String): String {
+        if (text.isEmpty() || text == "Error") return text
+
+        // 숫자 부분만 추출해서 포맷팅
+        val result = StringBuilder()
+        val currentNumber = StringBuilder()
+
+        for (char in text) {
+            if (char.isDigit() || char == '.') {
+                currentNumber.append(char)
+            } else {
+                // 숫자가 끝났으면 포맷팅해서 추가
+                if (currentNumber.isNotEmpty()) {
+                    result.append(formatNumber(currentNumber.toString()))
+                    currentNumber.clear()
+                }
+                // 연산자나 다른 문자 추가
+                result.append(char)
+            }
+        }
+
+        // 마지막 숫자 처리
+        if (currentNumber.isNotEmpty()) {
+            result.append(formatNumber(currentNumber.toString()))
+        }
+
+        return result.toString()
     }
 
     Column(
@@ -67,35 +329,46 @@ fun CalculatorScreen(
                 .padding(vertical = 16.dp),
             verticalArrangement = Arrangement.SpaceBetween // 위(입력)와 아래(결과)로 벌림
         ) {
-            // 1. 입력창 (TopEnd 역할)
+            // 1. 입력창
             // 텍스트가 길어지면 스크롤되거나 줄어들도록 Box로 감쌉니다.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f), // 공간의 대부분을 입력창이 씀
-                contentAlignment = Alignment.TopEnd // 상단 우측 정렬
+                contentAlignment = Alignment.TopEnd
             ) {
-                Text(
-                    text = input,
-                    color = Color.White,
-                    fontSize = 56.sp, // 메인이라 크게
-                    fontWeight = FontWeight.Light,
-                    textAlign = TextAlign.End,
-                    lineHeight = 60.sp, // 줄간격 확보
-                    overflow = TextOverflow.Visible, // 글자가 많으면 다음줄로 넘어가게 할 수도 있음 (선택사항)
-                    modifier = Modifier.fillMaxWidth()
-                )
+                InterceptPlatformTextInput(
+                    interceptor = { _, _ ->
+                        awaitCancellation()
+                    }
+                ) {
+                    BasicTextField(
+                        value = inputState,
+                        onValueChange = { newValue -> inputState = newValue },
+                        textStyle = TextStyle(
+                            color = Color.White,
+                            fontSize = dynamicFontSize,
+                            fontWeight = FontWeight.Light,
+                            textAlign = TextAlign.End,
+                        ),
+                        visualTransformation = remember { ThousandSeparatorTransformation() },
+                        cursorBrush = SolidColor(Color.White),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester)
+                    )
+                }
             }
 
-            // 2. 결과 미리보기 (BottomEnd 역할)
+            // 2. 결과 미리보기
             // input이 "0"이 아니고, 미리보기 결과가 있을 때만 보여줌
-            if (input != "0" && previewResult.isNotEmpty()) {
+            if (inputState.text != "0" && previewResult.isNotEmpty()) {
                 Text(
-                    text = previewResult,
-                    color = Color.Gray, // 회색으로 연하게 (포인트)
-                    fontSize = 32.sp,   // 작게
+                    text = formatNumberWithCommas(previewResult),
+                    color = Color.Gray,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.End, // 우측 정렬
+                    textAlign = TextAlign.End,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -117,27 +390,30 @@ fun CalculatorScreen(
                     backgroundColor = Color(0xFF9E9E9E),
                     contentColor = Color.Black,
                     contentDescription = "Refresh",
-                    onClick = {  }
+                    onClick = { }
                 )
                 CalculatorButton(
                     text = "AC",
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFF9E9E9E),
                     textColor = Color.Black,
-                    onClick = { input = "0" }
+                    onClick = { inputState = TextFieldValue(text = "", selection = TextRange(1)) }
                 )
                 CalculatorButton(
                     text = "( )",
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFF9E9E9E),
                     textColor = Color.Black,
-                    onClick = { input = addParentheses(input) }
+                    onClick = {
+                        val textToInsert = getParenthesisToInsert(inputState)
+                        insert(textToInsert)
+                    }
                 )
                 CalculatorButton(
                     text = stringResource(R.string.divide),
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFFFF9500),
-                    onClick = { input = addOperator(input, "÷") }
+                    onClick = { insert("÷") }
                 )
             }
 
@@ -149,22 +425,23 @@ fun CalculatorScreen(
                 CalculatorButton(
                     text = "7",
                     modifier = Modifier.weight(1f),
-                    onClick = { input = addNumber(input, "7") })
+                    onClick = { insert("7") }
+                )
                 CalculatorButton(
                     text = "8",
                     modifier = Modifier.weight(1f),
-                    onClick = { input = addNumber(input, "8") }
+                    onClick = { insert("8") }
                 )
                 CalculatorButton(
                     text = "9",
                     modifier = Modifier.weight(1f),
-                    onClick = { input = addNumber(input, "9") }
+                    onClick = { insert("9") }
                 )
                 CalculatorButton(
                     text = "×",
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFFFF9500),
-                    onClick = { input = addOperator(input, "×") }
+                    onClick = { insert("×") }
                 )
             }
 
@@ -176,23 +453,23 @@ fun CalculatorScreen(
                 CalculatorButton(
                     text = "4",
                     modifier = Modifier.weight(1f),
-                    onClick = { input = addNumber(input, "4") }
+                    onClick = { insert("4") }
                 )
                 CalculatorButton(
                     text = "5",
                     modifier = Modifier.weight(1f),
-                    onClick = { input = addNumber(input, "5") }
+                    onClick = { insert("5") }
                 )
                 CalculatorButton(
                     text = "6",
                     modifier = Modifier.weight(1f),
-                    onClick = { input = addNumber(input, "6") }
+                    onClick = { insert("6") }
                 )
                 CalculatorButton(
                     text = "−",
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFFFF9500),
-                    onClick = { input = addOperator(input, "−") }
+                    onClick = { insert("-") }
                 )
             }
 
@@ -204,23 +481,23 @@ fun CalculatorScreen(
                 CalculatorButton(
                     text = "1",
                     modifier = Modifier.weight(1f),
-                    onClick = { input = addNumber(input, "1") }
+                    onClick = { insert("1") }
                 )
                 CalculatorButton(
                     text = "2",
                     modifier = Modifier.weight(1f),
-                    onClick = { input = addNumber(input, "2") }
+                    onClick = { insert("2") }
                 )
                 CalculatorButton(
                     text = "3",
                     modifier = Modifier.weight(1f),
-                    onClick = { input = addNumber(input, "3") }
+                    onClick = { insert("3") }
                 )
                 CalculatorButton(
                     text = "+",
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFFFF9500),
-                    onClick = { input = addOperator(input, "+") }
+                    onClick = { insert("+") }
                 )
             }
 
@@ -232,96 +509,98 @@ fun CalculatorScreen(
                 CalculatorButton(
                     text = ".",
                     modifier = Modifier.weight(1f),
-                    onClick = {
-                        // 소수점 중복 방지 로직 (현재 입력중인 마지막 숫자에 점이 없는지 체크)
-                        val lastNumber = input.split(Regex("[+\\-×÷]")).last()
-                        if (!lastNumber.contains(".")) {
-                            input += "."
-                        }
-                    }
+                    onClick = { insert(".") }
                 )
                 CalculatorButton(
                     text = "0",
                     modifier = Modifier.weight(1f),
-                    onClick = { input = addNumber(input, "0") }
+                    onClick = { insert("0") }
                 )
-                CalculatorButton(
+                DeleteCalculatorButton(
                     text = "⌫",
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFF9E9E9E),
                     textColor = Color.Black,
-                    onClick = { input = if (input.length > 1) input.dropLast(1) else "0" }
+                    onDeleteAction = { delete() }
                 )
                 CalculatorButton(
                     text = "=",
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFFFF9500),
-                    onClick = { input = calculate(input) }
+                    onClick = {
+                        val result = calculate(inputState.text)
+                        inputState = TextFieldValue(result, selection = TextRange(result.length))
+                    }
                 )
             }
         }
     }
-}
 
-private fun addNumber(currentInput: String, number: String): String {
-    return if (currentInput == "0") number else currentInput + number
-}
-
-private fun addOperator(currentInput: String, operator: String): String {
-    if (currentInput.isEmpty() || currentInput == "Error") return "0"
-
-    val lastChar = currentInput.last()
-
-    // 마지막이 이미 연산자라면 새 연산자로 교체
-    return if (lastChar.toString().matches(Regex("[+\\-×÷]"))) {
-        currentInput.dropLast(1) + operator
-    } else {
-        currentInput + operator
+    LaunchedEffect(Unit) {
+        delay(100)
+        focusRequester.requestFocus()
     }
 }
 
-private fun addParentheses(currentInput: String): String {
-    val openCount = currentInput.count { it == '(' }
-    val closeCount = currentInput.count { it == ')' }
-    val lastChar = currentInput.lastOrNull()
+private fun getParenthesisToInsert(state: TextFieldValue): String {
+    val text = state.text
+    val cursor = state.selection.min // 현재 커서 위치
+
+    // 전체 괄호 개수 카운트
+    val openCount = text.count { it == '(' }
+    val closeCount = text.count { it == ')' }
+
+    // 커서 바로 앞의 글자 확인 (커서가 맨 앞이면 null)
+    val charBeforeCursor = if (cursor > 0) text.getOrNull(cursor - 1) else null
 
     // 1. 닫아야 하는 상황인지 체크
-    // (조건: 열린 게 더 많고 + 마지막이 숫자거나 닫는 괄호임)
-    if (openCount > closeCount && lastChar != null && (lastChar.isDigit() || lastChar == ')')) {
-        return "$currentInput)"
+    // (조건: 열린 게 더 많고 + 커서 앞이 숫자거나 닫는 괄호임)
+    if (openCount > closeCount && charBeforeCursor != null && (charBeforeCursor.isDigit() || charBeforeCursor == ')')) {
+        return ")"
     }
 
     // 2. 그 외에는 여는 상황
-    // (숫자 뒤에 바로 열 때는 곱하기 자동 추가)
-    if (lastChar != null && (lastChar.isDigit() || lastChar == ')')) {
-        return "$currentInput×("
+    // (커서 앞이 숫자거나 닫는 괄호면 곱하기 자동 추가)
+    if (charBeforeCursor != null && (charBeforeCursor.isDigit() || charBeforeCursor == ')')) {
+        return "×("
     }
 
-    // 그냥 열기
-    return "$currentInput("
+    // 3. 그냥 열기
+    return "("
 }
 
-@SuppressLint("DefaultLocale")
-private fun calculate(expr: String): String {
+private fun calculate(expression: String): String {
     return try {
-        // 공백이 섞여있을 수 있으므로 제거
-        val normalized = expr.replace(" ", "")
+        val normalized = expression
+            .replace("\n", "")
+            .replace(" ", "")
             .replace("×", "*")
             .replace("÷", "/")
             .replace("−", "-")
 
         if (normalized.isEmpty()) return "0"
 
-        // 마지막이 연산자로 끝나면 제거 (예: "3+" 상태에서 = 누를 시)
-        val finalExpr = if (!normalized.last().isDigit()) normalized.dropLast(1) else normalized
-
-        val result = eval(finalExpr)
-        if (result % 1.0 == 0.0) {
-            result.toInt().toString()
+        // 마지막이 연산자면 제거
+        val finalExpression = if (normalized.last().toString().matches(Regex("[+\\-*/]"))) {
+            normalized.dropLast(1)
         } else {
-            String.format("%.10f", result).trimEnd('0').trimEnd('.')
+            normalized
         }
-    } catch (_: Exception) {
+
+        val result = eval(finalExpression)
+
+        // 15자리를 넘어가거나(10^15), 너무 작으면(10^-10) E 표기법 사용
+        val absResult = kotlin.math.abs(result)
+        if (absResult != 0.0 && (absResult >= 1e15 || absResult < 1e-10)) {
+            // 예: 1.2345678900E15 (소수점 10자리)
+            String.format(Locale.US, "%.10E", result).replace(",", ".")
+        } else if (result % 1.0 == 0.0) {
+            String.format(Locale.US, "%.0f", result)
+        } else {
+            String.format(Locale.US, "%.10f", result).trimEnd('0').trimEnd('.')
+        }
+    } catch (e: Exception) {
+        Log.e(e.javaClass.simpleName, "Calculation error for expression: $expression", e)
         "Error"
     }
 }
@@ -437,6 +716,52 @@ fun CalculatorIconButton(
             contentDescription = contentDescription,
             tint = contentColor,
             modifier = Modifier.size(32.dp)
+        )
+    }
+}
+
+@Composable
+fun DeleteCalculatorButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = Color(0xFF333333),
+    textColor: Color = Color.White,
+    onDeleteAction: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var isPressed by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = modifier
+            .aspectRatio(1f)
+            .clip(CircleShape)
+            .background(color = if (isPressed) backgroundColor.copy(alpha = 0.7f) else backgroundColor)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        isPressed = true
+                        val job = scope.launch {
+                            onDeleteAction()
+                            delay(500)
+                            while (isActive) {
+                                onDeleteAction()
+                                delay(100)
+                            }
+                        }
+                        tryAwaitRelease()
+
+                        job.cancel()
+                        isPressed = false
+                    }
+                )
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            fontSize = 30.sp,
+            fontWeight = FontWeight.Medium,
+            color = textColor
         )
     }
 }

@@ -3,7 +3,7 @@
 
     <application>
         <activity
-            android:name="com.example.presentation.main.MainActivity"
+            android:name="com.ahn.presentation.main.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.CalcMoney">
             <intent-filter>

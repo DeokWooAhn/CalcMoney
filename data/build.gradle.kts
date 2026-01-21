@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.data"
+    namespace = "com.ahn.data"
     compileSdk = 35
 
     defaultConfig {

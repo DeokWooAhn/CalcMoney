@@ -9,11 +9,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.calcmoney"
+    namespace = "com.ahn.calcmoney"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.calcmoney"
+        applicationId = "com.ahn.calcmoney"
         minSdk = 28
         targetSdk = 35
         versionCode = 1

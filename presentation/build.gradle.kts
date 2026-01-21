@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.presentation"
+    namespace = "com.ahn.presentation"
     compileSdk = 35
 
     defaultConfig {

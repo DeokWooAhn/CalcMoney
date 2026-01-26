@@ -1,9 +1,10 @@
 package com.ahn.domain.usecase
 
 import java.util.Locale
+import javax.inject.Inject
 import kotlin.math.abs
 
-object CalculatorEngine {
+class CalculatorEngine @Inject constructor() {
     fun calculate(expression: String): String {
         return try {
             val normalized = expression

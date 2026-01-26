@@ -16,10 +16,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -38,7 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ahn.domain.usecase.CalculatorEngine.calculate
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ahn.presentation.R
 import com.ahn.presentation.ui.component.CalculatorButton
 import com.ahn.presentation.ui.component.CalculatorIconButton
@@ -51,52 +50,34 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun CalculatorScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: CalculatorViewModel = hiltViewModel()
 ) {
+    val state by viewModel.state.collectAsState()
     val context = LocalContext.current
-    var currentToast by remember { mutableStateOf<Toast?>(null) }
     val focusRequester = remember { FocusRequester() }
 
-    var inputState by remember {
-        mutableStateOf(
-            TextFieldValue(
-                text = "",
-                selection = TextRange(0)
-            )
-        )
-    }
-
-    val previewResult = remember(inputState.text) {
-        val text = inputState.text
-
-        if (text.isEmpty()) ""
-        else {
-            val lastChar = text.last()
-            val hasOperator = text.any { it in listOf('+', '-', '×', '÷') }
-            val isJustNegativeNumber =
-                text.startsWith("-") && text.count { it in listOf('+', '-', '×', '÷') } == 1
-
-            if (!hasOperator || lastChar in listOf('+', '-', '×', '÷') || isJustNegativeNumber) ""
-            else {
-                val res = calculate(text)
-                if (res == "Error") "" else res
+    LaunchedEffect(viewModel.sideEffect) {
+        viewModel.sideEffect.collect { sideEffect ->
+            when (sideEffect) {
+                is CalculatorContract.SideEffect.ShowToast -> {
+                    Toast.makeText(context, sideEffect.message, Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
 
-    val dynamicFontSize = remember(inputState.text.length) {
-        when (inputState.text.length) {
+    val textFieldValue = TextFieldValue(
+        text = state.expression,
+        selection = TextRange(state.cursorPosition)
+    )
+
+    val dynamicFontSize = remember(state.expression.length) {
+        when (state.expression.length) {
             in 0..11 -> 42.sp
             in 11..16 -> 35.sp
             else -> 30.sp
         }
-    }
-
-    fun showToast(message: String) {
-        currentToast?.cancel()
-        val toast = Toast.makeText(context, message, Toast.LENGTH_SHORT)
-        toast.show()
-        currentToast = toast
     }
 
     Column(
@@ -119,7 +100,7 @@ fun CalculatorScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f), // 공간의 대부분을 입력창이 씀
+                    .weight(1f),
                 contentAlignment = Alignment.TopEnd
             ) {
                 InterceptPlatformTextInput(
@@ -128,8 +109,12 @@ fun CalculatorScreen(
                     }
                 ) {
                     BasicTextField(
-                        value = inputState,
-                        onValueChange = { newValue -> inputState = newValue },
+                        value = textFieldValue,
+                        onValueChange = { newValue ->
+                            if (newValue.text == state.expression) {
+                                viewModel.updateCursorPosition(newValue.selection.start)
+                            }
+                        },
                         textStyle = TextStyle(
                             color = Color.White,
                             fontSize = dynamicFontSize,
@@ -146,10 +131,9 @@ fun CalculatorScreen(
             }
 
             // 2. 결과 미리보기
-            // input이 "0"이 아니고, 미리보기 결과가 있을 때만 보여줌
-            if (inputState.text != "0" && previewResult.isNotEmpty()) {
+            if (state.expression.isNotEmpty() && state.previewResult.isNotEmpty()) {
                 Text(
-                    text = formatNumberWithCommas(previewResult),
+                    text = formatNumberWithCommas(state.previewResult),
                     color = Color.Gray,
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Medium,
@@ -182,7 +166,7 @@ fun CalculatorScreen(
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFF9E9E9E),
                     textColor = Color.Black,
-                    onClick = { inputState = TextFieldValue(text = "", selection = TextRange(0)) }
+                    onClick = { viewModel.processIntent(CalculatorContract.Intent.Clear) }
                 )
                 CalculatorButton(
                     text = "( )",
@@ -190,15 +174,24 @@ fun CalculatorScreen(
                     backgroundColor = Color(0xFF9E9E9E),
                     textColor = Color.Black,
                     onClick = {
-                        val textToInsert = getParenthesisToInsert(inputState)
-                        insert(textToInsert)
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Parenthesis
+                            )
+                        )
                     }
                 )
                 CalculatorButton(
                     text = stringResource(R.string.divide),
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFFFF9500),
-                    onClick = { insert("÷") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Operator("÷")
+                            )
+                        )
+                    }
                 )
             }
 
@@ -210,23 +203,47 @@ fun CalculatorScreen(
                 CalculatorButton(
                     text = "7",
                     modifier = Modifier.weight(1f),
-                    onClick = { insert("7") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Number("7")
+                            )
+                        )
+                    }
                 )
                 CalculatorButton(
                     text = "8",
                     modifier = Modifier.weight(1f),
-                    onClick = { insert("8") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Number("8")
+                            )
+                        )
+                    }
                 )
                 CalculatorButton(
                     text = "9",
                     modifier = Modifier.weight(1f),
-                    onClick = { insert("9") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Number("9")
+                            )
+                        )
+                    }
                 )
                 CalculatorButton(
                     text = "×",
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFFFF9500),
-                    onClick = { insert("×") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Operator("×")
+                            )
+                        )
+                    }
                 )
             }
 
@@ -238,23 +255,47 @@ fun CalculatorScreen(
                 CalculatorButton(
                     text = "4",
                     modifier = Modifier.weight(1f),
-                    onClick = { insert("4") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Number("4")
+                            )
+                        )
+                    }
                 )
                 CalculatorButton(
                     text = "5",
                     modifier = Modifier.weight(1f),
-                    onClick = { insert("5") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Number("5")
+                            )
+                        )
+                    }
                 )
                 CalculatorButton(
                     text = "6",
                     modifier = Modifier.weight(1f),
-                    onClick = { insert("6") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Number("6")
+                            )
+                        )
+                    }
                 )
                 CalculatorButton(
                     text = "−",
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFFFF9500),
-                    onClick = { insert("-") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Operator("-")
+                            )
+                        )
+                    }
                 )
             }
 
@@ -266,23 +307,47 @@ fun CalculatorScreen(
                 CalculatorButton(
                     text = "1",
                     modifier = Modifier.weight(1f),
-                    onClick = { insert("1") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Number("1")
+                            )
+                        )
+                    }
                 )
                 CalculatorButton(
                     text = "2",
                     modifier = Modifier.weight(1f),
-                    onClick = { insert("2") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Number("2")
+                            )
+                        )
+                    }
                 )
                 CalculatorButton(
                     text = "3",
                     modifier = Modifier.weight(1f),
-                    onClick = { insert("3") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Number("3")
+                            )
+                        )
+                    }
                 )
                 CalculatorButton(
                     text = "+",
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFFFF9500),
-                    onClick = { insert("+") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Operator("+")
+                            )
+                        )
+                    }
                 )
             }
 
@@ -294,28 +359,37 @@ fun CalculatorScreen(
                 CalculatorButton(
                     text = ".",
                     modifier = Modifier.weight(1f),
-                    onClick = { insert(".") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Dot
+                            )
+                        )
+                    }
                 )
                 CalculatorButton(
                     text = "0",
                     modifier = Modifier.weight(1f),
-                    onClick = { insert("0") }
+                    onClick = {
+                        viewModel.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Number("0")
+                            )
+                        )
+                    }
                 )
                 DeleteCalculatorButton(
                     text = "⌫",
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFF9E9E9E),
                     textColor = Color.Black,
-                    onDeleteAction = { delete() }
+                    onDeleteAction = { viewModel.processIntent(CalculatorContract.Intent.Delete) }
                 )
                 CalculatorButton(
                     text = "=",
                     modifier = Modifier.weight(1f),
                     backgroundColor = Color(0xFFFF9500),
-                    onClick = {
-                        val result = calculate(inputState.text)
-                        inputState = TextFieldValue(result, selection = TextRange(result.length))
-                    }
+                    onClick = { viewModel.processIntent(CalculatorContract.Intent.Calculate) }
                 )
             }
         }

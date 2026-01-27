@@ -19,17 +19,21 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ahn.presentation.R
 
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    navController: NavHostController = rememberNavController()
+) {
     val statusBarPadding = WindowInsets
         .statusBars
         .asPaddingValues()
         .calculateTopPadding()
-    val navController = rememberNavController()
+
     val items = listOf(
         BottomNavItem.Calculator,
         BottomNavItem.Exchange,
@@ -64,7 +68,7 @@ fun MainScreen() {
                             selected = selected,
                             onClick = {
                                 navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }

@@ -25,9 +25,6 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun PreviewMain() {
-    // 가짜 컨트롤러 생성
     val testNav = rememberNavController()
-
-    // 직접 주입 (이때는 기본값 대신 testNav가 사용됨)
     MainScreen(navController = testNav)
 }

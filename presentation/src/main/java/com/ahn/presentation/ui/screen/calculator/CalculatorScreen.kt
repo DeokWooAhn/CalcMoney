@@ -385,10 +385,11 @@ fun CalculatorScreen(
                     text = "0",
                     modifier = Modifier.weight(1f),
                     onClick = {
-                        onIntent
+                        onIntent(
                             CalculatorContract.Intent.Input(
                                 CalculatorToken.Number("0")
                             )
+                        )
                     }
                 )
                 DeleteCalculatorButton(

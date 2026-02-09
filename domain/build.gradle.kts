@@ -14,4 +14,13 @@ kotlin {
 
 dependencies {
     implementation(libs.javax.inject)
+
+    // test
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.kotlin.reflect)
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }

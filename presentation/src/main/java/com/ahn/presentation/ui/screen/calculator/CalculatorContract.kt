@@ -20,7 +20,7 @@ interface CalculatorContract {
 
     // 3. 부수 효과: 일회성 이벤트
     sealed interface SideEffect {
-        data class ShowToast(val message: String) : SideEffect
+        data class ShowSnackBar(val message: String) : SideEffect
     }
 }
 

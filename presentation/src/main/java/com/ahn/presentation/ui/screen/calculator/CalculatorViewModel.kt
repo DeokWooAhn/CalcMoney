@@ -53,7 +53,7 @@ class CalculatorViewModel @Inject constructor(
 
     private fun handleNumberInput(number: String, expression: String, cursorPosition: Int) {
         if (!canInsertNumber(expression, cursorPosition)) {
-            sendSideEffect(CalculatorContract.SideEffect.ShowToast("숫자는 최대 $MAX_NUMBER_LENGTH 자리까지 입력 가능합니다."))
+            sendSideEffect(CalculatorContract.SideEffect.ShowSnackBar("숫자는 최대 $MAX_NUMBER_LENGTH 자리까지 입력 가능합니다."))
             return
         }
 
@@ -162,7 +162,7 @@ class CalculatorViewModel @Inject constructor(
                     errorMessage = "계산 오류"
                 )
             }
-            sendSideEffect(CalculatorContract.SideEffect.ShowToast("계산할 수 없는 수식입니다."))
+            sendSideEffect(CalculatorContract.SideEffect.ShowSnackBar("계산할 수 없는 수식입니다."))
             return
         }
 

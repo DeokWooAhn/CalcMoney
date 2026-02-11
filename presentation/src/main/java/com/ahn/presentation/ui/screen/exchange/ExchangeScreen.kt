@@ -9,12 +9,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Icon
@@ -88,10 +91,13 @@ fun ExchangeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
+                .padding(10.dp)
+                .verticalScroll(rememberScrollState())
+                .imePadding(),
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             Text(
                 text = "환율",
                 fontSize = 28.sp,
@@ -177,7 +183,7 @@ private fun ExchangeInputContainer(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.DarkGray, RoundedCornerShape(16.dp))
-                .padding(20.dp),
+                .padding(15.dp, 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -187,7 +193,7 @@ private fun ExchangeInputContainer(
                     onValueChange = onAmountChange,
                     textStyle = TextStyle(
                         color = Color.White,
-                        fontSize = 28.sp,
+                        fontSize = 25.sp,
                         fontWeight = FontWeight.SemiBold
                     ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),

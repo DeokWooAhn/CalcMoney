@@ -48,17 +48,17 @@ fun CurrencySelector(
         modifier = modifier
             .background(backgroundColor, RoundedCornerShape(12.dp))
             .clickable { showDialog = true }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = selectedCurrency.flagEmoji,
-            fontSize = 24.sp,
+            fontSize = 20.sp,
         )
         Text(
             text = selectedCurrency.code,
-            fontSize = 18.sp,
+            fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
             color = textColor,
         )

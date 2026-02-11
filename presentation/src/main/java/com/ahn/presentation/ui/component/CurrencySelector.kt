@@ -131,7 +131,7 @@ private fun CurrencyItem(
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .background(
-                if (isSelected) Color(0xFF3A3A3A) else Color.Transparent
+                if (isSelected) Color.DarkGray else Color.Transparent
             )
             .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -150,7 +150,7 @@ private fun CurrencyItem(
                 color = Color.White,
             )
             Text(
-                text = currency.code,
+                text = currency.currencyName,
                 fontSize = 14.sp,
                 color = Color.Gray,
             )
@@ -159,8 +159,8 @@ private fun CurrencyItem(
         if (isSelected) {
             Text(
                 text = "선택됨",
-                fontSize = 20.sp,
-                color = Color(0XFF4CAF50)
+                fontSize = 12.sp,
+                color = Color.Green
             )
         }
     }

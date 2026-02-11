@@ -4,9 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ahn.domain.usecase.CalculatorEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -21,8 +25,12 @@ class CalculatorViewModel @Inject constructor(
     private val _state = MutableStateFlow(CalculatorContract.State())
     val state: StateFlow<CalculatorContract.State> = _state.asStateFlow()
 
-    private val _sideEffect = Channel<CalculatorContract.SideEffect>()
-    val sideEffect = _sideEffect.receiveAsFlow()
+    private val _sideEffect = MutableSharedFlow<CalculatorContract.SideEffect>(
+        replay = 0,
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+    val sideEffect: SharedFlow<CalculatorContract.SideEffect> = _sideEffect.asSharedFlow()
 
     companion object {
         private const val MAX_NUMBER_LENGTH = 15
@@ -44,10 +52,23 @@ class CalculatorViewModel @Inject constructor(
         val cursorPosition = currentState.cursorPosition
 
         when (token) {
-            is CalculatorToken.Number -> handleNumberInput(token.value, currentExpression, cursorPosition)
-            is CalculatorToken.Operator -> handleOperatorInput(token.value, currentExpression, cursorPosition)
+            is CalculatorToken.Number -> handleNumberInput(
+                token.value,
+                currentExpression,
+                cursorPosition
+            )
+
+            is CalculatorToken.Operator -> handleOperatorInput(
+                token.value,
+                currentExpression,
+                cursorPosition
+            )
+
             is CalculatorToken.Dot -> handleDotInput(currentExpression, cursorPosition)
-            is CalculatorToken.Parenthesis -> handleParenthesisInput(currentExpression, cursorPosition)
+            is CalculatorToken.Parenthesis -> handleParenthesisInput(
+                currentExpression,
+                cursorPosition
+            )
         }
     }
 
@@ -238,14 +259,15 @@ class CalculatorViewModel @Inject constructor(
         // 커서 뒷부분에서 첫 구분자 찾기
         val textAfterCursor = expression.drop(cursorPos)
         val firstSeparatorIndex = textAfterCursor.indexOfFirst { it in "+-×÷()" }
-        val endOfNumber = if (firstSeparatorIndex == -1) expression.length else cursorPos + firstSeparatorIndex
+        val endOfNumber =
+            if (firstSeparatorIndex == -1) expression.length else cursorPos + firstSeparatorIndex
 
         return expression.substring(startOfNumber, endOfNumber)
     }
 
     private fun sendSideEffect(effect: CalculatorContract.SideEffect) {
         viewModelScope.launch {
-            _sideEffect.send(effect)
+            _sideEffect.tryEmit(effect)
         }
     }
 

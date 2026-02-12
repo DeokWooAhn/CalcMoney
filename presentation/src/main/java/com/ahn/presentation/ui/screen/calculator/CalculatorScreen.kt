@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -43,6 +44,9 @@ import com.ahn.presentation.ui.component.CalculatorButton
 import com.ahn.presentation.ui.component.CalculatorIconButton
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.DeleteCalculatorButton
+import com.ahn.presentation.ui.theme.buttonFunction
+import com.ahn.presentation.ui.theme.buttonOperator
+import com.ahn.presentation.ui.theme.buttonTextSecondary
 import com.ahn.presentation.util.ThousandSeparatorTransformation
 import com.ahn.presentation.util.formatNumberWithCommas
 import com.ahn.presentation.util.showSnackbarImmediately
@@ -106,7 +110,7 @@ fun CalculatorScreen(
         snackbarHost = {
             CustomSnackbarHost(snackbarHostState = snackbarHostState)
         },
-        containerColor = Color.Black,
+        containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -144,7 +148,7 @@ fun CalculatorScreen(
                                 }
                             },
                             textStyle = TextStyle(
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 fontSize = dynamicFontSize,
                                 fontWeight = FontWeight.Light,
                                 textAlign = TextAlign.End,
@@ -184,7 +188,7 @@ fun CalculatorScreen(
                     CalculatorIconButton(
                         imageVector = Icons.Default.Refresh,
                         modifier = Modifier.weight(1f),
-                        backgroundColor = Color(0xFF9E9E9E),
+                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
                         contentColor = Color.Black,
                         contentDescription = "Refresh",
                         onClick = { }
@@ -192,15 +196,15 @@ fun CalculatorScreen(
                     CalculatorButton(
                         text = "AC",
                         modifier = Modifier.weight(1f),
-                        backgroundColor = Color(0xFF9E9E9E),
-                        textColor = Color.Black,
+                        backgroundColor = MaterialTheme.colorScheme.buttonFunction,
+                        textColor = MaterialTheme.colorScheme.buttonTextSecondary,
                         onClick = { onIntent(CalculatorContract.Intent.Clear) }
                     )
                     CalculatorButton(
                         text = "( )",
                         modifier = Modifier.weight(1f),
-                        backgroundColor = Color(0xFF9E9E9E),
-                        textColor = Color.Black,
+                        backgroundColor = MaterialTheme.colorScheme.buttonFunction,
+                        textColor = MaterialTheme.colorScheme.buttonTextSecondary,
                         onClick = {
                             onIntent(
                                 CalculatorContract.Intent.Input(
@@ -212,7 +216,7 @@ fun CalculatorScreen(
                     CalculatorButton(
                         text = stringResource(R.string.divide),
                         modifier = Modifier.weight(1f),
-                        backgroundColor = Color(0xFFFF9500),
+                        backgroundColor = MaterialTheme.colorScheme.buttonOperator,
                         onClick = {
                             onIntent(
                                 CalculatorContract.Intent.Input(
@@ -264,7 +268,7 @@ fun CalculatorScreen(
                     CalculatorButton(
                         text = "×",
                         modifier = Modifier.weight(1f),
-                        backgroundColor = Color(0xFFFF9500),
+                        backgroundColor = MaterialTheme.colorScheme.buttonOperator,
                         onClick = {
                             onIntent(
                                 CalculatorContract.Intent.Input(
@@ -316,7 +320,7 @@ fun CalculatorScreen(
                     CalculatorButton(
                         text = "−",
                         modifier = Modifier.weight(1f),
-                        backgroundColor = Color(0xFFFF9500),
+                        backgroundColor = MaterialTheme.colorScheme.buttonOperator,
                         onClick = {
                             onIntent(
                                 CalculatorContract.Intent.Input(
@@ -368,7 +372,7 @@ fun CalculatorScreen(
                     CalculatorButton(
                         text = "+",
                         modifier = Modifier.weight(1f),
-                        backgroundColor = Color(0xFFFF9500),
+                        backgroundColor = MaterialTheme.colorScheme.buttonOperator,
                         onClick = {
                             onIntent(
                                 CalculatorContract.Intent.Input(
@@ -409,14 +413,14 @@ fun CalculatorScreen(
                     DeleteCalculatorButton(
                         text = "⌫",
                         modifier = Modifier.weight(1f),
-                        backgroundColor = Color(0xFF9E9E9E),
-                        textColor = Color.Black,
+                        backgroundColor = MaterialTheme.colorScheme.buttonFunction,      // ✅ 변경
+                        textColor = MaterialTheme.colorScheme.buttonTextSecondary,
                         onDeleteAction = { onIntent(CalculatorContract.Intent.Delete) }
                     )
                     CalculatorButton(
                         text = "=",
                         modifier = Modifier.weight(1f),
-                        backgroundColor = Color(0xFFFF9500),
+                        backgroundColor = MaterialTheme.colorScheme.buttonOperator,
                         onClick = { onIntent(CalculatorContract.Intent.Calculate) }
                     )
                 }

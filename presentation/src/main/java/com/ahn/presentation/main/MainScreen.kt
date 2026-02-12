@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -45,7 +46,7 @@ fun MainScreen(
         contentWindowInsets = WindowInsets(0.dp),
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(R.color.black))
+            .background(MaterialTheme.colorScheme.background)
             .padding(top = statusBarPadding),
         bottomBar = {
                 NavigationBar(

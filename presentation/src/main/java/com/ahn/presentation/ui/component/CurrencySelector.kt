@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.ahn.presentation.ui.screen.exchange.Currency
+import com.ahn.presentation.ui.theme.Green
 
 @Composable
 fun CurrencySelector(
@@ -90,7 +92,7 @@ private fun CurrencyPickerDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = Color(0XFF1E1E1E),
+            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 500.dp)
@@ -100,7 +102,7 @@ private fun CurrencyPickerDialog(
                     text = "통화 선택",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(20.dp),
                 )
 
@@ -131,7 +133,10 @@ private fun CurrencyItem(
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .background(
-                if (isSelected) Color.DarkGray else Color.Transparent
+                if (isSelected)
+                    MaterialTheme.colorScheme.surfaceVariant
+                else
+                    Color.Transparent
             )
             .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -147,12 +152,12 @@ private fun CurrencyItem(
                 text = currency.name,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = currency.currencyName,
                 fontSize = 14.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -160,7 +165,7 @@ private fun CurrencyItem(
             Text(
                 text = "선택됨",
                 fontSize = 12.sp,
-                color = Color.Green
+                color = Green
             )
         }
     }

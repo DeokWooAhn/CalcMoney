@@ -8,7 +8,7 @@
     <!-- Secondary brand color. -->
     <item name="colorOnSecondary">@color/black</item>
     <!-- Status bar color. -->
-    <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+    <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 
     <style name="Theme.CalcMoney.Splash" parent="Theme.SplashScreen" >

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,6 +25,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ahn.presentation.ui.theme.buttonFunction
+import com.ahn.presentation.ui.theme.buttonNumber
+import com.ahn.presentation.ui.theme.buttonTextPrimary
+import com.ahn.presentation.ui.theme.buttonTextSecondary
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -32,8 +37,8 @@ import kotlinx.coroutines.launch
 fun CalculatorButton(
     text: String,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Color(0xFF333333),
-    textColor: Color = Color.White,
+    backgroundColor: Color = MaterialTheme.colorScheme.buttonNumber,
+    textColor: Color = MaterialTheme.colorScheme.buttonTextPrimary,
     onClick: () -> Unit
 ) {
     Box(
@@ -57,8 +62,8 @@ fun CalculatorButton(
 fun CalculatorIconButton(
     imageVector: ImageVector,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Color(0xFF333333),
-    contentColor: Color = Color.White,
+    backgroundColor: Color = MaterialTheme.colorScheme.buttonFunction,
+    contentColor: Color = MaterialTheme.colorScheme.buttonTextSecondary,
     contentDescription: String,
     onClick: () -> Unit
 ) {
@@ -83,8 +88,8 @@ fun CalculatorIconButton(
 fun DeleteCalculatorButton(
     text: String,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Color(0xFF333333),
-    textColor: Color = Color.White,
+    backgroundColor: Color = MaterialTheme.colorScheme.buttonFunction,
+    textColor: Color = MaterialTheme.colorScheme.buttonTextSecondary,
     onDeleteAction: () -> Unit
 ) {
     val scope = rememberCoroutineScope()

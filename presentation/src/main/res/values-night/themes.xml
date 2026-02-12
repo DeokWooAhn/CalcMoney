@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- 다크 모드 테마 -->
+    <style name="Theme.CalcMoney" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/primary_0</item>
+        <item name="colorPrimaryVariant">@color/primary_2</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <!-- Secondary brand color. -->
+        <item name="colorOnSecondary">@color/black</item>
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- 상태바 아이콘 흰색 (다크모드) -->
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+</resources>

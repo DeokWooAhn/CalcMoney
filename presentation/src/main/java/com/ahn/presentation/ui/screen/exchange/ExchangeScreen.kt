@@ -20,11 +20,15 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -75,6 +79,7 @@ fun ExchangeRoute(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExchangeScreen(
     state: ExchangeContract.State,
@@ -85,26 +90,33 @@ fun ExchangeScreen(
         snackbarHost = {
             CustomSnackbarHost(snackbarHostState = snackbarHostState)
         },
-        containerColor = Color.Black,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "환율",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(10.dp)
+                .padding(horizontal = 10.dp)
                 .verticalScroll(rememberScrollState())
                 .imePadding(),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            Text(
-                text = "환율",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.padding(bottom = 40.dp)
-            )
 
             ExchangeInputContainer(
                 amount = state.fromAmount,
@@ -120,14 +132,17 @@ fun ExchangeScreen(
             Box(
                 modifier = Modifier
                     .size(56.dp)
-                    .background(Color.DarkGray, shape = RoundedCornerShape(28.dp)),
+                    .background(
+                        MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(28.dp)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 IconButton(onClick = { onIntent(ExchangeContract.Intent.SwapCurrencies) }) {
                     Icon(
                         imageVector = Icons.Default.SwapVert,
                         contentDescription = "통화 교환",
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -155,7 +170,7 @@ fun ExchangeScreen(
                         )
                     } ${state.toCurrency.code}",
                     fontSize = 14.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -175,14 +190,17 @@ private fun ExchangeInputContainer(
         Text(
             text = label,
             fontSize = 14.sp,
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
         )
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.DarkGray, RoundedCornerShape(16.dp))
+                .background(
+                    MaterialTheme.colorScheme.surface,
+                    RoundedCornerShape(16.dp)
+                )
                 .padding(15.dp, 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -192,12 +210,12 @@ private fun ExchangeInputContainer(
                     value = amount,
                     onValueChange = onAmountChange,
                     textStyle = TextStyle(
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 25.sp,
                         fontWeight = FontWeight.SemiBold
                     ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    cursorBrush = SolidColor(Color.White),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     modifier = Modifier.weight(1f),
                     singleLine = true
                 )
@@ -206,7 +224,7 @@ private fun ExchangeInputContainer(
                     text = amount.ifEmpty { "0" },
                     fontSize = 28.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
                 )
             }

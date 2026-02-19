@@ -2,6 +2,7 @@ package com.ahn.presentation.ui.screen.exchange
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ahn.domain.usecase.GetExchangeRateUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -17,7 +18,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ExchangeViewModel @Inject constructor(
-
+    private val getExchangeRateUseCase: GetExchangeRateUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ExchangeContract.State())
@@ -93,22 +94,19 @@ class ExchangeViewModel @Inject constructor(
             try {
                 _state.update { it.copy(isLoading = true) }
 
-                // TODO: 실제 API 호출
-                // val rate = getExchangeRateUseCase(
-                //     from = _state.value.fromCurrency.code,
-                //     to = _state.value.toCurrency.code
-                // )
-
-                // mock 환율 데이터
-                val rate = getMockExchangeRate(_state.value.fromCurrency, _state.value.toCurrency)
+                val rate = getMockExchangeRate(
+                    from = _state.value.fromCurrency,
+                    to = _state.value.toCurrency,
+                )
 
                 _state.update {
                     it.copy(exchangeRate = rate, isLoading = false)
                 }
                 calculateExchange()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 _state.update { it.copy(isLoading = false) }
-                sendSideEffect(ExchangeContract.SideEffect.ShowSnackBar("환율 정보를 가져올 수 없습니다."))
+                sendSideEffect(ExchangeContract.SideEffect.ShowSnackBar(
+                    "환율 정보를 가져올 수 없습니다: ${e.message}"))
             }
         }
     }

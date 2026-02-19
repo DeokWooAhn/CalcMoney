@@ -16,6 +16,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        val apiKey = properties["EXCHANGE_API_KEY"] as String? ?: ""
+        buildConfigField("String", "EXCHANGE_API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {
@@ -35,6 +38,10 @@ android {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 }
 

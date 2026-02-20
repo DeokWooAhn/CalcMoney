@@ -15,8 +15,8 @@ class ExchangeRateApi @Inject constructor(
         searchData: String = ""
     ): List<ExchangeRateResponse> {
         return client.get("/site/program/financial/exchangeJSON") {
-            parameter("authKey", authKey)
-            parameter("searchData", searchData)
+            parameter("authkey", authKey)
+            parameter("searchdate", searchData)
             parameter("data", "AP01")
         }.body()
     }

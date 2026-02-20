@@ -4,8 +4,8 @@ interface ExchangeContract {
     data class State(
         val fromAmount: String = "1",
         val toAmount: String = "",
-        val fromCurrency: Currency = Currency.KRW,
-        val toCurrency: Currency = Currency.USD,
+        val fromCurrency: Currency = Currency.USD,
+        val toCurrency: Currency = Currency.KRW,
         val exchangeRate: Double = 0.0,
         val isLoading: Boolean = false,
     )

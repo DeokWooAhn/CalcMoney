@@ -87,6 +87,7 @@ class ExchangeViewModel @Inject constructor(
                 toCurrency = it.fromCurrency,
                 fromAmount = it.toAmount.ifEmpty { "1" })
         }
+        fetchExchangeRate()
     }
 
     private fun fetchExchangeRate() {
@@ -94,9 +95,9 @@ class ExchangeViewModel @Inject constructor(
             try {
                 _state.update { it.copy(isLoading = true) }
 
-                val rate = getMockExchangeRate(
-                    from = _state.value.fromCurrency,
-                    to = _state.value.toCurrency,
+                val rate = getExchangeRateUseCase(
+                    from = _state.value.fromCurrency.code,
+                    to = _state.value.toCurrency.code,
                 )
 
                 _state.update {
@@ -128,16 +129,16 @@ class ExchangeViewModel @Inject constructor(
     }
 
     // mock 환율 데이터
-    private fun getMockExchangeRate(from: Currency, to: Currency): Double {
-        return when {
-            from == to -> 1.0
-            from == Currency.KRW && to == Currency.USD -> 0.00075
-            from == Currency.USD && to == Currency.KRW -> 1533.33
-            from == Currency.KRW && to == Currency.JPY -> 0.11
-            from == Currency.JPY && to == Currency.KRW -> 9.09
-            from == Currency.USD && to == Currency.JPY -> 149.50
-            from == Currency.JPY && to == Currency.USD -> 0.0067
-            else -> 1.0
-        }
-    }
+//    private fun getMockExchangeRate(from: Currency, to: Currency): Double {
+//        return when {
+//            from == to -> 1.0
+//            from == Currency.KRW && to == Currency.USD -> 0.00075
+//            from == Currency.USD && to == Currency.KRW -> 1533.33
+//            from == Currency.KRW && to == Currency.JPY -> 0.11
+//            from == Currency.JPY && to == Currency.KRW -> 9.09
+//            from == Currency.USD && to == Currency.JPY -> 149.50
+//            from == Currency.JPY && to == Currency.USD -> 0.0067
+//            else -> 1.0
+//        }
+//    }
 }

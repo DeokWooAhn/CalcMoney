@@ -12,10 +12,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -47,34 +49,41 @@ fun MainScreen(
             .background(MaterialTheme.colorScheme.background)
             .padding(top = statusBarPadding),
         bottomBar = {
-                NavigationBar(
-                    modifier = Modifier.height(65.dp)) {
-                    val navBackStackEntry by navController.currentBackStackEntryAsState()
-                    val currentDestination = navBackStackEntry?.destination
+            NavigationBar(
+                modifier = Modifier.height(65.dp)
+            ) {
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = navBackStackEntry?.destination
 
-                    items.forEach { item ->
-                        val selected =
-                            currentDestination?.hierarchy?.any { it.route == item.route } == true
+                items.forEach { item ->
+                    val selected =
+                        currentDestination?.hierarchy?.any { it.route == item.route } == true
 
-                        NavigationBarItem(
-                            modifier = Modifier.fillMaxHeight(),
-                            icon = {
-                                Icon(
-                                    painterResource(if (selected) item.selectedIcon else item.icon),
-                                    contentDescription = item.title
-                                )
-                            },
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
+                    NavigationBarItem(
+                        modifier = Modifier.fillMaxHeight(),
+                        icon = {
+                            Icon(
+                                painterResource(if (selected) item.selectedIcon else item.icon),
+                                contentDescription = item.title,
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        },
+                        selected = selected,
+                        onClick = {
+                            navController.navigate(item.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
                                 }
+                                launchSingleTop = true
+                                restoreState = true
                             }
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = Color.Transparent,
                         )
-                    }
+                    )
                 }
+            }
         }
     ) { innerPadding ->
         MainNavGraph(

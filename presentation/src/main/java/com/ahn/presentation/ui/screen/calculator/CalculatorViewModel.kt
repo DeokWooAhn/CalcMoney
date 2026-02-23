@@ -1,21 +1,10 @@
 package com.ahn.presentation.ui.screen.calculator
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.ahn.domain.usecase.CalculatorEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.ContainerHost
+import org.orbitmvi.orbit.viewmodel.container
 import javax.inject.Inject
 
 @HiltViewModel
@@ -122,103 +111,96 @@ class CalculatorViewModel @Inject constructor(
         reduce { buildInsertState(state, ".") }
     }
 
-    private fun handleParenthesisInput(expression: String, cursorPosition: Int) = intent {
+    private fun handleParenthesisInput() = intent {
+        val expression = state.expression
+        val cursorPosition = state.cursorPosition
         val openCount = expression.count { it == '(' }
         val closeCount = expression.count { it == ')' }
         val charBefore = if (cursorPosition > 0) expression.getOrNull(cursorPosition - 1) else null
 
-        // 닫는 괄호가 필요한 상황
-        if (openCount > closeCount && charBefore != null && (charBefore.isDigit() || charBefore == ')')) {
-            insertText(expression, cursorPosition, ")")
-            return
+        val textToInsert = when {
+            // 닫는 괄호가 필요한 상황
+            openCount > closeCount && charBefore != null &&
+                    (charBefore.isDigit() || charBefore == ')') -> ")"
+            // 숫자나 닫는 괄호 뒤에 여는 괄호면 곱하기 추가
+            charBefore != null &&
+                    (charBefore.isDigit() || charBefore == ')') -> "×("
+            // 기본: 여는 괄호
+            else -> "("
         }
 
-        // 숫자나 닫는 괄호 뒤에 여는 괄호면 곱하기 추가
-        if (charBefore != null && (charBefore.isDigit() || charBefore == ')')) {
-            insertText(expression, cursorPosition, "×(")
-            return
-        }
-
-        // 기본: 여는 괄호
-        insertText(expression, cursorPosition, "(")
+        reduce { buildInsertState(state, textToInsert) }
     }
 
-    private fun handleDelete() {
-        val currentState = _state.value
-        val expression = currentState.expression
-        val cursorPos = currentState.cursorPosition
+    private fun handleDelete() = intent {
+        val expression = state.expression
+        val cursorPos = state.cursorPosition
 
-        if (expression.isEmpty() || cursorPos == 0) return
+        if (expression.isEmpty() || cursorPos == 0) return@intent
 
         val newExpression = StringBuilder(expression)
             .deleteCharAt(cursorPos - 1)
             .toString()
-        val newCursorPos = cursorPos - 1
 
-        updateState(expression, cursorPos, newExpression, newCursorPos)
+        reduce { buildNewExpressionState(state, newExpression, cursorPos - 1) }
     }
 
-    private fun handleClear() {
-        _state.update {
-            CalculatorContract.State()
-        }
+    private fun handleClear() = intent {
+        reduce { CalculatorContract.State() }
     }
 
-    private fun handleCalculate() {
-        val expression = _state.value.expression
-
-        if (expression.isEmpty()) return
+    private fun handleCalculate() = intent {
+        val expression = state.expression
+        if (expression.isEmpty()) return@intent
 
         val result = calculatorEngine.calculate(expression)
 
         if (result == "Error") {
-            _state.update {
-                it.copy(
-                    isError = true,
-                    errorMessage = "계산 오류"
-                )
+            reduce {
+                state.copy(isError = true, errorMessage = "계산 오류")
             }
-            sendSideEffect(CalculatorContract.SideEffect.ShowSnackBar("계산할 수 없는 수식입니다."))
-            return
+            postSideEffect(
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    "계산할 수 없는 수식입니다."
+                )
+            )
+            return@intent
         }
 
-        _state.update {
+        reduce {
             CalculatorContract.State(
                 expression = result,
                 cursorPosition = result.length,
-                previewResult = "",
-                isError = false,
-                errorMessage = null
             )
         }
     }
 
-    private fun insertText(expression: String, cursorPos: Int, textToInsert: String) {
-        val newExpression = StringBuilder(expression)
-            .insert(cursorPos, textToInsert)
+
+    // ── Pure Computation Helpers (상태를 직접 변경 하지 않음) ───
+
+    private fun buildInsertState(
+        currentState: CalculatorContract.State,
+        textToInsert: String
+    ): CalculatorContract.State {
+        val newExpression = StringBuilder(currentState.expression)
+            .insert(currentState.cursorPosition, textToInsert)
             .toString()
-        val newCursorPos = cursorPos + textToInsert.length
-
-        updateState(expression, cursorPos, newExpression, newCursorPos)
+        val newCursorPos = currentState.cursorPosition + textToInsert.length
+        return buildNewExpressionState(currentState, newExpression, newCursorPos)
     }
 
-    private fun updateState(
-        oldExpression: String,
-        oldCursorPos: Int,
+    private fun buildNewExpressionState(
+        currentState: CalculatorContract.State,
         newExpression: String,
-        newCursorPos: Int = newExpression.length
-    ) {
-        val previewResult = calculatePreview(newExpression)
-
-        _state.update {
-            it.copy(
-                expression = newExpression,
-                cursorPosition = newCursorPos,
-                previewResult = previewResult,
-                isError = false,
-                errorMessage = null
-            )
-        }
+        newCursorPos: Int
+    ): CalculatorContract.State {
+        return currentState.copy(
+            expression = newExpression,
+            cursorPosition = newCursorPos,
+            previewResult = calculatePreview(newExpression),
+            isError = false,
+            errorMessage = null
+        )
     }
 
     private fun calculatePreview(expression: String): String {
@@ -258,11 +240,5 @@ class CalculatorViewModel @Inject constructor(
             if (firstSeparatorIndex == -1) expression.length else cursorPos + firstSeparatorIndex
 
         return expression.substring(startOfNumber, endOfNumber)
-    }
-
-    private fun sendSideEffect(effect: CalculatorContract.SideEffect) {
-        viewModelScope.launch {
-            _sideEffect.tryEmit(effect)
-        }
     }
 }

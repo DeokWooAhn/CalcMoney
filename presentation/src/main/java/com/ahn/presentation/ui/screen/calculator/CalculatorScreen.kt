@@ -17,7 +17,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -53,22 +52,22 @@ import com.ahn.presentation.util.showSnackbarImmediately
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 
 @Composable
 fun CalculatorRoute(
     viewModel: CalculatorViewModel = hiltViewModel()
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(viewModel.sideEffect) {
-        viewModel.sideEffect.collect { sideEffect ->
-            when (sideEffect) {
-                is CalculatorContract.SideEffect.ShowSnackBar -> {
-                    scope.launch {
-                        snackbarHostState.showSnackbarImmediately(sideEffect.message)
-                    }
+    viewModel.collectSideEffect { sideEffect ->
+        when (sideEffect) {
+            is CalculatorContract.SideEffect.ShowSnackBar -> {
+                scope.launch {
+                    snackbarHostState.showSnackbarImmediately(sideEffect.message)
                 }
             }
         }

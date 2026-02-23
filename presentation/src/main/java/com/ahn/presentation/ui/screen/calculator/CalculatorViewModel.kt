@@ -15,22 +15,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.orbitmvi.orbit.ContainerHost
 import javax.inject.Inject
 
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
     private val calculatorEngine: CalculatorEngine
-) : ViewModel() {
+) : ViewModel(), ContainerHost<CalculatorContract.State, CalculatorContract.SideEffect> {
 
-    private val _state = MutableStateFlow(CalculatorContract.State())
-    val state: StateFlow<CalculatorContract.State> = _state.asStateFlow()
-
-    private val _sideEffect = MutableSharedFlow<CalculatorContract.SideEffect>(
-        replay = 0,
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    override val container = container<CalculatorContract.State, CalculatorContract.SideEffect>(
+        initialState = CalculatorContract.State()
     )
-    val sideEffect: SharedFlow<CalculatorContract.SideEffect> = _sideEffect.asSharedFlow()
 
     companion object {
         private const val MAX_NUMBER_LENGTH = 15
@@ -46,88 +41,88 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
-    private fun handleInput(token: CalculatorToken) {
-        val currentState = state.value
-        val currentExpression = currentState.expression
-        val cursorPosition = currentState.cursorPosition
-
-        when (token) {
-            is CalculatorToken.Number -> handleNumberInput(
-                token.value,
-                currentExpression,
-                cursorPosition
-            )
-
-            is CalculatorToken.Operator -> handleOperatorInput(
-                token.value,
-                currentExpression,
-                cursorPosition
-            )
-
-            is CalculatorToken.Dot -> handleDotInput(currentExpression, cursorPosition)
-            is CalculatorToken.Parenthesis -> handleParenthesisInput(
-                currentExpression,
-                cursorPosition
-            )
+    fun updateCursorPosition(newCursorPosition: Int) = intent {
+        reduce {
+                state.copy(cursorPosition = newCursorPosition.coerceIn(0, state.expression.length))
         }
     }
 
-    private fun handleNumberInput(number: String, expression: String, cursorPosition: Int) {
+    private fun handleInput(token: CalculatorToken) {
+        when (token) {
+            is CalculatorToken.Number -> handleNumberInput(token.value)
+            is CalculatorToken.Operator -> handleOperatorInput(token.value)
+            is CalculatorToken.Dot -> handleDotInput()
+            is CalculatorToken.Parenthesis -> handleParenthesisInput()
+        }
+    }
+
+    private fun handleNumberInput(number: String) = intent {
+        val expression = state.expression
+        val cursorPosition = state.cursorPosition
+
         if (!canInsertNumber(expression, cursorPosition)) {
-            sendSideEffect(CalculatorContract.SideEffect.ShowSnackBar("숫자는 최대 $MAX_NUMBER_LENGTH 자리까지 입력 가능합니다."))
-            return
+            postSideEffect(
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    "숫자는 최대 $MAX_NUMBER_LENGTH 자리까지 입력 가능합니다."
+                )
+            )
+            return@intent
         }
 
         if (expression == "0" && number != "0") {
-            updateState("", 0, number)
-            return
+            reduce { buildNewExpressionState(state, number, number.length) }
+            return@intent
         }
 
-        insertText(expression, cursorPosition, number)
+        reduce { buildInsertState(state, number) }
     }
 
-    private fun handleOperatorInput(operator: String, expression: String, cursorPosition: Int) {
-        if (expression.isEmpty()) return
+    private fun handleOperatorInput(operator: String) = intent {
+        val expression = state.expression
+        val cursorPosition = state.cursorPosition
 
-        if (cursorPosition == 0) return
+        if (expression.isEmpty() || cursorPosition == 0) return@intent
 
         val charBefore = expression.getOrNull(cursorPosition - 1)
 
+        // 이전 문자가 연산자면 교체
         if (charBefore != null && charBefore.toString() in OPERATORS) {
             val newExpression = StringBuilder(expression)
                 .deleteCharAt(cursorPosition - 1)
                 .insert(cursorPosition - 1, operator)
                 .toString()
 
-            updateState(expression, cursorPosition, newExpression, cursorPosition)
-            return
+            reduce { buildNewExpressionState(state, newExpression, cursorPosition) }
+            return@intent
         }
 
-        if (charBefore == '(') return
+        if (charBefore == '(') return@intent
 
-        insertText(expression, cursorPosition, operator)
+        reduce { buildInsertState(state, operator) }
     }
 
-    private fun handleDotInput(expression: String, cursorPosition: Int) {
+    private fun handleDotInput() = intent {
+        val expression = state.expression
+        val cursorPosition = state.cursorPosition
+
         if (expression.isEmpty()) {
-            updateState("", 0, "0.", 2)
-            return
+            reduce { buildNewExpressionState(state, "0.", 2) }
+            return@intent
         }
 
         val currentNumberBlock = getCurrentNumberBlock(expression, cursorPosition)
-        if (currentNumberBlock.contains('.')) return
+        if (currentNumberBlock.contains('.')) return@intent
 
         val charBefore = expression.getOrNull(cursorPosition - 1)
-
         if (charBefore != null && (charBefore.toString() in OPERATORS || charBefore == '(')) {
-            insertText(expression, cursorPosition, "0.")
-            return
+            reduce { buildInsertState(state, "0.") }
+            return@intent
         }
 
-        insertText(expression, cursorPosition, ".")
+        reduce { buildInsertState(state, ".") }
     }
 
-    private fun handleParenthesisInput(expression: String, cursorPosition: Int) {
+    private fun handleParenthesisInput(expression: String, cursorPosition: Int) = intent {
         val openCount = expression.count { it == '(' }
         val closeCount = expression.count { it == ')' }
         val charBefore = if (cursorPosition > 0) expression.getOrNull(cursorPosition - 1) else null
@@ -268,12 +263,6 @@ class CalculatorViewModel @Inject constructor(
     private fun sendSideEffect(effect: CalculatorContract.SideEffect) {
         viewModelScope.launch {
             _sideEffect.tryEmit(effect)
-        }
-    }
-
-    fun updateCursorPosition(newCursorPosition: Int) {
-        _state.update {
-            it.copy(cursorPosition = newCursorPosition.coerceIn(0, it.expression.length))
         }
     }
 }

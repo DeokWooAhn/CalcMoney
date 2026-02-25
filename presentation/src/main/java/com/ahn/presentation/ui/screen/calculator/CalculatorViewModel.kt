@@ -175,7 +175,6 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
-
     // ── Pure Computation Helpers (상태를 직접 변경 하지 않음) ───
 
     private fun buildInsertState(

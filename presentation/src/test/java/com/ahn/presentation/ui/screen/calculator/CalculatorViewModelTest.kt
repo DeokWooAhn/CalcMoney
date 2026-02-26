@@ -1,54 +1,63 @@
 package com.ahn.presentation.ui.screen.calculator
 
 import com.ahn.domain.usecase.CalculatorEngine
+import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class CalculatorViewModelTest : BehaviorSpec({
 
-    // MockK로 domain 의존성 Mock
-    val calculatorEngine = mockk<CalculatorEngine>()
+    isolationMode = IsolationMode.InstancePerLeaf
 
-    beforeEach {
-        every { calculatorEngine.calculate(any()) } returns "0"
-    }
+    val testDispatcher = UnconfinedTestDispatcher()
+    val calculatorEngine = mockk<CalculatorEngine>()
+    val viewModel by lazy { CalculatorViewModel(calculatorEngine) }
+
+    beforeEach { Dispatchers.setMain(testDispatcher) }
+    afterSpec { Dispatchers.resetMain() }
 
     Given("계산기 초기 상태에서") {
+        every { calculatorEngine.calculate(any()) } returns "0"
+
         When("5를 입력하면") {
-            val viewModel = CalculatorViewModel(calculatorEngine)
             viewModel.processIntent(
                 CalculatorContract.Intent.Input(CalculatorToken.Number("5"))
             )
+
             Then("expression은 '5'이어야 한다") {
-                viewModel.state.value.expression shouldBe "5"
+                viewModel.container.stateFlow.value.expression shouldBe "5"
             }
 
             Then("커서 위치는 1이어야 한다") {
-                viewModel.state.value.cursorPosition shouldBe 1
+                viewModel.container.stateFlow.value.cursorPosition shouldBe 1
             }
         }
 
         When("0을 입력하면") {
-            val viewModel = CalculatorViewModel(calculatorEngine)
             viewModel.processIntent(
                 CalculatorContract.Intent.Input(CalculatorToken.Number("0"))
             )
 
             Then("expression은 '0'이어야 한다") {
-                viewModel.state.value.expression shouldBe "0"
+                viewModel.container.stateFlow.value.expression shouldBe "0"
             }
         }
 
         When("연산자를 먼저 입력하면") {
-            val viewModel = CalculatorViewModel(calculatorEngine)
             viewModel.processIntent(
                 CalculatorContract.Intent.Input(CalculatorToken.Operator("+"))
             )
 
             Then("무시되어 expression은 비어 있어야 한다") {
-                viewModel.state.value.expression shouldBe ""
+                viewModel.container.stateFlow.value.expression shouldBe ""
             }
         }
     }

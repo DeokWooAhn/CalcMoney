@@ -3,20 +3,18 @@ package com.ahn.presentation.ui.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,46 +31,56 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.ahn.presentation.ui.screen.exchange.Currency
+import com.ahn.domain.model.CurrencyInfo
 import com.ahn.presentation.ui.theme.Green
 
 @Composable
 fun CurrencySelector(
-    selectedCurrency: Currency,
-    onCurrencySelected: (Currency) -> Unit,
+    selectedCurrency: CurrencyInfo?,
+    availableCurrencies: List<CurrencyInfo>,
+    onCurrencySelected: (CurrencyInfo) -> Unit,
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color.Black,
     textColor: Color = Color.White,
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
-    Row(
-        modifier = modifier
-            .background(backgroundColor, RoundedCornerShape(12.dp))
-            .clickable { showDialog = true }
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    selectedCurrency?.let { currency ->
+        Row(
+            modifier = modifier
+                .background(backgroundColor, RoundedCornerShape(12.dp))
+                .clickable { showDialog = true }
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = selectedCurrency.flagEmoji,
+                fontSize = 20.sp,
+            )
+            Text(
+                text = selectedCurrency.code,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = textColor,
+            )
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = "Dropdown Icon",
+                tint = textColor,
+            )
+        }
+    } ?: run {
         Text(
-            text = selectedCurrency.flagEmoji,
-            fontSize = 20.sp,
-        )
-        Text(
-            text = selectedCurrency.code,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
+            text = "통화 선택",
             color = textColor,
-        )
-        Icon(
-            imageVector = Icons.Default.ArrowDropDown,
-            contentDescription = "Dropdown Icon",
-            tint = textColor,
+            modifier = modifier.padding(12.dp, 8.dp)
         )
     }
 
     if (showDialog) {
         CurrencyPickerDialog(
+            currencies = availableCurrencies,
             selectedCurrency = selectedCurrency,
             onDismiss = { showDialog = false },
             onCurrencySelected = { currency ->
@@ -85,9 +93,10 @@ fun CurrencySelector(
 
 @Composable
 private fun CurrencyPickerDialog(
-    selectedCurrency: Currency,
+    currencies: List<CurrencyInfo>,
+    selectedCurrency: CurrencyInfo?,
     onDismiss: () -> Unit,
-    onCurrencySelected: (Currency) -> Unit,
+    onCurrencySelected: (CurrencyInfo) -> Unit,
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -109,7 +118,7 @@ private fun CurrencyPickerDialog(
                 HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
 
                 LazyColumn {
-                    items(Currency.entries.toTypedArray()) { currency ->
+                    items(currencies) { currency ->
                         CurrencyItem(
                             currency = currency,
                             isSelected = currency == selectedCurrency,
@@ -124,7 +133,7 @@ private fun CurrencyPickerDialog(
 
 @Composable
 private fun CurrencyItem(
-    currency: Currency,
+    currency: CurrencyInfo,
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
@@ -149,13 +158,13 @@ private fun CurrencyItem(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = currency.name,
+                text = currency.displayCode,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = currency.currencyName,
+                text = currency.name,
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -171,25 +180,20 @@ private fun CurrencyItem(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF121212)
+@Preview
 @Composable
 fun CurrencySelectorPreview() {
-    // 상태 관리 시뮬레이션
-    var selectedCurrency by remember { mutableStateOf(Currency.KRW) }
+    val sampleCurrencies = listOf(
+        CurrencyInfo("KRW", "KRW", "대한민국 원", "🇰🇷"),
+        CurrencyInfo("USD", "USD", "미국 달러", "🇺🇸"),
+    )
+    var selected by remember { mutableStateOf(sampleCurrencies[0]) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        CurrencySelector(
-            selectedCurrency = selectedCurrency,
-            onCurrencySelected = { newCurrency ->
-                selectedCurrency = newCurrency
-            }
-        )
-    }
+    CurrencySelector(
+        selectedCurrency = selected,
+        availableCurrencies = sampleCurrencies,
+        onCurrencySelected = { selected = it }
+    )
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFF1E1E1E)
@@ -198,13 +202,22 @@ fun CurrencyItemPreview() {
     Column {
         // 선택된 상태
         CurrencyItem(
-            currency = Currency.KRW,
+            currency = CurrencyInfo(
+                "KRW",
+                "KRW",
+                "대한민국 원",
+                "🇰🇷"
+            ),
             isSelected = true,
             onClick = {}
         )
-        // 선택되지 않은 상태
         CurrencyItem(
-            currency = Currency.USD,
+            currency = CurrencyInfo(
+                "USD",
+                "USD",
+                "미국 달러",
+                "🇺🇸"
+            ),
             isSelected = false,
             onClick = {}
         )

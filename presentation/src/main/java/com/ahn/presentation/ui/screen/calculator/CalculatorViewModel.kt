@@ -21,18 +21,18 @@ class CalculatorViewModel @Inject constructor(
         private val OPERATORS = listOf("+", "-", "×", "÷")
     }
 
+    fun updateCursorPosition(newCursorPosition: Int) = intent {
+        reduce {
+            state.copy(cursorPosition = newCursorPosition.coerceIn(0, state.expression.length))
+        }
+    }
+
     fun processIntent(intent: CalculatorContract.Intent) {
         when (intent) {
             is CalculatorContract.Intent.Input -> handleInput(intent.token)
             is CalculatorContract.Intent.Delete -> handleDelete()
             is CalculatorContract.Intent.Clear -> handleClear()
             is CalculatorContract.Intent.Calculate -> handleCalculate()
-        }
-    }
-
-    fun updateCursorPosition(newCursorPosition: Int) = intent {
-        reduce {
-                state.copy(cursorPosition = newCursorPosition.coerceIn(0, state.expression.length))
         }
     }
 

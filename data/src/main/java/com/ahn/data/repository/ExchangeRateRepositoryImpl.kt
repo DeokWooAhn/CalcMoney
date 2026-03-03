@@ -4,6 +4,7 @@ import com.ahn.data.remote.ExchangeRateApi
 import com.ahn.domain.repository.ExchangeRateRepository
 import javax.inject.Inject
 import com.ahn.data.BuildConfig
+import com.ahn.domain.model.CurrencyInfo
 
 class ExchangeRateRepositoryImpl @Inject constructor(
     private val api: ExchangeRateApi
@@ -50,6 +51,38 @@ class ExchangeRateRepositoryImpl @Inject constructor(
         }
 
         throw IllegalStateException("환율 데이터를 찾을 수 없습니다")
+    }
+
+    override suspend fun getSupportedCurrencies(): List<CurrencyInfo> {
+        val rates = api.getExchangeRate(authKey = API_KEY)
+
+        return rates.filter {
+            it.result == 1 && !it.currencyUnit.isNullOrBlank()
+        }.map { response ->
+            val code = response.currencyUnit!!.replace("(100)", "").trim()
+            CurrencyInfo(
+                code = code,
+                displayCode = code,
+                name = response.currencyName ?: "Unknown",
+                flagEmoji = getFlagEmoji(code)
+            )
+        }.distinctBy { it.code }
+    }
+
+    private fun getFlagEmoji(currencyCode: String): String {
+        return when (currencyCode) {
+            "KRW" -> "🇰🇷"
+            "USD" -> "🇺🇸"
+            "JPY" -> "🇯🇵"
+            "EUR" -> "🇪🇺"
+            "CNY" -> "🇨🇳"
+            "GBP" -> "🇬🇧"
+            "AUD" -> "🇦🇺"
+            "CAD" -> "🇨🇦"
+            "CHF" -> "🇨🇭"
+            "HKD" -> "🇭🇰"
+            else -> "🏳️"
+        }
     }
 
     private fun String.toRateNumber(currencyUnit: String? = null): Double? {

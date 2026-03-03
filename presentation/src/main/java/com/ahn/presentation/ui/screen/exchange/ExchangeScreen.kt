@@ -45,27 +45,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ahn.domain.model.CurrencyInfo
 import com.ahn.presentation.ui.component.CurrencySelector
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.util.showSnackbarImmediately
 import kotlinx.coroutines.launch
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 import java.util.Locale
 
 @Composable
 fun ExchangeRoute(
     viewModel: ExchangeViewModel = hiltViewModel()
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(viewModel.sideEffect) {
-        viewModel.sideEffect.collect { sideEffect ->
-            when (sideEffect) {
-                is ExchangeContract.SideEffect.ShowSnackBar -> {
-                    scope.launch {
-                        snackbarHostState.showSnackbarImmediately(sideEffect.message)
-                    }
+    viewModel.collectSideEffect { sideEffect ->
+        when (sideEffect) {
+            is ExchangeContract.SideEffect.ShowSnackBar -> {
+                scope.launch {
+                    snackbarHostState.showSnackbarImmediately(sideEffect.message)
                 }
             }
         }
@@ -122,6 +123,7 @@ fun ExchangeScreen(
                 currency = state.fromCurrency,
                 onAmountChange = { onIntent(ExchangeContract.Intent.UpdateFromAmount(it)) },
                 onCurrencyClick = { onIntent(ExchangeContract.Intent.SelectFromCurrency(it)) },
+                availableCurrencies = state.availableCurrencies,
                 isEditable = true,
                 label = "기준 금액",
             )
@@ -154,23 +156,28 @@ fun ExchangeScreen(
                 currency = state.toCurrency,
                 onAmountChange = { },
                 onCurrencyClick = { onIntent(ExchangeContract.Intent.SelectToCurrency(it)) },
+                availableCurrencies = state.availableCurrencies,
                 isEditable = false,
                 label = "받을 금액",
             )
 
-            if (state.exchangeRate > 0) {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = "1 ${state.fromCurrency.code} = ${
-                        String.format(
-                            Locale.US,
-                            "%.4f",
-                            state.exchangeRate
+            state.fromCurrency?.let { from ->
+                state.toCurrency?.let { to ->
+                    if (state.exchangeRate > 0) {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = "1 ${state.fromCurrency.code} = ${
+                                String.format(
+                                    Locale.US,
+                                    "%.4f",
+                                    state.exchangeRate
+                                )
+                            } ${state.toCurrency.code}",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                    } ${state.toCurrency.code}",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                    }
+                }
             }
         }
     }
@@ -179,9 +186,10 @@ fun ExchangeScreen(
 @Composable
 private fun ExchangeInputContainer(
     amount: String,
-    currency: Currency,
+    currency: CurrencyInfo?,
     onAmountChange: (String) -> Unit,
-    onCurrencyClick: (Currency) -> Unit,
+    onCurrencyClick: (CurrencyInfo) -> Unit,
+    availableCurrencies: List<CurrencyInfo>,
     isEditable: Boolean,
     label: String,
 ) {
@@ -230,10 +238,13 @@ private fun ExchangeInputContainer(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            CurrencySelector(
-                selectedCurrency = currency,
-                onCurrencySelected = onCurrencyClick,
-            )
+            currency?.let {
+                CurrencySelector(
+                    selectedCurrency = currency,
+                    availableCurrencies = availableCurrencies,
+                    onCurrencySelected = onCurrencyClick,
+                )
+            }
         }
     }
 }

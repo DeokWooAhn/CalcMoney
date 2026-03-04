@@ -18,7 +18,7 @@ class ExchangeViewModel @Inject constructor(
 ) : ViewModel(), ContainerHost<ExchangeContract.State, ExchangeContract.SideEffect> {
 
     override val container = container(
-        initialState = ExchangeContract.State()
+        initialState = ExchangeContract.State(),
     ) {
         performLoadCurrencies()
     }

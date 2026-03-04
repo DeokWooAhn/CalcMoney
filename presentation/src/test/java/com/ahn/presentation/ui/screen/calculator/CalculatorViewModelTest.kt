@@ -23,7 +23,7 @@ class CalculatorViewModelTest : BehaviorSpec({
     val viewModel by lazy { CalculatorViewModel(calculatorEngine) }
 
     beforeEach { Dispatchers.setMain(testDispatcher) }
-    afterSpec { Dispatchers.resetMain() }
+    afterEach { Dispatchers.resetMain() }
 
     Given("계산기 초기 상태에서") {
         every { calculatorEngine.calculate(any()) } returns "0"

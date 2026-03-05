@@ -1,6 +1,5 @@
 package com.ahn.presentation.ui.screen.calculator
 
-import app.cash.turbine.test
 import com.ahn.domain.usecase.CalculatorEngine
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
@@ -11,7 +10,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.orbitmvi.orbit.test.test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CalculatorViewModelTest : BehaviorSpec({
@@ -120,23 +121,30 @@ class CalculatorViewModelTest : BehaviorSpec({
         every { calculatorEngine.calculate(any()) } returns "Error"
 
         When("=을 누르면") {
-            viewModel.processIntent(
-                CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
-            )
-            viewModel.processIntent(CalculatorContract.Intent.Calculate)
+            Then("에러 상태가 되고 스낵바 SideEffect가 발생해야 한다") {
+                runTest {
+                    val viewModel = CalculatorViewModel(calculatorEngine)
 
-            Then("에러 상태가 되어야 한다") {
-                viewModel.container.stateFlow.value.isError shouldBe true
-                viewModel.container.stateFlow.value.errorMessage shouldBe "계산 오류"
-            }
+                    viewModel.test(this) {
+                        expectInitialState()
 
-            Then("에러 스낵바가 표시되어야 한다") {
-                viewModel.container.sideEffectFlow.test {
-                    val effect = awaitItem()
-                    effect shouldBe CalculatorContract.SideEffect.ShowSnackBar(
-                        "계산할 수 없는 수식입니다."
-                    )
-                    cancelAndIgnoreRemainingEvents()
+                        // 1. 수식 입력
+                        containerHost.processIntent(CalculatorContract.Intent.Input(CalculatorToken.Number("1")))
+                        expectState { copy(expression = "1", cursorPosition = 1) }
+
+                        // 2. 계산 액션 발생
+                        containerHost.processIntent(CalculatorContract.Intent.Calculate)
+
+                        // 3. 상태 검증 (에러 상태로 변경됨)
+                        expectState {
+                            copy(isError = true, errorMessage = "계산 오류")
+                        }
+
+                        // 4. Turbine 없이 Orbit 내장 기능으로 SideEffect 검증
+                        expectSideEffect(
+                            CalculatorContract.SideEffect.ShowSnackBar("계산할 수 없는 수식입니다.")
+                        )
+                    }
                 }
             }
         }

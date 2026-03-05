@@ -108,7 +108,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                             )
                         }
 
-                        // (3) 자동으로 이어지는 환율 로딩 켜짐 (Actual 에러의 범인!)
+                        // (3) 자동으로 이어지는 환율 로딩 켜짐 (Actual 에러의 범인)
                         expectState { copy(isLoading = true) }
 
                         // (4) 환율 세팅 완료, 로딩 꺼짐, 기본 계산(1 * 1333.33) 세팅
@@ -196,7 +196,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                             )
                         }
 
-                        // ─── [2단계: 환율 로드 (여기서 실패!)] ───
+                        // ─── [2단계: 환율 로드 (여기서 실패)] ───
                         expectState { copy(isLoading = true) }
                         expectState { copy(isLoading = false) } // 실패해서 로딩만 꺼짐
 

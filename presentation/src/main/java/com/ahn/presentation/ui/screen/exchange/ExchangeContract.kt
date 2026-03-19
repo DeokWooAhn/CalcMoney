@@ -9,6 +9,7 @@ interface ExchangeContract {
         val fromCurrency: CurrencyInfo? = null,
         val toCurrency: CurrencyInfo? = null,
         val availableCurrencies: List<CurrencyInfo> = emptyList(),
+        val favoriteCurrencyCodes: Set<String> = emptySet(),
         val exchangeRate: Double = 0.0,
         val isLoading: Boolean = false,
     )
@@ -17,6 +18,7 @@ interface ExchangeContract {
         data class UpdateFromAmount(val amount: String) : Intent
         data class SelectFromCurrency(val currency: CurrencyInfo) : Intent
         data class SelectToCurrency(val currency: CurrencyInfo) : Intent
+        data class ToggleFavorite(val currencyCode: String) : Intent
         object SwapCurrencies : Intent
         object LoadCurrencies : Intent
     }

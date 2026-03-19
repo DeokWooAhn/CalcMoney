@@ -30,8 +30,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -124,6 +122,8 @@ fun ExchangeScreen(
                 onAmountChange = { onIntent(ExchangeContract.Intent.UpdateFromAmount(it)) },
                 onCurrencyClick = { onIntent(ExchangeContract.Intent.SelectFromCurrency(it)) },
                 availableCurrencies = state.availableCurrencies,
+                favoriteCurrencyCodes = state.favoriteCurrencyCodes,
+                onToggleFavorite = { onIntent(ExchangeContract.Intent.ToggleFavorite(it)) },
                 isEditable = true,
                 label = "기준 금액",
             )
@@ -157,6 +157,8 @@ fun ExchangeScreen(
                 onAmountChange = { },
                 onCurrencyClick = { onIntent(ExchangeContract.Intent.SelectToCurrency(it)) },
                 availableCurrencies = state.availableCurrencies,
+                favoriteCurrencyCodes = state.favoriteCurrencyCodes,
+                onToggleFavorite = { onIntent(ExchangeContract.Intent.ToggleFavorite(it)) },
                 isEditable = false,
                 label = "받을 금액",
             )
@@ -190,6 +192,8 @@ private fun ExchangeInputContainer(
     onAmountChange: (String) -> Unit,
     onCurrencyClick: (CurrencyInfo) -> Unit,
     availableCurrencies: List<CurrencyInfo>,
+    favoriteCurrencyCodes: Set<String>,
+    onToggleFavorite: (String) -> Unit,
     isEditable: Boolean,
     label: String,
 ) {
@@ -242,7 +246,9 @@ private fun ExchangeInputContainer(
                 CurrencySelector(
                     selectedCurrency = currency,
                     availableCurrencies = availableCurrencies,
+                    favoriteCurrencyCodes = favoriteCurrencyCodes,
                     onCurrencySelected = onCurrencyClick,
+                    onToggleFavorite = onToggleFavorite,
                 )
             }
         }

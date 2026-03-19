@@ -14,6 +14,7 @@ kotlin {
 
 dependencies {
     implementation(libs.javax.inject)
+    implementation(libs.kotlinx.coroutines.core)
 
     // test
     testImplementation(libs.kotest.runner.junit5)

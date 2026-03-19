@@ -1,7 +1,9 @@
 package com.ahn.data.di
 
 import com.ahn.data.repository.ExchangeRateRepositoryImpl
+import com.ahn.data.repository.FavoriteCurrencyRepositoryImpl
 import com.ahn.domain.repository.ExchangeRateRepository
+import com.ahn.domain.repository.FavoriteCurrencyRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -15,4 +17,9 @@ abstract class RepositoryModule {
     abstract fun bindExchangeRateRepository(
         impl: ExchangeRateRepositoryImpl
     ): ExchangeRateRepository
+
+    @Binds
+    abstract fun bindFavoriteCurrencyRepository(
+        impl: FavoriteCurrencyRepositoryImpl
+    ): FavoriteCurrencyRepository
 }

@@ -3,7 +3,9 @@ package com.ahn.presentation.ui.screen.exchange
 import androidx.lifecycle.ViewModel
 import com.ahn.domain.model.CurrencyInfo
 import com.ahn.domain.usecase.GetExchangeRateUseCase
+import com.ahn.domain.usecase.GetFavoriteCurrenciesUseCase
 import com.ahn.domain.usecase.GetSupportedCurrenciesUseCase
+import com.ahn.domain.usecase.ToggleFavoriteCurrencyUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -15,12 +17,15 @@ import javax.inject.Inject
 class ExchangeViewModel @Inject constructor(
     private val getExchangeRateUseCase: GetExchangeRateUseCase,
     private val getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase,
+    private val getFavoriteCurrenciesUseCase: GetFavoriteCurrenciesUseCase,
+    private val toggleFavoriteCurrencyUseCase: ToggleFavoriteCurrencyUseCase,
 ) : ViewModel(), ContainerHost<ExchangeContract.State, ExchangeContract.SideEffect> {
 
     override val container = container(
         initialState = ExchangeContract.State(),
     ) {
         performLoadCurrencies()
+        observeFavorites()
     }
 
     fun processIntent(intent: ExchangeContract.Intent) {
@@ -28,6 +33,7 @@ class ExchangeViewModel @Inject constructor(
             is ExchangeContract.Intent.UpdateFromAmount -> handleUpdateFromAmount(intent.amount)
             is ExchangeContract.Intent.SelectFromCurrency -> handleSelectFromCurrency(intent.currency)
             is ExchangeContract.Intent.SelectToCurrency -> handleSelectToCurrency(intent.currency)
+            is ExchangeContract.Intent.ToggleFavorite -> handleToggleFavorite(intent.currencyCode)
             is ExchangeContract.Intent.SwapCurrencies -> intent { performSwapCurrencies() }
             is ExchangeContract.Intent.LoadCurrencies -> intent { performLoadCurrencies() }
         }
@@ -60,6 +66,16 @@ class ExchangeViewModel @Inject constructor(
             reduce { state.copy(toCurrency = currency) }
             performFetchExchangeRate()
         }
+    }
+
+    private fun observeFavorites() = intent {
+        getFavoriteCurrenciesUseCase().collect { codes ->
+            reduce { state.copy(favoriteCurrencyCodes = codes.toSet()) }
+        }
+    }
+
+    private fun handleToggleFavorite(currencyCode: String) = intent {
+        toggleFavoriteCurrencyUseCase(currencyCode)
     }
 
     private suspend fun Syntax<ExchangeContract.State, ExchangeContract.SideEffect>.performLoadCurrencies() {

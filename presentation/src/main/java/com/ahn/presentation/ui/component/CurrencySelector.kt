@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,6 +16,9 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -38,7 +42,9 @@ import com.ahn.presentation.ui.theme.Green
 fun CurrencySelector(
     selectedCurrency: CurrencyInfo?,
     availableCurrencies: List<CurrencyInfo>,
+    favoriteCurrencyCodes: Set<String>,
     onCurrencySelected: (CurrencyInfo) -> Unit,
+    onToggleFavorite: (String) -> Unit,
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color.Black,
     textColor: Color = Color.White,
@@ -82,11 +88,13 @@ fun CurrencySelector(
         CurrencyPickerDialog(
             currencies = availableCurrencies,
             selectedCurrency = selectedCurrency,
+            favoriteCurrencyCodes = favoriteCurrencyCodes,
             onDismiss = { showDialog = false },
             onCurrencySelected = { currency ->
                 onCurrencySelected(currency)
                 showDialog = false
-            }
+            },
+            onToggleFavorite = onToggleFavorite,
         )
     }
 }
@@ -95,9 +103,18 @@ fun CurrencySelector(
 private fun CurrencyPickerDialog(
     currencies: List<CurrencyInfo>,
     selectedCurrency: CurrencyInfo?,
+    favoriteCurrencyCodes: Set<String>,
     onDismiss: () -> Unit,
     onCurrencySelected: (CurrencyInfo) -> Unit,
+    onToggleFavorite: (String) -> Unit,
 ) {
+    val sortedCurrencies = remember(currencies, favoriteCurrencyCodes) {
+        val favorites = currencies.filter { it.code in favoriteCurrencyCodes }
+            .sortedBy { favoriteCurrencyCodes.toList().indexOf(it.code) }
+        val others = currencies.filter { it.code !in favoriteCurrencyCodes }
+        favorites + others
+    }
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -122,7 +139,9 @@ private fun CurrencyPickerDialog(
                         CurrencyItem(
                             currency = currency,
                             isSelected = currency == selectedCurrency,
-                            onClick = { onCurrencySelected(currency) }
+                            isFavorite = currency.code in favoriteCurrencyCodes,
+                            onClick = { onCurrencySelected(currency) },
+                            onToggleFavorite = { onToggleFavorite(currency.code) },
                         )
                     }
                 }
@@ -135,7 +154,9 @@ private fun CurrencyPickerDialog(
 private fun CurrencyItem(
     currency: CurrencyInfo,
     isSelected: Boolean,
+    isFavorite: Boolean,
     onClick: () -> Unit,
+    onToggleFavorite: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -147,7 +168,7 @@ private fun CurrencyItem(
                 else
                     Color.Transparent
             )
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -170,11 +191,12 @@ private fun CurrencyItem(
             )
         }
 
-        if (isSelected) {
-            Text(
-                text = "선택됨",
-                fontSize = 12.sp,
-                color = Green
+        IconButton(onClick = onToggleFavorite, modifier = Modifier.size(40.dp)) {
+            Icon(
+                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                contentDescription = if (isFavorite) "즐겨찾기 해제" else "즐겨찾기 추가",
+                tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp)
             )
         }
     }
@@ -186,13 +208,24 @@ fun CurrencySelectorPreview() {
     val sampleCurrencies = listOf(
         CurrencyInfo("KRW", "KRW", "대한민국 원", "🇰🇷"),
         CurrencyInfo("USD", "USD", "미국 달러", "🇺🇸"),
+        CurrencyInfo("JPY", "JPY", "일본 엔", "🇯🇵"),
     )
+
     var selected by remember { mutableStateOf(sampleCurrencies[0]) }
+    var favorites by remember { mutableStateOf(setOf("USD", "JPY")) }
 
     CurrencySelector(
         selectedCurrency = selected,
         availableCurrencies = sampleCurrencies,
-        onCurrencySelected = { selected = it }
+        favoriteCurrencyCodes = favorites,
+        onCurrencySelected = { selected = it },
+        onToggleFavorite = { code ->
+            favorites = if (code in favorites) {
+                favorites - code
+            } else {
+                favorites + code
+            }
+        },
     )
 }
 
@@ -209,7 +242,9 @@ fun CurrencyItemPreview() {
                 "🇰🇷"
             ),
             isSelected = true,
-            onClick = {}
+            isFavorite = true,
+            onClick = {},
+            onToggleFavorite = {}
         )
         CurrencyItem(
             currency = CurrencyInfo(
@@ -219,7 +254,9 @@ fun CurrencyItemPreview() {
                 "🇺🇸"
             ),
             isSelected = false,
-            onClick = {}
+            isFavorite = true,
+            onClick = {},
+            onToggleFavorite = {}
         )
     }
 }

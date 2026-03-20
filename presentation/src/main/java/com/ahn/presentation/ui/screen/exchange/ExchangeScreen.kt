@@ -192,7 +192,7 @@ private fun ExchangeInputContainer(
     onAmountChange: (String) -> Unit,
     onCurrencyClick: (CurrencyInfo) -> Unit,
     availableCurrencies: List<CurrencyInfo>,
-    favoriteCurrencyCodes: Set<String>,
+    favoriteCurrencyCodes: List<String>,
     onToggleFavorite: (String) -> Unit,
     isEditable: Boolean,
     label: String,

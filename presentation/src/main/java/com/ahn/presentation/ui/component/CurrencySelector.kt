@@ -36,13 +36,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.ahn.domain.model.CurrencyInfo
-import com.ahn.presentation.ui.theme.Green
 
 @Composable
 fun CurrencySelector(
     selectedCurrency: CurrencyInfo?,
     availableCurrencies: List<CurrencyInfo>,
-    favoriteCurrencyCodes: Set<String>,
+    favoriteCurrencyCodes: List<String>,
     onCurrencySelected: (CurrencyInfo) -> Unit,
     onToggleFavorite: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -50,12 +49,16 @@ fun CurrencySelector(
     textColor: Color = Color.White,
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    var favoriteCodesSnapshot by remember { mutableStateOf<List<String>>(emptyList()) }
 
     selectedCurrency?.let { currency ->
         Row(
             modifier = modifier
                 .background(backgroundColor, RoundedCornerShape(12.dp))
-                .clickable { showDialog = true }
+                .clickable {
+                    showDialog = true
+                    favoriteCodesSnapshot = favoriteCurrencyCodes
+                }
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -88,7 +91,8 @@ fun CurrencySelector(
         CurrencyPickerDialog(
             currencies = availableCurrencies,
             selectedCurrency = selectedCurrency,
-            favoriteCurrencyCodes = favoriteCurrencyCodes,
+            favoriteCurrencyCodesForSort = favoriteCodesSnapshot,
+            favoriteCurrencyCodesForIcon = favoriteCurrencyCodes,
             onDismiss = { showDialog = false },
             onCurrencySelected = { currency ->
                 onCurrencySelected(currency)
@@ -103,15 +107,22 @@ fun CurrencySelector(
 private fun CurrencyPickerDialog(
     currencies: List<CurrencyInfo>,
     selectedCurrency: CurrencyInfo?,
-    favoriteCurrencyCodes: Set<String>,
+    favoriteCurrencyCodesForSort: List<String>,
+    favoriteCurrencyCodesForIcon: List<String>,
     onDismiss: () -> Unit,
     onCurrencySelected: (CurrencyInfo) -> Unit,
     onToggleFavorite: (String) -> Unit,
 ) {
-    val sortedCurrencies = remember(currencies, favoriteCurrencyCodes) {
-        val favorites = currencies.filter { it.code in favoriteCurrencyCodes }
-            .sortedBy { favoriteCurrencyCodes.toList().indexOf(it.code) }
-        val others = currencies.filter { it.code !in favoriteCurrencyCodes }
+    val orderMap = remember(favoriteCurrencyCodesForSort) {
+        favoriteCurrencyCodesForSort.withIndex().associate { it.value to it.index }
+    }
+
+    val sortedCurrencies = remember(currencies, orderMap) {
+        val favorites = currencies
+            .filter { it.code in orderMap }
+            .sortedBy { orderMap[it.code] }
+
+        val others = currencies.filter { it.code !in orderMap }
         favorites + others
     }
 
@@ -135,11 +146,11 @@ private fun CurrencyPickerDialog(
                 HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
 
                 LazyColumn {
-                    items(currencies) { currency ->
+                    items(sortedCurrencies, key = { it.code }) { currency ->
                         CurrencyItem(
                             currency = currency,
                             isSelected = currency == selectedCurrency,
-                            isFavorite = currency.code in favoriteCurrencyCodes,
+                            isFavorite = currency.code in favoriteCurrencyCodesForIcon,
                             onClick = { onCurrencySelected(currency) },
                             onToggleFavorite = { onToggleFavorite(currency.code) },
                         )
@@ -212,7 +223,7 @@ fun CurrencySelectorPreview() {
     )
 
     var selected by remember { mutableStateOf(sampleCurrencies[0]) }
-    var favorites by remember { mutableStateOf(setOf("USD", "JPY")) }
+    var favorites by remember { mutableStateOf(listOf("USD", "JPY")) }
 
     CurrencySelector(
         selectedCurrency = selected,
@@ -225,7 +236,7 @@ fun CurrencySelectorPreview() {
             } else {
                 favorites + code
             }
-        },
+        }
     )
 }
 

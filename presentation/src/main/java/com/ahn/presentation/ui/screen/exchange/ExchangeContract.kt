@@ -9,7 +9,7 @@ interface ExchangeContract {
         val fromCurrency: CurrencyInfo? = null,
         val toCurrency: CurrencyInfo? = null,
         val availableCurrencies: List<CurrencyInfo> = emptyList(),
-        val favoriteCurrencyCodes: Set<String> = emptySet(),
+        val favoriteCurrencyCodes: List<String> = emptyList(),
         val exchangeRate: Double = 0.0,
         val isLoading: Boolean = false,
     )

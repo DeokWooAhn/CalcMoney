@@ -70,12 +70,21 @@ class ExchangeViewModel @Inject constructor(
 
     private fun observeFavorites() = intent {
         getFavoriteCurrenciesUseCase().collect { codes ->
-            reduce { state.copy(favoriteCurrencyCodes = codes.toSet()) }
+            reduce { state.copy(favoriteCurrencyCodes = codes) }
         }
     }
 
     private fun handleToggleFavorite(currencyCode: String) = intent {
+        val wasFavorite = currencyCode in state.favoriteCurrencyCodes
+
         toggleFavoriteCurrencyUseCase(currencyCode)
+
+        postSideEffect(
+            ExchangeContract.SideEffect.ShowSnackBar(
+                if (wasFavorite) "즐겨찾기가 해제되었습니다."
+                else "즐겨찾기에 추가되었습니다."
+            )
+        )
     }
 
     private suspend fun Syntax<ExchangeContract.State, ExchangeContract.SideEffect>.performLoadCurrencies() {

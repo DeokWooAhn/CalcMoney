@@ -2,13 +2,17 @@ package com.ahn.presentation.ui.screen.exchange
 
 import com.ahn.domain.model.CurrencyInfo
 import com.ahn.domain.usecase.GetExchangeRateUseCase
+import com.ahn.domain.usecase.GetFavoriteCurrenciesUseCase
 import com.ahn.domain.usecase.GetSupportedCurrenciesUseCase
+import com.ahn.domain.usecase.ToggleFavoriteCurrencyUseCase
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -17,8 +21,7 @@ import org.orbitmvi.orbit.test.test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ExchangeViewModelTest : BehaviorSpec({
-
-    isolationMode = IsolationMode.InstancePerLeaf
+    isolationMode = IsolationMode.InstancePerRoot
 
     val testDispatcher = UnconfinedTestDispatcher()
 
@@ -31,11 +34,22 @@ class ExchangeViewModelTest : BehaviorSpec({
 
     val getExchangeRateUseCase = mockk<GetExchangeRateUseCase>()
     val getSupportedCurrenciesUseCase = mockk<GetSupportedCurrenciesUseCase>()
+    val getFavoriteCurrenciesUseCase = mockk<GetFavoriteCurrenciesUseCase>()
+    val toggleFavoriteCurrencyUseCase = mockk<ToggleFavoriteCurrencyUseCase>()
+
+    fun createViewModel() = ExchangeViewModel(
+        getExchangeRateUseCase,
+        getSupportedCurrenciesUseCase,
+        getFavoriteCurrenciesUseCase,
+        toggleFavoriteCurrencyUseCase
+    )
 
     beforeEach {
         Dispatchers.setMain(testDispatcher)
         coEvery { getSupportedCurrenciesUseCase() } returns mockCurrencies
-        coEvery { getExchangeRateUseCase(any(), any()) } returns 1333.33
+        coEvery { getExchangeRateUseCase(any(), any()) } returns 1500.00
+        every { getFavoriteCurrenciesUseCase() } returns MutableStateFlow(emptyList())
+        coEvery { toggleFavoriteCurrencyUseCase(any()) } returns Unit
     }
     afterEach { Dispatchers.resetMain() }
 
@@ -43,15 +57,14 @@ class ExchangeViewModelTest : BehaviorSpec({
         When("초기 상태를 확인하면") {
             Then("초기화 과정이 순차적으로 올바르게 진행되어야 한다") {
                 runTest {
-                    val viewModel =
-                        ExchangeViewModel(getExchangeRateUseCase, getSupportedCurrenciesUseCase)
+                    val viewModel = createViewModel()
 
                     viewModel.test(this) {
                         expectInitialState()
 
                         runOnCreate() // 초기화 시작
 
-                        // ─── [1단계] performLoadCurrencies() 구간 ───
+                        // performLoadCurrencies() 완료 후 observeFavorites() 호출 → 첫 emission은 로딩 ON
                         expectState { copy(isLoading = true) }
                         expectState {
                             copy(
@@ -71,10 +84,12 @@ class ExchangeViewModelTest : BehaviorSpec({
                         expectState {
                             copy(
                                 isLoading = false,
-                                exchangeRate = 1333.33,
-                                toAmount = "1333.33" // 기본 금액 "1" * 1333.33
+                                exchangeRate = 1500.00,
+                                toAmount = "1500.00" // 기본 금액 "1" * 1500.00
                             )
                         }
+                        // observeFavorites() 무한 collect 때문에 joinIntents가 끝나지 않음 → 컨테이너 취소 필요
+                        cancelAndIgnoreRemainingItems()
                     }
                 }
             }
@@ -85,8 +100,7 @@ class ExchangeViewModelTest : BehaviorSpec({
         When("유효한 금액을 입력하면") {
             Then("입력값과 환전 금액이 반영되어야 한다") {
                 runTest {
-                    val viewModel =
-                        ExchangeViewModel(getExchangeRateUseCase, getSupportedCurrenciesUseCase)
+                    val viewModel = createViewModel()
 
                     viewModel.test(this) {
                         expectInitialState()
@@ -94,11 +108,10 @@ class ExchangeViewModelTest : BehaviorSpec({
                         // 1. 초기화 시작
                         runOnCreate()
 
-                        // ─── [초기화 상태 4개 모두 소비하기] ───
-                        // (1) 통화 목록 로딩 켜짐
+
                         expectState { copy(isLoading = true) }
 
-                        // (2) 통화 목록 세팅 완료, 로딩 꺼짐
+                        // 통화 목록 세팅 완료, 로딩 꺼짐
                         expectState {
                             copy(
                                 isLoading = false,
@@ -108,15 +121,14 @@ class ExchangeViewModelTest : BehaviorSpec({
                             )
                         }
 
-                        // (3) 자동으로 이어지는 환율 로딩 켜짐 (Actual 에러의 범인)
                         expectState { copy(isLoading = true) }
 
-                        // (4) 환율 세팅 완료, 로딩 꺼짐, 기본 계산(1 * 1333.33) 세팅
+                        // 환율 세팅 완료, 로딩 꺼짐, 기본 계산(1 * 1500.00) 세팅
                         expectState {
                             copy(
                                 isLoading = false,
-                                exchangeRate = 1333.33,
-                                toAmount = "1333.33"
+                                exchangeRate = 1500.00,
+                                toAmount = "1500.00"
                             )
                         }
                         // ────────────────────────────────
@@ -128,9 +140,10 @@ class ExchangeViewModelTest : BehaviorSpec({
                         expectState {
                             copy(
                                 fromAmount = "1000",
-                                toAmount = "1333330.00"
+                                toAmount = "1500000.00"
                             )
                         }
+                        cancelAndIgnoreRemainingItems()
                     }
                 }
             }
@@ -144,24 +157,23 @@ class ExchangeViewModelTest : BehaviorSpec({
                     // 테스트가 본격적으로 시작되는 여기서 예외를 던지도록 덮어씌움
                     coEvery { getSupportedCurrenciesUseCase() } throws Exception("Network Error")
 
-                    val viewModel =
-                        ExchangeViewModel(getExchangeRateUseCase, getSupportedCurrenciesUseCase)
+                    val viewModel = createViewModel()
 
                     viewModel.test(this) {
                         expectInitialState()
 
                         runOnCreate()
 
-                        // 1. 로딩 켜짐
                         expectState { copy(isLoading = true) }
 
-                        // 2. 에러가 발생하여 캐치(catch) 블록으로 이동, 로딩만 꺼지고 상태는 그대로
+                        // 에러가 발생하여 캐치(catch) 블록으로 이동, 로딩만 꺼지고 상태는 그대로
                         expectState { copy(isLoading = false) }
 
-                        // 3. 에러 스낵바 SideEffect 발생 검증
+                        // 4. 에러 스낵바 SideEffect 발생 검증
                         expectSideEffect(
                             ExchangeContract.SideEffect.ShowSnackBar("통화 목록을 불러올 수 없습니다: Network Error")
                         )
+                        cancelAndIgnoreRemainingItems()
                     }
                 }
             }
@@ -173,19 +185,15 @@ class ExchangeViewModelTest : BehaviorSpec({
             Then("에러 스낵바 SideEffect가 발생해야 한다") {
                 runTest {
                     // 환율 API만 실패하도록 덮어씨움
-                    coEvery {
-                        getExchangeRateUseCase(any(), any())
-                    } throws Exception("Network Error")
+                    coEvery { getExchangeRateUseCase(any(), any()) } throws Exception("Network Error")
 
-                    val viewModel =
-                        ExchangeViewModel(getExchangeRateUseCase, getSupportedCurrenciesUseCase)
+                    val viewModel = createViewModel()
 
                     viewModel.test(this) {
                         expectInitialState()
 
                         runOnCreate()
 
-                        // ─── [1단계: 통화 목록 로드 (성공)] ───
                         expectState { copy(isLoading = true) }
                         expectState {
                             copy(
@@ -196,7 +204,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                             )
                         }
 
-                        // ─── [2단계: 환율 로드 (여기서 실패)] ───
+                        // ─── [3단계: 환율 로드 (여기서 실패)] ───
                         expectState { copy(isLoading = true) }
                         expectState { copy(isLoading = false) } // 실패해서 로딩만 꺼짐
 
@@ -204,6 +212,109 @@ class ExchangeViewModelTest : BehaviorSpec({
                         expectSideEffect(
                             ExchangeContract.SideEffect.ShowSnackBar("환율 정보를 가져올 수 없습니다: Network Error")
                         )
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+    }
+
+    Given("즐겨찾기를 토글할 때") {
+        When("즐겨찾기에 없는 통화(USD)를 하트 누르면") {
+            Then("즐겨찾기에 추가되어 상태에 반영되어야 한다") {
+                runTest {
+                    val favoritesFlow = MutableStateFlow<List<String>>(emptyList())
+
+                    every { getFavoriteCurrenciesUseCase() } returns favoritesFlow
+                    coEvery { toggleFavoriteCurrencyUseCase("USD") } coAnswers {
+                        favoritesFlow.value = listOf("USD")
+                    }
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        // 초기 로딩 상태 소비
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                availableCurrencies = mockCurrencies,
+                                fromCurrency = usd,
+                                toCurrency = krw
+                            )
+                        }
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                exchangeRate = 1500.00,
+                                toAmount = "1500.00"
+                            )
+                        }
+
+                        containerHost.processIntent(ExchangeContract.Intent.ToggleFavorite("USD"))
+
+                        // postSideEffect가 Flow collect의 reduce보다 먼저 스트림에 올 수 있음
+                        expectSideEffect(
+                            ExchangeContract.SideEffect.ShowSnackBar("즐겨찾기에 추가되었습니다.")
+                        )
+                        expectState {
+                            copy(favoriteCurrencyCodes = listOf("USD"))
+                        }
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+
+        When("이미 즐겨찾기인 통화(USD)를 다시 하트 누르면") {
+            Then("즐겨찾기에서 제거되어 상태에 반영되어야 한다") {
+                runTest {
+                    val favoritesFlow = MutableStateFlow(listOf("USD"))
+
+                    coEvery { getSupportedCurrenciesUseCase() } returns mockCurrencies
+                    coEvery { getExchangeRateUseCase(any(), any()) } returns 1500.00
+                    every { getFavoriteCurrenciesUseCase() } returns favoritesFlow
+                    coEvery { toggleFavoriteCurrencyUseCase("USD") } coAnswers {
+                        favoritesFlow.value = emptyList()
+                    }
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                availableCurrencies = mockCurrencies,
+                                fromCurrency = usd,
+                                toCurrency = krw
+                            )
+                        }
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                exchangeRate = 1500.00,
+                                toAmount = "1500.00"
+                            )
+                        }
+                        // performLoadCurrencies + 환율 완료 후 observeFavorites()에서 [USD] 반영
+                        expectState { copy(favoriteCurrencyCodes = listOf("USD")) }
+
+                        containerHost.processIntent(ExchangeContract.Intent.ToggleFavorite("USD"))
+
+                        expectSideEffect(
+                            ExchangeContract.SideEffect.ShowSnackBar("즐겨찾기가 해제되었습니다.")
+                        )
+                        expectState { copy(favoriteCurrencyCodes = emptyList()) }
+                        cancelAndIgnoreRemainingItems()
                     }
                 }
             }

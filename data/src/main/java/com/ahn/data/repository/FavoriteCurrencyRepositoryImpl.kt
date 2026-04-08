@@ -24,6 +24,4 @@ class FavoriteCurrencyRepositoryImpl @Inject constructor(
     override suspend fun isFavorite(currencyCode: String): Boolean {
         return dataSource.isFavorite(currencyCode)
     }
-
-
 }

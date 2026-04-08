@@ -186,7 +186,7 @@ fun ExchangeScreen(
 }
 
 @Composable
-private fun ExchangeInputContainer(
+internal fun ExchangeInputContainer(
     amount: String,
     currency: CurrencyInfo?,
     onAmountChange: (String) -> Unit,

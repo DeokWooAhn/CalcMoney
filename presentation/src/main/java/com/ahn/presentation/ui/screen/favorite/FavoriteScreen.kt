@@ -1,5 +1,6 @@
 package com.ahn.presentation.ui.screen.favorite
 
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -38,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,10 +72,6 @@ fun FavoriteRoute(
                 }
             }
         }
-    }
-
-    LaunchedEffect(Unit) {
-        exchangeViewModel.processIntent(ExchangeContract.Intent.LoadCurrencies)
     }
 
     LaunchedEffect(
@@ -217,20 +216,38 @@ private fun FavoriteRateCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(item.currency.flagEmoji, fontSize = 22.sp)
-                    Column {
-                        Text(item.currency.code, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        item.currency.flagEmoji,
+                        fontSize = 22.sp
+                    )
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            item.currency.code,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                        )
                         Text(
                             item.currency.name,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .basicMarquee(),
                             style = MaterialTheme.typography.bodySmall,
                             maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Clip,
                         )
                     }
                 }
-                IconButton(onClick = onRemoveFavorite) {
+                IconButton(
+                    onClick = onRemoveFavorite,
+                    modifier = Modifier.requiredSize(40.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Default.Favorite,
                         contentDescription = "즐겨찾기 해제",
@@ -238,8 +255,17 @@ private fun FavoriteRateCard(
                     )
                 }
             }
+
             Spacer(modifier = Modifier.height(8.dp))
-            Text(item.convertedAmount, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+
+            Text(
+                item.convertedAmount,
+                modifier = Modifier.fillMaxWidth(),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Text(
                 item.rateLabel,
                 style = MaterialTheme.typography.labelSmall,
@@ -258,4 +284,24 @@ private fun FavoriteScreenPreview() {
         onExchangeIntent = {},
         snackbarHostState = remember { SnackbarHostState() }
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun FavoriteRateCardPreview() {
+    MaterialTheme {
+        FavoriteRateCard(
+            item = FavoriteContract.Item(
+                currency = com.ahn.domain.model.CurrencyInfo(
+                    code = "USD",
+                    displayCode = "USD",
+                    name = "미국 달러",
+                    flagEmoji = "🇺🇸"
+                ),
+                convertedAmount = "1,433.20",
+                rateLabel = "1 KRW = 0.0007 USD"
+            ),
+            onRemoveFavorite = {}
+        )
+    }
 }

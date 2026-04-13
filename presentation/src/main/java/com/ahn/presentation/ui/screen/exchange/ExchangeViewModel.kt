@@ -95,12 +95,19 @@ class ExchangeViewModel @Inject constructor(
             val krw = currencies.find { it.code == "KRW" }
             val usd = currencies.find { it.code == "USD" }
 
+            val preservedFrom = state.fromCurrency?.let { current ->
+                currencies.find { it.code == current.code }
+            }
+
+            val preservedTo = state.toCurrency?.let { current ->
+                currencies.find { it.code == current.code }
+            }
+
             reduce {
                 state.copy(
                     availableCurrencies = currencies,
-                    fromCurrency = usd ?: currencies.firstOrNull() ?: state.fromCurrency,
-                    toCurrency = krw ?: currencies.getOrNull(1) ?: currencies.firstOrNull()
-                    ?: state.toCurrency,
+                    fromCurrency = preservedFrom ?: usd ?: currencies.firstOrNull() ?: state.fromCurrency,
+                    toCurrency = preservedTo ?: krw ?: currencies.getOrNull(1) ?: currencies.firstOrNull() ?: state.toCurrency,
                     isLoading = false
                 )
             }

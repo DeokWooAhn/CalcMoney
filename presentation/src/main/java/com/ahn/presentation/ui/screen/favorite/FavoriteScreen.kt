@@ -80,7 +80,15 @@ fun FavoriteRoute(
         exchangeState.favoriteCurrencyCodes,
         exchangeState.availableCurrencies,
     ) {
-        favoriteViewModel.onExchangeStateChanged(exchangeState)
+        favoriteViewModel.onExchangeStateChanged(
+            fromCurrency = exchangeState.fromCurrency,
+            favoriteCurrencyCodes = exchangeState.favoriteCurrencyCodes,
+            availableCurrencies = exchangeState.availableCurrencies,
+        )
+    }
+
+    LaunchedEffect(exchangeState.fromAmount) {
+        favoriteViewModel.onBaseAmountChanged(exchangeState.fromAmount)
     }
 
     FavoriteScreen(

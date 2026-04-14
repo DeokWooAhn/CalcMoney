@@ -15,9 +15,7 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -46,8 +44,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ahn.presentation.ui.component.CustomSnackbarHost
+import com.ahn.presentation.ui.component.ExchangeInputContainer
 import com.ahn.presentation.ui.screen.exchange.ExchangeContract
-import com.ahn.presentation.ui.screen.exchange.ExchangeInputContainer
 import com.ahn.presentation.ui.screen.exchange.ExchangeViewModel
 import com.ahn.presentation.util.showSnackbarImmediately
 import kotlinx.coroutines.launch
@@ -76,7 +74,6 @@ fun FavoriteRoute(
 
     LaunchedEffect(
         exchangeState.fromCurrency,
-        exchangeState.fromAmount,
         exchangeState.favoriteCurrencyCodes,
         exchangeState.availableCurrencies,
     ) {
@@ -130,8 +127,7 @@ fun FavoriteScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 10.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(horizontal = 10.dp),
         ) {
             ExchangeInputContainer(
                 amount = exchangeState.fromAmount,
@@ -152,7 +148,7 @@ fun FavoriteScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp),
+                            .weight(1f),
                         contentAlignment = Alignment.Center,
                     ) {
                         CircularProgressIndicator()
@@ -163,6 +159,7 @@ fun FavoriteScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .weight(1f)
                             .padding(vertical = 32.dp),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -174,17 +171,26 @@ fun FavoriteScreen(
                 }
 
                 favoriteState.items.isEmpty() -> {
-                    Text(
-                        text = "환율 정보를 불러올 수 없습니다.",
-                        modifier = Modifier.padding(8.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "환율 정보를 불러올 수 없습니다.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
 
                 else -> {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
-                        modifier = Modifier.height(800.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
                         contentPadding = PaddingValues(bottom = 24.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),

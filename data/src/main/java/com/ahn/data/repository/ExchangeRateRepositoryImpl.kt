@@ -4,6 +4,7 @@ import com.ahn.data.remote.ExchangeRateApi
 import com.ahn.domain.repository.ExchangeRateRepository
 import javax.inject.Inject
 import com.ahn.data.BuildConfig
+import com.ahn.data.model.ExchangeRateResponse
 import com.ahn.domain.model.CurrencyInfo
 
 class ExchangeRateRepositoryImpl @Inject constructor(
@@ -12,23 +13,42 @@ class ExchangeRateRepositoryImpl @Inject constructor(
 
     companion object {
         const val API_KEY = BuildConfig.EXCHANGE_API_KEY
+        private const val CACHE_TTL_MS = 60 * 60 * 1000L
     }
 
-    override suspend fun getExchangeRate(from: String, to: String): Double {
+    private var cachedRates: List<ExchangeRateResponse> = emptyList()
+    private var cacheTimestamp: Long = 0L
+
+    private suspend fun fetchRatesIfNeeded(): List<ExchangeRateResponse> {
+        val now = System.currentTimeMillis()
+
+        if (cachedRates.isNotEmpty() && (now - cacheTimestamp) < CACHE_TTL_MS) {
+            return cachedRates
+        }
+
         val rates = api.getExchangeRate(authKey = API_KEY)
-        val validRates = rates.filter {
+        val valid = rates.filter {
             it.result == 1 && !it.currencyUnit.isNullOrBlank() && !it.baseRate.isNullOrBlank()
         }
 
-        if (validRates.isEmpty()) {
+        if (valid.isEmpty()) {
             throw IllegalStateException(apiErrorMessage(rates.firstOrNull()?.result))
         }
+
+        cachedRates = valid
+        cacheTimestamp = now
+
+        return valid
+    }
+
+    override suspend fun getExchangeRate(from: String, to: String): Double {
+        val validRates = fetchRatesIfNeeded()
 
         if (from == "KRW") {
             val targetRate = validRates.find { it.currencyUnit?.contains(to) == true }
             val rate = targetRate?.baseRate?.toRateNumber(targetRate.currencyUnit)
                 ?: throw IllegalStateException("환율 데이터를 찾을 수 없습니다")
-            return 1.0 / rate  // 역수 계산: KRW 기준으로 변환
+            return 1.0 / rate
         }
 
         if (to == "KRW") {
@@ -41,25 +61,25 @@ class ExchangeRateRepositoryImpl @Inject constructor(
             validRates.find { it.currencyUnit?.contains(from) == true }?.let {
                 it.baseRate?.toRateNumber(it.currencyUnit)
             }
+
         val toRate =
             validRates.find { it.currencyUnit?.contains(to) == true }?.let {
                 it.baseRate?.toRateNumber(it.currencyUnit)
             }
 
         if (fromRate != null && toRate != null) {
-            return fromRate / toRate  // from 통화의 KRW 가치를 to 통화로 변환
+            return fromRate / toRate
         }
 
         throw IllegalStateException("환율 데이터를 찾을 수 없습니다")
     }
 
     override suspend fun getSupportedCurrencies(): List<CurrencyInfo> {
-        val rates = api.getExchangeRate(authKey = API_KEY)
+        val rates = fetchRatesIfNeeded()
 
-        return rates.filter {
-            it.result == 1 && !it.currencyUnit.isNullOrBlank()
-        }.map { response ->
+        return rates.map { response ->
             val code = response.currencyUnit!!.replace("(100)", "").trim()
+
             CurrencyInfo(
                 code = code,
                 displayCode = code,
@@ -68,6 +88,7 @@ class ExchangeRateRepositoryImpl @Inject constructor(
             )
         }.distinctBy { it.code }
     }
+
 
     private fun getFlagEmoji(currencyCode: String): String {
         return when (currencyCode) {

@@ -46,6 +46,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ahn.domain.model.CurrencyInfo
 import com.ahn.presentation.ui.component.CurrencySelector
 import com.ahn.presentation.ui.component.CustomSnackbarHost
+import com.ahn.presentation.ui.component.ExchangeInputContainer
 import com.ahn.presentation.util.showSnackbarImmediately
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
@@ -180,76 +181,6 @@ fun ExchangeScreen(
                         )
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-internal fun ExchangeInputContainer(
-    amount: String,
-    currency: CurrencyInfo?,
-    onAmountChange: (String) -> Unit,
-    onCurrencyClick: (CurrencyInfo) -> Unit,
-    availableCurrencies: List<CurrencyInfo>,
-    favoriteCurrencyCodes: List<String>,
-    onToggleFavorite: (String) -> Unit,
-    isEditable: Boolean,
-    label: String,
-) {
-    Column {
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    MaterialTheme.colorScheme.surface,
-                    RoundedCornerShape(16.dp)
-                )
-                .padding(15.dp, 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (isEditable) {
-                BasicTextField(
-                    value = amount,
-                    onValueChange = onAmountChange,
-                    textStyle = TextStyle(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 25.sp,
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-            } else {
-                Text(
-                    text = amount.ifEmpty { "0" },
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            currency?.let {
-                CurrencySelector(
-                    selectedCurrency = currency,
-                    availableCurrencies = availableCurrencies,
-                    favoriteCurrencyCodes = favoriteCurrencyCodes,
-                    onCurrencySelected = onCurrencyClick,
-                    onToggleFavorite = onToggleFavorite,
-                )
             }
         }
     }

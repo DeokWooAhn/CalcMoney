@@ -1,11 +1,20 @@
 package com.ahn.presentation.ui.screen.calculator
 
+import com.ahn.domain.model.CurrencyInfo
+
 interface CalculatorContract {
     // 1. 상태: 순수 String과 Int(커서)로 관리
     data class State(
         val expression: String = "",
         val cursorPosition: Int = 0, // 커서 위치를 별도 관리해야 중간 편집 가능
         val previewResult: String = "",
+        val mainExchangeCurrency: CurrencyInfo? = null,
+        val selectedExchangeCurrency: CurrencyInfo? = null,
+        val availableCurrencies: List<CurrencyInfo> = emptyList(),
+        val exchangeRate: Double = 0.0,
+        val convertedExpressionAmount: String = "",
+        val convertedPreviewAmount: String = "",
+        val repeatOperation: String? = null, // 마지막 연산자 저장 (반복 계산용)
         val isError: Boolean = false,
         val errorMessage: String? = null
     )
@@ -13,6 +22,9 @@ interface CalculatorContract {
     // 2. 의도: 추상화된 입력
     sealed interface Intent {
         data class Input(val token: CalculatorToken) : Intent
+        data class SelectMainExchangeCurrency(val currency: CurrencyInfo) : Intent
+        data class SelectExchangeCurrency(val currency: CurrencyInfo) : Intent
+        object SwapExchangeCurrencies : Intent
         object Delete : Intent
         object Clear : Intent
         object Calculate : Intent

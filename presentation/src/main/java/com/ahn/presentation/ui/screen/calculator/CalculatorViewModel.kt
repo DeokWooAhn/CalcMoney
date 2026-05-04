@@ -1,20 +1,29 @@
 package com.ahn.presentation.ui.screen.calculator
 
 import androidx.lifecycle.ViewModel
+import com.ahn.domain.model.CurrencyInfo
 import com.ahn.domain.usecase.CalculatorEngine
+import com.ahn.domain.usecase.GetExchangeRateUseCase
+import com.ahn.domain.usecase.GetSupportedCurrenciesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.ContainerHost
+import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.container
+import kotlin.math.roundToLong
 import javax.inject.Inject
 
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
-    private val calculatorEngine: CalculatorEngine
+    private val calculatorEngine: CalculatorEngine,
+    private val getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase,
+    private val getExchangeRateUseCase: GetExchangeRateUseCase,
 ) : ViewModel(), ContainerHost<CalculatorContract.State, CalculatorContract.SideEffect> {
 
-    override val container = container<CalculatorContract.State, CalculatorContract.SideEffect>(
+    override val container = container(
         initialState = CalculatorContract.State()
-    )
+    ) {
+        performLoadCurrencies()
+    }
 
     companion object {
         private const val MAX_NUMBER_LENGTH = 15
@@ -30,9 +39,12 @@ class CalculatorViewModel @Inject constructor(
     fun processIntent(intent: CalculatorContract.Intent) {
         when (intent) {
             is CalculatorContract.Intent.Input -> handleInput(intent.token)
+            is CalculatorContract.Intent.SelectExchangeCurrency -> handleSelectExchangeCurrency(intent.currency)
             is CalculatorContract.Intent.Delete -> handleDelete()
             is CalculatorContract.Intent.Clear -> handleClear()
             is CalculatorContract.Intent.Calculate -> handleCalculate()
+            is CalculatorContract.Intent.SelectMainExchangeCurrency -> handleSelectMainExchangeCurrency(intent.currency)
+            CalculatorContract.Intent.SwapExchangeCurrencies -> intent { performSwapExchangeCurrencies() }
         }
     }
 
@@ -146,14 +158,31 @@ class CalculatorViewModel @Inject constructor(
     }
 
     private fun handleClear() = intent {
-        reduce { CalculatorContract.State() }
+        reduce {
+            state.copy(
+                expression = "",
+                cursorPosition = 0,
+                previewResult = "",
+                convertedExpressionAmount = "",
+                convertedPreviewAmount = "",
+                isError = false,
+                errorMessage = null,
+            )
+        }
     }
 
     private fun handleCalculate() = intent {
         val expression = state.expression
         if (expression.isEmpty()) return@intent
 
-        val result = calculatorEngine.calculate(expression)
+        val expressionToCalculate =
+            if (state.repeatOperation != null && expression.toDoubleOrNull() != null) {
+                expression + state.repeatOperation
+            } else {
+                expression
+            }
+
+        val result = calculatorEngine.calculate(expressionToCalculate)
 
         if (result == "Error") {
             reduce {
@@ -167,12 +196,83 @@ class CalculatorViewModel @Inject constructor(
             return@intent
         }
 
+        val nextRepeatOperation = extractRepeatOperation(expressionToCalculate)
+            ?: state.repeatOperation
+
         reduce {
-            CalculatorContract.State(
+            buildNewExpressionState(
+                currentState = state,
+                newExpression = result,
+                newCursorPos = result.length,
+            ).copy(
                 expression = result,
                 cursorPosition = result.length,
+                previewResult = "",
+                convertedPreviewAmount = "",
+                repeatOperation = nextRepeatOperation
             )
         }
+    }
+
+    private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.performLoadCurrencies() {
+        try {
+            val currencies = getSupportedCurrenciesUseCase()
+            val mainCurrency = currencies.find { it.code == "KRW" } ?: currencies.firstOrNull()
+            val subCurrency = currencies.find { it.code == "USD" }
+                ?: currencies.firstOrNull { it.code != mainCurrency?.code }
+
+            reduce {
+                state.copy(
+                    availableCurrencies = currencies,
+                    mainExchangeCurrency = state.mainExchangeCurrency ?: mainCurrency,
+                    selectedExchangeCurrency = state.selectedExchangeCurrency ?: subCurrency,
+                )
+            }
+
+            performFetchExchangeRate()
+        } catch (e: Exception) {
+            postSideEffect(
+                CalculatorContract.SideEffect.ShowSnackBar("통화 목록을 불러올 수 없습니다: ${e.message}")
+            )
+        }
+    }
+
+    private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.performFetchExchangeRate() {
+        val from = state.mainExchangeCurrency ?: return
+        val to = state.selectedExchangeCurrency ?: return
+
+        try {
+            val rate = if (from.code == to.code) {
+                1.0
+            } else {
+                getExchangeRateUseCase(from = from.code, to = to.code)
+            }
+
+            reduce {
+                state.copy(exchangeRate = rate).withConvertedAmounts()
+            }
+        } catch (e: Exception) {
+            postSideEffect(
+                CalculatorContract.SideEffect.ShowSnackBar("환율 정보를 가져올 수 없습니다: ${e.message}")
+            )
+        }
+    }
+
+    private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.performSwapExchangeCurrencies() {
+        val from = state.mainExchangeCurrency ?: return
+        val to = state.selectedExchangeCurrency ?: return
+
+        reduce {
+            state.copy(
+                mainExchangeCurrency = to,
+                selectedExchangeCurrency = from,
+                exchangeRate = 0.0,
+                convertedExpressionAmount = "",
+                convertedPreviewAmount = "",
+            )
+        }
+
+        performFetchExchangeRate()
     }
 
     // ── Pure Computation Helpers (상태를 직접 변경 하지 않음) ───
@@ -197,9 +297,10 @@ class CalculatorViewModel @Inject constructor(
             expression = newExpression,
             cursorPosition = newCursorPos,
             previewResult = calculatePreview(newExpression),
+            repeatOperation = null, // 새 입력이 들어오면 반복 연산 초기화
             isError = false,
             errorMessage = null
-        )
+        ).withConvertedAmounts()
     }
 
     private fun calculatePreview(expression: String): String {
@@ -239,5 +340,106 @@ class CalculatorViewModel @Inject constructor(
             if (firstSeparatorIndex == -1) expression.length else cursorPos + firstSeparatorIndex
 
         return expression.substring(startOfNumber, endOfNumber)
+    }
+
+    private fun CalculatorContract.State.withConvertedAmounts(): CalculatorContract.State {
+        return copy(
+            convertedExpressionAmount = convertExpression(expression, exchangeRate, selectedExchangeCurrency?.code),
+            convertedPreviewAmount = convertSingleAmount(previewResult, exchangeRate, selectedExchangeCurrency?.code),
+        )
+    }
+
+    private fun convertExpression(
+        expression: String,
+        rate: Double,
+        currencyCode: String?,
+    ): String {
+        if (expression.isEmpty() || rate <= 0.0 || currencyCode == null) return ""
+
+        val result = StringBuilder()
+        val number = StringBuilder()
+
+        fun flushNumber() {
+            if (number.isEmpty()) return
+            val converted = number.toString().toDoubleOrNull()?.let {
+                (it * rate).roundToLong()
+            }
+            if (converted != null) {
+                result.append(converted).append(" ").append(currencyCode)
+            } else {
+                result.append(number)
+            }
+            number.clear()
+        }
+
+        expression.forEach { char ->
+            if (char.isDigit() || char == '.') {
+                number.append(char)
+            } else {
+                flushNumber()
+                result.append(" ").append(char).append(" ")
+            }
+        }
+
+        flushNumber()
+
+        return result.toString().replace(Regex("\\s+"), " ").trim()
+    }
+
+    private fun convertSingleAmount(
+        text: String,
+        rate: Double,
+        currencyCode: String?,
+    ): String {
+        if (text.isEmpty() || rate <= 0.0 || currencyCode == null) return ""
+
+        val amount = text.toDoubleOrNull()
+            ?: calculatorEngine.calculate(text).takeIf { it != "Error" }?.toDoubleOrNull()
+            ?: return ""
+
+        return "${(amount * rate).roundToLong()} $currencyCode"
+    }
+
+    private fun handleSelectMainExchangeCurrency(currency: CurrencyInfo) = intent {
+        if (currency.code == state.mainExchangeCurrency?.code) return@intent
+
+        reduce {
+            state.copy(
+                mainExchangeCurrency = currency,
+                exchangeRate = 0.0,
+                convertedExpressionAmount = "",
+                convertedPreviewAmount = "",
+            )
+        }
+
+        performFetchExchangeRate()
+    }
+
+    private fun handleSelectExchangeCurrency(currency: CurrencyInfo) = intent {
+        if (currency.code == state.selectedExchangeCurrency?.code) return@intent
+
+        reduce {
+            state.copy(
+                selectedExchangeCurrency = currency,
+                exchangeRate = 0.0,
+                convertedExpressionAmount = "",
+                convertedPreviewAmount = "",
+            )
+        }
+
+        performFetchExchangeRate()
+    }
+
+    private fun extractRepeatOperation(expression: String): String? {
+        val operatorIndex = expression.indexOfLast { it.toString() in OPERATORS }
+
+        if (operatorIndex <= 0 || operatorIndex == expression.lastIndex) return null
+
+        val operator = expression[operatorIndex].toString()
+        val operand = expression.substring(operatorIndex + 1)
+
+        if (operand.toDoubleOrNull() == null) return null
+
+        return operator + operand
     }
 }

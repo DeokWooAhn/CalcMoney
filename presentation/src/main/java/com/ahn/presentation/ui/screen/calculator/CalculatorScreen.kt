@@ -1,15 +1,27 @@
 package com.ahn.presentation.ui.screen.calculator
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
@@ -18,8 +30,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -34,10 +48,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ahn.domain.model.CurrencyInfo
 import com.ahn.presentation.R
 import com.ahn.presentation.ui.component.CalculatorButton
 import com.ahn.presentation.ui.component.CalculatorIconButton
@@ -115,9 +132,54 @@ fun CalculatorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(16.dp, 5.dp, 16.dp, 16.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CalculatorExchangeCurrencySelector(
+                    label = "메인 환율",
+                    selectedCurrency = state.mainExchangeCurrency,
+                    availableCurrencies = state.availableCurrencies,
+                    onCurrencySelected = {
+                        onIntent(CalculatorContract.Intent.SelectMainExchangeCurrency(it))
+                    },
+                    modifier = Modifier.widthIn(min = 84.dp),
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                ) {
+                    IconButton(
+                        onClick = {
+                            onIntent(CalculatorContract.Intent.SwapExchangeCurrencies)
+                        },
+                        modifier = Modifier.size(36.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SwapHoriz,
+                            contentDescription = "환율 통화 교환",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+
+                CalculatorExchangeCurrencySelector(
+                    label = "보조 환율",
+                    selectedCurrency = state.selectedExchangeCurrency,
+                    availableCurrencies = state.availableCurrencies,
+                    onCurrencySelected = {
+                        onIntent(CalculatorContract.Intent.SelectExchangeCurrency(it))
+                    },
+                    modifier = Modifier.widthIn(min = 84.dp),
+                )
+            }
+
             // Display Area
             Column(
                 modifier = Modifier
@@ -134,43 +196,60 @@ fun CalculatorScreen(
                         .weight(1f),
                     contentAlignment = Alignment.TopEnd
                 ) {
-                    InterceptPlatformTextInput(
-                        interceptor = { _, _ ->
-                            awaitCancellation()
-                        }
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
-                        BasicTextField(
-                            value = textFieldValue,
-                            onValueChange = { newValue ->
-                                if (newValue.text == state.expression) {
-                                    onCursorMove(newValue.selection.start)
-                                }
-                            },
-                            textStyle = TextStyle(
-                                color = MaterialTheme.colorScheme.onBackground,
-                                fontSize = dynamicFontSize,
-                                fontWeight = FontWeight.Light,
-                                textAlign = TextAlign.End,
-                            ),
-                            visualTransformation = remember { ThousandSeparatorTransformation() },
-                            cursorBrush = SolidColor(Color.White),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .focusRequester(focusRequester)
+                        InterceptPlatformTextInput(
+                            interceptor = { _, _ ->
+                                awaitCancellation()
+                            }
+                        ) {
+                            BasicTextField(
+                                value = textFieldValue,
+                                onValueChange = { newValue ->
+                                    if (newValue.text == state.expression) {
+                                        onCursorMove(newValue.selection.start)
+                                    }
+                                },
+                                textStyle = TextStyle(
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    fontSize = dynamicFontSize,
+                                    fontWeight = FontWeight.Light,
+                                    textAlign = TextAlign.End,
+                                ),
+                                visualTransformation = remember { ThousandSeparatorTransformation() },
+                                cursorBrush = SolidColor(Color.White),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(focusRequester)
+                            )
+                        }
+
+                        ConvertedAmountText(
+                            amount = state.convertedExpressionAmount,
+                            currency = state.selectedExchangeCurrency,
                         )
                     }
                 }
 
                 // 2. 결과 미리보기
                 if (state.expression.isNotEmpty() && state.previewResult.isNotEmpty()) {
-                    Text(
-                        text = formatNumberWithCommas(state.previewResult),
-                        color = Color.Gray,
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = formatNumberWithCommas(state.previewResult),
+                            color = Color.Gray,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.End,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        ConvertedAmountText(
+                            amount = state.convertedPreviewAmount,
+                            currency = state.selectedExchangeCurrency,
+                        )
+                    }
                 }
             }
 
@@ -433,6 +512,115 @@ fun CalculatorScreen(
     }
 }
 
+@Composable
+private fun CalculatorExchangeCurrencySelector(
+    label: String,
+    selectedCurrency: CurrencyInfo?,
+    availableCurrencies: List<CurrencyInfo>,
+    onCurrencySelected: (CurrencyInfo) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Row(
+            modifier = Modifier
+                .clickable(enabled = availableCurrencies.isNotEmpty()) { showDialog = true }
+                .padding(horizontal = 15.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = selectedCurrency?.let { "${it.flagEmoji} ${it.code}" }
+                    ?: "통화 선택",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+
+    if (showDialog) {
+        Dialog(onDismissRequest = { showDialog = false }) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 500.dp),
+            ) {
+                Column {
+                    Text(
+                        text = "$label 선택",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(20.dp),
+                    )
+
+                    HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
+
+                    LazyColumn {
+                        items(availableCurrencies, key = { it.code }) { currency ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onCurrencySelected(currency)
+                                        showDialog = false
+                                    }
+                                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(text = currency.flagEmoji, fontSize = 24.sp)
+
+                                Column {
+                                    Text(
+                                        text = currency.displayCode,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        text = currency.name,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConvertedAmountText(
+    amount: String,
+    currency: CurrencyInfo?,
+) {
+    if (amount.isEmpty() || currency == null) return
+
+    Text(
+        text = "≈ ${formatNumberWithCommas(amount)}",
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Medium,
+        textAlign = TextAlign.End,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
 fun CalculatorScreenPreview() {
@@ -441,7 +629,9 @@ fun CalculatorScreenPreview() {
             state = CalculatorContract.State(
                 expression = "100+200",
                 cursorPosition = 2,
-                previewResult = "300"
+                previewResult = "300",
+                mainExchangeCurrency = CurrencyInfo("KRW", "KRW", "대한민국 원", "🇰🇷"),
+                selectedExchangeCurrency = CurrencyInfo("USD", "USD", "미국 달러", "🇺🇸"),
             ),
             onCursorMove = { },
             onIntent = { }

@@ -776,7 +776,7 @@ fun CalculatorScreenPreview() {
                 selectedExchangeCurrency = CurrencyInfo("USD", "USD", "미국 달러", "🇺🇸"),
             ),
             onCursorMove = { },
-            onIntent = { }
+            onIntent = { },
         )
     }
 }

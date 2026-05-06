@@ -3,6 +3,12 @@ package com.ahn.presentation.ui.screen.calculator
 import com.ahn.domain.model.CurrencyInfo
 
 interface CalculatorContract {
+
+    data class HistoryItem(
+        val expression: String,
+        val result: String,
+    )
+
     // 1. 상태: 순수 String과 Int(커서)로 관리
     data class State(
         val expression: String = "",
@@ -14,7 +20,9 @@ interface CalculatorContract {
         val exchangeRate: Double = 0.0,
         val convertedExpressionAmount: String = "",
         val convertedPreviewAmount: String = "",
+        val isCalculatedResult: Boolean = false,
         val repeatOperation: String? = null, // 마지막 연산자 저장 (반복 계산용)
+        val histories: List<HistoryItem> = emptyList(),
         val isError: Boolean = false,
         val errorMessage: String? = null
     )
@@ -28,6 +36,7 @@ interface CalculatorContract {
         object Delete : Intent
         object Clear : Intent
         object Calculate : Intent
+        object ClearHistory : Intent
     }
 
     // 3. 부수 효과: 일회성 이벤트

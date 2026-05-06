@@ -1,5 +1,6 @@
 package com.ahn.presentation.ui.screen.calculator
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.ahn.domain.model.CurrencyInfo
 import com.ahn.domain.usecase.CalculatorEngine
@@ -11,6 +12,7 @@ import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.container
 import kotlin.math.roundToLong
 import javax.inject.Inject
+import kotlin.math.exp
 
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
@@ -39,12 +41,19 @@ class CalculatorViewModel @Inject constructor(
     fun processIntent(intent: CalculatorContract.Intent) {
         when (intent) {
             is CalculatorContract.Intent.Input -> handleInput(intent.token)
-            is CalculatorContract.Intent.SelectExchangeCurrency -> handleSelectExchangeCurrency(intent.currency)
+            is CalculatorContract.Intent.SelectExchangeCurrency -> handleSelectExchangeCurrency(
+                intent.currency
+            )
+
             is CalculatorContract.Intent.Delete -> handleDelete()
             is CalculatorContract.Intent.Clear -> handleClear()
             is CalculatorContract.Intent.Calculate -> handleCalculate()
-            is CalculatorContract.Intent.SelectMainExchangeCurrency -> handleSelectMainExchangeCurrency(intent.currency)
+            is CalculatorContract.Intent.SelectMainExchangeCurrency -> handleSelectMainExchangeCurrency(
+                intent.currency
+            )
+
             CalculatorContract.Intent.SwapExchangeCurrencies -> intent { performSwapExchangeCurrencies() }
+            CalculatorContract.Intent.ClearHistory -> handleClearHistory()
         }
     }
 
@@ -165,6 +174,8 @@ class CalculatorViewModel @Inject constructor(
                 previewResult = "",
                 convertedExpressionAmount = "",
                 convertedPreviewAmount = "",
+                repeatOperation = null,
+                isCalculatedResult = false,
                 isError = false,
                 errorMessage = null,
             )
@@ -199,6 +210,11 @@ class CalculatorViewModel @Inject constructor(
         val nextRepeatOperation = extractRepeatOperation(expressionToCalculate)
             ?: state.repeatOperation
 
+        val historyItem = CalculatorContract.HistoryItem(
+            expression = expressionToCalculate,
+            result = result,
+        )
+
         reduce {
             buildNewExpressionState(
                 currentState = state,
@@ -209,7 +225,9 @@ class CalculatorViewModel @Inject constructor(
                 cursorPosition = result.length,
                 previewResult = "",
                 convertedPreviewAmount = "",
-                repeatOperation = nextRepeatOperation
+                repeatOperation = nextRepeatOperation,
+                isCalculatedResult = true,
+                histories = state.histories + historyItem,
             )
         }
     }
@@ -233,6 +251,12 @@ class CalculatorViewModel @Inject constructor(
         } catch (e: Exception) {
             postSideEffect(
                 CalculatorContract.SideEffect.ShowSnackBar("통화 목록을 불러올 수 없습니다: ${e.message}")
+            )
+
+            Log.e(
+                "CalculatorViewModel",
+                "통화 목록을 불러올 수 없습니다.",
+                e
             )
         }
     }
@@ -298,6 +322,7 @@ class CalculatorViewModel @Inject constructor(
             cursorPosition = newCursorPos,
             previewResult = calculatePreview(newExpression),
             repeatOperation = null, // 새 입력이 들어오면 반복 연산 초기화
+            isCalculatedResult = false,
             isError = false,
             errorMessage = null
         ).withConvertedAmounts()
@@ -344,8 +369,16 @@ class CalculatorViewModel @Inject constructor(
 
     private fun CalculatorContract.State.withConvertedAmounts(): CalculatorContract.State {
         return copy(
-            convertedExpressionAmount = convertExpression(expression, exchangeRate, selectedExchangeCurrency?.code),
-            convertedPreviewAmount = convertSingleAmount(previewResult, exchangeRate, selectedExchangeCurrency?.code),
+            convertedExpressionAmount = convertExpression(
+                expression,
+                exchangeRate,
+                selectedExchangeCurrency?.code
+            ),
+            convertedPreviewAmount = convertSingleAmount(
+                previewResult,
+                exchangeRate,
+                selectedExchangeCurrency?.code
+            ),
         )
     }
 
@@ -441,5 +474,9 @@ class CalculatorViewModel @Inject constructor(
         if (operand.toDoubleOrNull() == null) return null
 
         return operator + operand
+    }
+
+    private fun handleClearHistory() = intent {
+        reduce { state.copy(histories = emptyList()) }
     }
 }

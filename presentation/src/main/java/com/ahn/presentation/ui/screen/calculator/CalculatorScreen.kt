@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +30,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Button
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -699,17 +699,17 @@ private fun CalculatorHistoryPanel(
 
     LaunchedEffect(histories.size) {
         if (histories.isNotEmpty()) {
-            listState.animateScrollToItem(0)
+            listState.scrollToItem(0)
         }
     }
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(15.dp, 10.dp)
         ) {
             LazyColumn(
                 state = listState,
@@ -717,7 +717,11 @@ private fun CalculatorHistoryPanel(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(
+                    space = 20.dp,
+                    alignment = Alignment.Bottom
+                ),
             ) {
                 items(
                     items = histories.asReversed(),
@@ -728,14 +732,14 @@ private fun CalculatorHistoryPanel(
                     ) {
                         Text(
                             text = formatNumberWithCommas(item.expression),
-                            fontSize = 20.sp,
+                            fontSize = 15.sp,
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.End,
                         )
 
                         Text(
                             text = "=${formatNumberWithCommas(item.result)}",
-                            fontSize = 26.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.primary,
                             textAlign = TextAlign.End,
@@ -746,9 +750,14 @@ private fun CalculatorHistoryPanel(
 
             Button(
                 onClick = onClearHistory,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .width(150.dp),
             ) {
-                Text(text = "계산 기록 삭제")
+                Text(
+                    text = "계산 기록 삭제",
+                    fontSize = 14.sp
+                )
             }
         }
     }

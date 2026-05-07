@@ -181,6 +181,15 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Evaluate the current expression (optionally applying a repeat operation) and update the view state.
+     *
+     * If the expression is empty this intent does nothing. When a numeric expression and a repeat operation
+     * are present, the repeat operation is appended before evaluation. On evaluation error the state is
+     * marked as an error and a snackbar side effect is posted. On success the expression is replaced with
+     * the computed result, preview/converted preview are cleared, the repeat operation is updated, the
+     * result is flagged as a calculated result, and a history entry for the calculation is appended.
+     */
     private fun handleCalculate() = intent {
         val expression = state.expression
         if (expression.isEmpty()) return@intent
@@ -327,6 +336,15 @@ class CalculatorViewModel @Inject constructor(
         ).withConvertedAmounts()
     }
 
+    /**
+     * Compute a live-preview result for the given arithmetic expression.
+     *
+     * Returns an empty string when the expression is empty, ends with an operator, contains no operator,
+     * represents a lone negative number, or when evaluation fails.
+     *
+     * @param expression The arithmetic expression to evaluate for preview.
+     * @return The evaluated result as a string, or an empty string if no preview is available.
+     */
     private fun calculatePreview(expression: String): String {
         if (expression.isEmpty()) return ""
 
@@ -418,6 +436,16 @@ class CalculatorViewModel @Inject constructor(
         return result.toString().replace(Regex("\\s+"), " ").trim()
     }
 
+    /**
+     * Converts a numeric value or arithmetic expression string into a rounded amount labeled with the target currency code.
+     *
+     * If `text` is a plain number it is parsed directly; otherwise the expression is evaluated and its numeric result is used.
+     *
+     * @param text A numeric string or an arithmetic expression to convert.
+     * @param rate The exchange rate multiplier to apply; must be greater than 0.
+     * @param currencyCode The target currency code to append to the converted amount.
+     * @return The converted amount rounded to a long followed by a space and the `currencyCode` (for example `"123 USD"`), or an empty string if the input is empty, the rate is not positive, the currency code is null, or the text cannot be parsed/evaluated to a number.
+     */
     private fun convertSingleAmount(
         text: String,
         rate: Double,

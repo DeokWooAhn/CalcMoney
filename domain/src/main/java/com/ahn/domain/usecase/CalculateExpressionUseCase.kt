@@ -5,6 +5,17 @@ import javax.inject.Inject
 import kotlin.math.abs
 
 class CalculateExpressionUseCase @Inject constructor() {
+    /**
+     * Normalize and evaluate a user arithmetic expression and return the result as a formatted string.
+     *
+     * The input is normalized (whitespace/newlines removed, `×`→`*`, `÷`→`/`, `−`→`-`), a trailing operator is dropped if present, and the remaining expression is evaluated.
+     *
+     * @param expression The arithmetic expression to evaluate; may include digits, `.`, `+`, `-`, `*`, `/`, parentheses, and localized operator symbols (`×`, `÷`, `−`), as well as spaces or newlines.
+     * @return The evaluation result as:
+     *         - `"0"` if the expression is empty after normalization,
+     *         - `"Error"` if evaluation fails,
+     *         - otherwise a numeric string formatted as an integer when the result is whole, a decimal with up to 10 fractional digits (trailing zeros removed) for typical magnitudes, or scientific notation with 10 decimal digits for magnitudes >= 1e15 or < 1e-10 (excluding zero).
+     */
     fun calculate(expression: String): String {
         return try {
             val normalized = expression

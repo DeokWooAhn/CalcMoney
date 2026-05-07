@@ -763,6 +763,13 @@ private fun CalculatorHistoryPanel(
     }
 }
 
+/**
+ * Preview of the CalculatorScreen populated with example state and currencies.
+ *
+ * Renders a Surface containing CalculatorScreen configured with a sample expression ("100+200"),
+ * a preview result ("300"), cursor position, and two example currencies (KRW and USD). Callback
+ * handlers are no-ops to allow composable preview rendering in the IDE.
+ */
 @Preview(showBackground = true)
 @Composable
 fun CalculatorScreenPreview() {
@@ -776,7 +783,7 @@ fun CalculatorScreenPreview() {
                 selectedExchangeCurrency = CurrencyInfo("USD", "USD", "미국 달러", "🇺🇸"),
             ),
             onCursorMove = { },
-            onIntent = { }
+            onIntent = { },
         )
     }
 }

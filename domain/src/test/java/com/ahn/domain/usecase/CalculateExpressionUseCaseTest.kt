@@ -3,8 +3,8 @@ package com.ahn.domain.usecase
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 
-class CalculatorEngineTest : DescribeSpec({
-    val engine = CalculatorEngine()
+class CalculateExpressionUseCaseTest : DescribeSpec({
+    val engine = CalculateExpressionUseCase()
 
     describe("기본 사칙연산") {
         it("덧셈: 1+2 = 3") {
@@ -58,7 +58,7 @@ class CalculatorEngineTest : DescribeSpec({
         }
 
         it("매우 큰 수는 E 표기법을 사용한다") {
-            engine.calculate("999999999999999×10") shouldBe "9.9999999990E15"
+            engine.calculate("999999999999999×10") shouldBe "1.0000000000E+16"
         }
     }
 })

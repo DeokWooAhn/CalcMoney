@@ -357,6 +357,13 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 cursorPosition = 2,
                                 previewResult = "",
                                 repeatOperation = "+20",
+                                isCalculatedResult = true,
+                                histories = listOf(
+                                    CalculatorContract.HistoryItem(
+                                        expression = "10+20",
+                                        result = "30",
+                                    )
+                                ),
                             )
                         }
                     }
@@ -419,6 +426,13 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 cursorPosition = 1,
                                 previewResult = "",
                                 repeatOperation = "+1",
+                                isCalculatedResult = true,
+                                histories = listOf(
+                                    CalculatorContract.HistoryItem(
+                                        expression = "2+1",
+                                        result = "3",
+                                    )
+                                ),
                             )
                         }
 
@@ -429,6 +443,17 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 cursorPosition = 1,
                                 previewResult = "",
                                 repeatOperation = "+1",
+                                isCalculatedResult = true,
+                                histories = listOf(
+                                    CalculatorContract.HistoryItem(
+                                        expression = "2+1",
+                                        result = "3",
+                                    ),
+                                    CalculatorContract.HistoryItem(
+                                        expression = "3+1",
+                                        result = "4",
+                                    )
+                                ),
                             )
                         }
 
@@ -439,8 +464,155 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 cursorPosition = 1,
                                 previewResult = "",
                                 repeatOperation = "+1",
+                                isCalculatedResult = true,
+                                histories = listOf(
+                                    CalculatorContract.HistoryItem(
+                                        expression = "2+1",
+                                        result = "3",
+                                    ),
+                                    CalculatorContract.HistoryItem(
+                                        expression = "3+1",
+                                        result = "4",
+                                    ),
+                                    CalculatorContract.HistoryItem(
+                                        expression = "4+1",
+                                        result = "5",
+                                    )
+                                ),
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    Given("계산 기록이 있는 상태에서") {
+        When("AC를 누르면") {
+            Then("계산 기록은 유지되어야 한다") {
+                runTest {
+                    every { calculatorEngine.calculate(any()) } returns "0"
+                    every { calculatorEngine.calculate("1+1") } returns "2"
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
+                        )
+                        expectState { copy(expression = "1", cursorPosition = 1) }
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.Input(CalculatorToken.Operator("+"))
+                        )
+                        expectState { copy(expression = "1+", cursorPosition = 2) }
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
+                        )
+                        expectState {
+                            copy(
+                                expression = "1+1",
+                                cursorPosition = 3,
+                                previewResult = "2",
+                            )
+                        }
+
+                        containerHost.processIntent(CalculatorContract.Intent.Calculate)
+                        expectState {
+                            copy(
+                                expression = "2",
+                                cursorPosition = 1,
+                                previewResult = "",
+                                repeatOperation = "+1",
+                                isCalculatedResult = true,
+                                histories = listOf(
+                                    CalculatorContract.HistoryItem(
+                                        expression = "1+1",
+                                        result = "2",
+                                    )
+                                ),
+                            )
+                        }
+
+                        containerHost.processIntent(CalculatorContract.Intent.Clear)
+                        expectState {
+                            copy(
+                                expression = "",
+                                cursorPosition = 0,
+                                previewResult = "",
+                                convertedExpressionAmount = "",
+                                convertedPreviewAmount = "",
+                                repeatOperation = null,
+                                isCalculatedResult = false,
+                                histories = listOf(
+                                    CalculatorContract.HistoryItem(
+                                        expression = "1+1",
+                                        result = "2",
+                                    )
+                                ),
+                                isError = false,
+                                errorMessage = null,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        When("ClearHistory를 실행하면") {
+            Then("계산 기록이 비워져야 한다") {
+                runTest {
+                    every { calculatorEngine.calculate(any()) } returns "0"
+                    every { calculatorEngine.calculate("1+1") } returns "2"
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
+                        )
+                        expectState { copy(expression = "1", cursorPosition = 1) }
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.Input(CalculatorToken.Operator("+"))
+                        )
+                        expectState { copy(expression = "1+", cursorPosition = 2) }
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
+                        )
+                        expectState {
+                            copy(
+                                expression = "1+1",
+                                cursorPosition = 3,
+                                previewResult = "2",
+                            )
+                        }
+
+                        containerHost.processIntent(CalculatorContract.Intent.Calculate)
+                        expectState {
+                            copy(
+                                expression = "2",
+                                cursorPosition = 1,
+                                previewResult = "",
+                                repeatOperation = "+1",
+                                isCalculatedResult = true,
+                                histories = listOf(
+                                    CalculatorContract.HistoryItem(
+                                        expression = "1+1",
+                                        result = "2",
+                                    )
+                                ),
+                            )
+                        }
+
+                        containerHost.processIntent(CalculatorContract.Intent.ClearHistory)
+                        expectState { copy(histories = emptyList()) }
                     }
                 }
             }

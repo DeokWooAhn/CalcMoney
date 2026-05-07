@@ -1,7 +1,7 @@
 package com.ahn.presentation.ui.screen.calculator
 
 import com.ahn.domain.model.CurrencyInfo
-import com.ahn.domain.usecase.CalculatorEngine
+import com.ahn.domain.usecase.CalculateExpressionUseCase
 import com.ahn.domain.usecase.GetExchangeRateUseCase
 import com.ahn.domain.usecase.GetSupportedCurrenciesUseCase
 import io.kotest.core.spec.IsolationMode
@@ -17,6 +17,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.orbitmvi.orbit.test.OrbitTestContext
 import org.orbitmvi.orbit.test.test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -25,15 +26,63 @@ class CalculatorViewModelTest : BehaviorSpec({
     isolationMode = IsolationMode.InstancePerRoot
 
     val testDispatcher = UnconfinedTestDispatcher()
-    val calculatorEngine = mockk<CalculatorEngine>()
+    val calculateExpressionUseCase = mockk<CalculateExpressionUseCase>()
     val getSupportedCurrenciesUseCase = mockk<GetSupportedCurrenciesUseCase>()
     val getExchangeRateUseCase = mockk<GetExchangeRateUseCase>()
 
     fun createViewModel() = CalculatorViewModel(
-        calculatorEngine = calculatorEngine,
+        calculateExpressionUseCase = calculateExpressionUseCase,
         getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
         getExchangeRateUseCase = getExchangeRateUseCase,
     )
+
+    val onePlusOneHistory = listOf(
+        CalculatorContract.HistoryItem(
+            expression = "1+1",
+            result = "2",
+        )
+    )
+
+    suspend fun OrbitTestContext<
+        CalculatorContract.State,
+        CalculatorContract.SideEffect,
+        CalculatorViewModel
+    >.setupCalculatedHistory() {
+        expectInitialState()
+
+        containerHost.processIntent(
+            CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
+        )
+        expectState { copy(expression = "1", cursorPosition = 1) }
+
+        containerHost.processIntent(
+            CalculatorContract.Intent.Input(CalculatorToken.Operator("+"))
+        )
+        expectState { copy(expression = "1+", cursorPosition = 2) }
+
+        containerHost.processIntent(
+            CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
+        )
+        expectState {
+            copy(
+                expression = "1+1",
+                cursorPosition = 3,
+                previewResult = "2",
+            )
+        }
+
+        containerHost.processIntent(CalculatorContract.Intent.Calculate)
+        expectState {
+            copy(
+                expression = "2",
+                cursorPosition = 1,
+                previewResult = "",
+                repeatOperation = "+1",
+                isCalculatedResult = true,
+                histories = onePlusOneHistory,
+            )
+        }
+    }
 
     beforeSpec { Dispatchers.setMain(testDispatcher) }
     afterSpec { Dispatchers.resetMain() }
@@ -41,7 +90,7 @@ class CalculatorViewModelTest : BehaviorSpec({
     // InstancePerRoot에서는 매 Then마다 Mock 객체를 초기화해야 함
     beforeEach {
         clearAllMocks()
-        every { calculatorEngine.calculate(any()) } returns "0"
+        every { calculateExpressionUseCase.calculate(any()) } returns "0"
     }
 
     Given("계산기 초기 상태에서") {
@@ -302,9 +351,9 @@ class CalculatorViewModelTest : BehaviorSpec({
             Then("결과 '30'이 expression에 표시되어야 한다") {
                 runTest {
                     // InstancePerRoot에서는 Mocking을 Then 블록 안에 두는 것이 가장 안전
-                    every { calculatorEngine.calculate(any()) } returns "0"
-                    every { calculatorEngine.calculate("10+2") } returns "12"
-                    every { calculatorEngine.calculate("10+20") } returns "30"
+                    every { calculateExpressionUseCase.calculate(any()) } returns "0"
+                    every { calculateExpressionUseCase.calculate("10+2") } returns "12"
+                    every { calculateExpressionUseCase.calculate("10+20") } returns "30"
 
                     val viewModel = createViewModel()
 
@@ -357,6 +406,13 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 cursorPosition = 2,
                                 previewResult = "",
                                 repeatOperation = "+20",
+                                isCalculatedResult = true,
+                                histories = listOf(
+                                    CalculatorContract.HistoryItem(
+                                        expression = "10+20",
+                                        result = "30",
+                                    )
+                                ),
                             )
                         }
                     }
@@ -369,10 +425,10 @@ class CalculatorViewModelTest : BehaviorSpec({
         When("=을 반복해서 누르면") {
             Then("마지막 연산 '+1'이 계속 반복되어야 한다") {
                 runTest {
-                    every { calculatorEngine.calculate(any()) } returns "0"
-                    every { calculatorEngine.calculate("2+1") } returns "3"
-                    every { calculatorEngine.calculate("3+1") } returns "4"
-                    every { calculatorEngine.calculate("4+1") } returns "5"
+                    every { calculateExpressionUseCase.calculate(any()) } returns "0"
+                    every { calculateExpressionUseCase.calculate("2+1") } returns "3"
+                    every { calculateExpressionUseCase.calculate("3+1") } returns "4"
+                    every { calculateExpressionUseCase.calculate("4+1") } returns "5"
 
                     val viewModel = createViewModel()
 
@@ -419,6 +475,13 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 cursorPosition = 1,
                                 previewResult = "",
                                 repeatOperation = "+1",
+                                isCalculatedResult = true,
+                                histories = listOf(
+                                    CalculatorContract.HistoryItem(
+                                        expression = "2+1",
+                                        result = "3",
+                                    )
+                                ),
                             )
                         }
 
@@ -429,6 +492,17 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 cursorPosition = 1,
                                 previewResult = "",
                                 repeatOperation = "+1",
+                                isCalculatedResult = true,
+                                histories = listOf(
+                                    CalculatorContract.HistoryItem(
+                                        expression = "2+1",
+                                        result = "3",
+                                    ),
+                                    CalculatorContract.HistoryItem(
+                                        expression = "3+1",
+                                        result = "4",
+                                    )
+                                ),
                             )
                         }
 
@@ -439,8 +513,74 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 cursorPosition = 1,
                                 previewResult = "",
                                 repeatOperation = "+1",
+                                isCalculatedResult = true,
+                                histories = listOf(
+                                    CalculatorContract.HistoryItem(
+                                        expression = "2+1",
+                                        result = "3",
+                                    ),
+                                    CalculatorContract.HistoryItem(
+                                        expression = "3+1",
+                                        result = "4",
+                                    ),
+                                    CalculatorContract.HistoryItem(
+                                        expression = "4+1",
+                                        result = "5",
+                                    )
+                                ),
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    Given("계산 기록이 있는 상태에서") {
+        When("AC를 누르면") {
+            Then("계산 기록은 유지되어야 한다") {
+                runTest {
+                    every { calculateExpressionUseCase.calculate(any()) } returns "0"
+                    every { calculateExpressionUseCase.calculate("1+1") } returns "2"
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        setupCalculatedHistory()
+
+                        containerHost.processIntent(CalculatorContract.Intent.Clear)
+                        expectState {
+                            copy(
+                                expression = "",
+                                cursorPosition = 0,
+                                previewResult = "",
+                                convertedExpressionAmount = "",
+                                convertedPreviewAmount = "",
+                                repeatOperation = null,
+                                isCalculatedResult = false,
+                                histories = onePlusOneHistory,
+                                isError = false,
+                                errorMessage = null,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        When("ClearHistory를 실행하면") {
+            Then("계산 기록이 비워져야 한다") {
+                runTest {
+                    every { calculateExpressionUseCase.calculate(any()) } returns "0"
+                    every { calculateExpressionUseCase.calculate("1+1") } returns "2"
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        setupCalculatedHistory()
+
+                        containerHost.processIntent(CalculatorContract.Intent.ClearHistory)
+                        expectState { copy(histories = emptyList()) }
                     }
                 }
             }
@@ -451,7 +591,7 @@ class CalculatorViewModelTest : BehaviorSpec({
         When("=을 누르면") {
             Then("에러 상태가 되고 스낵바 SideEffect가 발생해야 한다") {
                 runTest {
-                    every { calculatorEngine.calculate(any()) } returns "Error"
+                    every { calculateExpressionUseCase.calculate(any()) } returns "Error"
 
                     val viewModel = createViewModel()
 

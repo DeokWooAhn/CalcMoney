@@ -3,7 +3,7 @@ package com.ahn.presentation.ui.screen.calculator
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.ahn.domain.model.CurrencyInfo
-import com.ahn.domain.usecase.CalculatorEngine
+import com.ahn.domain.usecase.CalculateExpressionUseCase
 import com.ahn.domain.usecase.GetExchangeRateUseCase
 import com.ahn.domain.usecase.GetSupportedCurrenciesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,11 +12,10 @@ import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.container
 import kotlin.math.roundToLong
 import javax.inject.Inject
-import kotlin.math.exp
 
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
-    private val calculatorEngine: CalculatorEngine,
+    private val calculateExpressionUseCase: CalculateExpressionUseCase,
     private val getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase,
     private val getExchangeRateUseCase: GetExchangeRateUseCase,
 ) : ViewModel(), ContainerHost<CalculatorContract.State, CalculatorContract.SideEffect> {
@@ -193,7 +192,7 @@ class CalculatorViewModel @Inject constructor(
                 expression
             }
 
-        val result = calculatorEngine.calculate(expressionToCalculate)
+        val result = calculateExpressionUseCase.calculate(expressionToCalculate)
 
         if (result == "Error") {
             reduce {
@@ -341,7 +340,7 @@ class CalculatorViewModel @Inject constructor(
             return ""
         }
 
-        val result = calculatorEngine.calculate(expression)
+        val result = calculateExpressionUseCase.calculate(expression)
         return if (result == "Error") "" else result
     }
 
@@ -427,7 +426,7 @@ class CalculatorViewModel @Inject constructor(
         if (text.isEmpty() || rate <= 0.0 || currencyCode == null) return ""
 
         val amount = text.toDoubleOrNull()
-            ?: calculatorEngine.calculate(text).takeIf { it != "Error" }?.toDoubleOrNull()
+            ?: calculateExpressionUseCase.calculate(text).takeIf { it != "Error" }?.toDoubleOrNull()
             ?: return ""
 
         return "${(amount * rate).roundToLong()} $currencyCode"

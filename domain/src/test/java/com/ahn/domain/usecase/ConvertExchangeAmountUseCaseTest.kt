@@ -41,9 +41,11 @@ class ConvertExchangeAmountUseCaseTest : DescribeSpec({
                 rate = 0.0,
                 currencyCode = "USD",
             ) shouldBe ""
+        }
 
-            useCase.convertSingleAmount(
-                text = "100",
+        it("환율이 음수면 빈 문자열을 반환한다") {
+            useCase.convertExpression(
+                expression = "100+200",
                 rate = -1.0,
                 currencyCode = "USD",
             ) shouldBe ""

@@ -3,6 +3,7 @@ package com.ahn.presentation.ui.screen.favorite
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ahn.domain.model.CurrencyInfo
+import com.ahn.domain.usecase.BuildFavoriteRatesUseCase
 import com.ahn.domain.usecase.GetExchangeRateUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -17,6 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class FavoriteViewModel @Inject constructor(
     private val getExchangeRateUseCase: GetExchangeRateUseCase,
+    private val buildFavoriteRatesUseCase: BuildFavoriteRatesUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(FavoriteContract.State())
@@ -80,33 +82,29 @@ class FavoriteViewModel @Inject constructor(
     }
 
     private fun rebuildItems() {
-        val base = currentBaseCurrency
-        val byCode = currentCurrencies.associateBy { it.code }
-        val baseAmount = currentBaseAmount.toDoubleOrNull() ?: 0.0
+        val favoriteRates = buildFavoriteRatesUseCase(
+            baseCurrency = currentBaseCurrency,
+            baseAmount = currentBaseAmount,
+            favoriteCurrencyCodes = currentFavoriteCodes,
+            availableCurrencies = currentCurrencies,
+            ratesByCode = cachedRates,
+        )
 
-        if (base == null || currentFavoriteCodes.isEmpty() || currentCurrencies.isEmpty()) {
-            _state.update { it.copy(isLoading = false, items = emptyList()) }
-            return
+        val items = favoriteRates.map { rateInfo ->
+            FavoriteContract.Item(
+                currency = rateInfo.currency,
+                convertedAmount = String.format(Locale.US, "%.2f", rateInfo.convertedAmount),
+                rateLabel = "1 ${rateInfo.baseCurrencyCode} = ${
+                    String.format(Locale.US, "%.4f", rateInfo.rate)
+                } ${rateInfo.currency.code}",
+            )
         }
 
-        val items = buildList {
-            for (code in currentFavoriteCodes) {
-                val info = byCode[code] ?: continue
-                if (code == base.code) continue
-
-                val rate = cachedRates[code] ?: continue
-                val converted = baseAmount * rate
-
-                add(
-                    FavoriteContract.Item(
-                        currency = info,
-                        convertedAmount = String.format(Locale.US, "%.2f", converted),
-                        rateLabel = "1 ${base.code} = ${String.format(Locale.US, "%.4f", rate)} ${info.code}"
-                    )
-                )
-            }
+        _state.update {
+            it.copy(
+                isLoading = false,
+                items = items
+            )
         }
-
-        _state.update { it.copy(isLoading = false, items = items) }
     }
 }

@@ -3,7 +3,7 @@ package com.ahn.domain.usecase
 import com.ahn.domain.repository.FavoriteCurrencyRepository
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
-import io.mockk.clearAllMocks
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -16,7 +16,7 @@ class ToggleFavoriteCurrencyUseCaseTest : BehaviorSpec({
     val useCase = ToggleFavoriteCurrencyUseCase(repository)
 
     beforeEach {
-        clearAllMocks()
+        clearMocks(repository)
     }
 
     Given("선택한 통화가 즐겨찾기에 없는 상태에서") {

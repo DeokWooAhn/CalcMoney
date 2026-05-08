@@ -4,13 +4,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.ahn.domain.model.CurrencyInfo
 import com.ahn.domain.usecase.CalculateExpressionUseCase
+import com.ahn.domain.usecase.ConvertExchangeAmountUseCase
+import com.ahn.domain.usecase.ExtractRepeatOperationUseCase
 import com.ahn.domain.usecase.GetExchangeRateUseCase
 import com.ahn.domain.usecase.GetSupportedCurrenciesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.container
-import kotlin.math.roundToLong
 import javax.inject.Inject
 
 @HiltViewModel
@@ -18,6 +19,8 @@ class CalculatorViewModel @Inject constructor(
     private val calculateExpressionUseCase: CalculateExpressionUseCase,
     private val getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase,
     private val getExchangeRateUseCase: GetExchangeRateUseCase,
+    private val convertExchangeAmountUseCase: ConvertExchangeAmountUseCase,
+    private val extractRepeatOperationUseCase: ExtractRepeatOperationUseCase,
 ) : ViewModel(), ContainerHost<CalculatorContract.State, CalculatorContract.SideEffect> {
 
     override val container = container(
@@ -206,7 +209,7 @@ class CalculatorViewModel @Inject constructor(
             return@intent
         }
 
-        val nextRepeatOperation = extractRepeatOperation(expressionToCalculate)
+        val nextRepeatOperation = extractRepeatOperationUseCase(expressionToCalculate)
             ?: state.repeatOperation
 
         val historyItem = CalculatorContract.HistoryItem(
@@ -368,68 +371,17 @@ class CalculatorViewModel @Inject constructor(
 
     private fun CalculatorContract.State.withConvertedAmounts(): CalculatorContract.State {
         return copy(
-            convertedExpressionAmount = convertExpression(
-                expression,
-                exchangeRate,
-                selectedExchangeCurrency?.code
+            convertedExpressionAmount = convertExchangeAmountUseCase.convertExpression(
+                expression = expression,
+                rate = exchangeRate,
+                currencyCode = selectedExchangeCurrency?.code
             ),
-            convertedPreviewAmount = convertSingleAmount(
-                previewResult,
-                exchangeRate,
-                selectedExchangeCurrency?.code
+            convertedPreviewAmount = convertExchangeAmountUseCase.convertSingleAmount(
+                text = previewResult,
+                rate = exchangeRate,
+                currencyCode = selectedExchangeCurrency?.code
             ),
         )
-    }
-
-    private fun convertExpression(
-        expression: String,
-        rate: Double,
-        currencyCode: String?,
-    ): String {
-        if (expression.isEmpty() || rate <= 0.0 || currencyCode == null) return ""
-
-        val result = StringBuilder()
-        val number = StringBuilder()
-
-        fun flushNumber() {
-            if (number.isEmpty()) return
-            val converted = number.toString().toDoubleOrNull()?.let {
-                (it * rate).roundToLong()
-            }
-            if (converted != null) {
-                result.append(converted).append(" ").append(currencyCode)
-            } else {
-                result.append(number)
-            }
-            number.clear()
-        }
-
-        expression.forEach { char ->
-            if (char.isDigit() || char == '.') {
-                number.append(char)
-            } else {
-                flushNumber()
-                result.append(" ").append(char).append(" ")
-            }
-        }
-
-        flushNumber()
-
-        return result.toString().replace(Regex("\\s+"), " ").trim()
-    }
-
-    private fun convertSingleAmount(
-        text: String,
-        rate: Double,
-        currencyCode: String?,
-    ): String {
-        if (text.isEmpty() || rate <= 0.0 || currencyCode == null) return ""
-
-        val amount = text.toDoubleOrNull()
-            ?: calculateExpressionUseCase.calculate(text).takeIf { it != "Error" }?.toDoubleOrNull()
-            ?: return ""
-
-        return "${(amount * rate).roundToLong()} $currencyCode"
     }
 
     private fun handleSelectMainExchangeCurrency(currency: CurrencyInfo) = intent {
@@ -460,19 +412,6 @@ class CalculatorViewModel @Inject constructor(
         }
 
         performFetchExchangeRate()
-    }
-
-    private fun extractRepeatOperation(expression: String): String? {
-        val operatorIndex = expression.indexOfLast { it.toString() in OPERATORS }
-
-        if (operatorIndex <= 0 || operatorIndex == expression.lastIndex) return null
-
-        val operator = expression[operatorIndex].toString()
-        val operand = expression.substring(operatorIndex + 1)
-
-        if (operand.toDoubleOrNull() == null) return null
-
-        return operator + operand
     }
 
     private fun handleClearHistory() = intent {

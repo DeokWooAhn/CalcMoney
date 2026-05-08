@@ -2,6 +2,7 @@ package com.ahn.presentation.ui.screen.exchange
 
 import androidx.lifecycle.ViewModel
 import com.ahn.domain.model.CurrencyInfo
+import com.ahn.domain.usecase.CalculateExchangeAmountUseCase
 import com.ahn.domain.usecase.GetExchangeRateUseCase
 import com.ahn.domain.usecase.GetFavoriteCurrenciesUseCase
 import com.ahn.domain.usecase.GetSupportedCurrenciesUseCase
@@ -10,7 +11,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.container
-import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -19,6 +19,7 @@ class ExchangeViewModel @Inject constructor(
     private val getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase,
     private val getFavoriteCurrenciesUseCase: GetFavoriteCurrenciesUseCase,
     private val toggleFavoriteCurrencyUseCase: ToggleFavoriteCurrencyUseCase,
+    private val calculateExchangeAmountUseCase: CalculateExchangeAmountUseCase,
 ) : ViewModel(), ContainerHost<ExchangeContract.State, ExchangeContract.SideEffect> {
 
     override val container = container(
@@ -44,7 +45,7 @@ class ExchangeViewModel @Inject constructor(
             reduce {
                 state.copy(
                     fromAmount = amount,
-                    toAmount = calculateToAmount(amount, state.exchangeRate)
+                    toAmount = calculateExchangeAmountUseCase(amount, state.exchangeRate)
                 )
             }
         }
@@ -159,7 +160,7 @@ class ExchangeViewModel @Inject constructor(
                 state.copy(
                     exchangeRate = rate,
                     isLoading = false,
-                    toAmount = calculateToAmount(state.fromAmount, rate)
+                    toAmount = calculateExchangeAmountUseCase(state.fromAmount, rate)
                 )
             }
         } catch (e: Exception) {
@@ -168,12 +169,5 @@ class ExchangeViewModel @Inject constructor(
                 ExchangeContract.SideEffect.ShowSnackBar("환율 정보를 가져올 수 없습니다: ${e.message}")
             )
         }
-    }
-
-    private fun calculateToAmount(fromAmount: String, rate: Double): String {
-        val amount = fromAmount.toDoubleOrNull() ?: 0.0
-        val result = amount * rate
-
-        return if (result > 0) String.format(Locale.US, "%.2f", result) else ""
     }
 }

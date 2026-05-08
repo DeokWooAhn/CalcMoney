@@ -40,6 +40,15 @@ class ExchangeViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Validates a new "from" amount string and, if valid, updates the state with the new
+     * `fromAmount` and the corresponding recalculated `toAmount` based on the current exchange rate.
+     *
+     * The input is accepted only if it is an empty string or matches a numeric format with an optional decimal point.
+     * If the input is invalid, the state is not modified.
+     *
+     * @param amount The user-entered amount string to set as the "from" amount; must be empty or match `^\d*\.?\d*$`.
+     */
     private fun handleUpdateFromAmount(amount: String) = intent {
         if (amount.isEmpty() || amount.matches(Regex("^\\d*\\.?\\d*$"))) {
             reduce {
@@ -136,6 +145,14 @@ class ExchangeViewModel @Inject constructor(
         performFetchExchangeRate()
     }
 
+    /**
+     * Fetches the current exchange rate for the selected currency pair and updates state accordingly.
+     *
+     * Sets `isLoading = true` while fetching, then on success updates `exchangeRate`, `toAmount`
+     * (using the provided calculation use case) and clears `isLoading`. If the selected currencies
+     * changed while the request was in flight, the fetched result is discarded. On failure clears
+     * `isLoading` and posts a `ShowSnackBar` side effect containing the error message.
+     */
     private suspend fun Syntax<ExchangeContract.State, ExchangeContract.SideEffect>.performFetchExchangeRate() {
         val fromCurrency = state.fromCurrency ?: return
         val toCurrency = state.toCurrency ?: return

@@ -6,24 +6,15 @@ import kotlin.math.abs
 
 class CalculateExpressionUseCase @Inject constructor() {
     /**
-     * 사용자 산술 표현식을 정규화하고 계산한 뒤, 결과를 포맷된 문자열로 반환합니다.
+     * Normalizes a user-provided arithmetic expression, evaluates it, and returns the result as a formatted string.
      *
-     * 입력값은 정규화됩니다.
-     * 공백과 줄바꿈은 제거되고, `×`는 `*`, `÷`는 `/`, `−`는 `-`로 변환됩니다.
-     * 또한 표현식 끝에 연산자가 남아 있다면 해당 연산자는 제거한 뒤, 남은 표현식을 계산합니다.
+     * Normalization removes spaces and newlines, converts localized operator symbols (`×` → `*`, `÷` → `/`, `−` → `-`), and drops a trailing operator if present before evaluation.
      *
-     * @param expression 계산할 산술 표현식입니다.
-     *                   숫자, `.`, `+`, `-`, `*`, `/`, 괄호를 포함할 수 있으며,
-     *                   지역화된 연산자 기호(`×`, `÷`, `−`)와 공백 또는 줄바꿈도 포함될 수 있습니다.
-     *
-     * @return 계산 결과를 다음과 같은 문자열로 반환합니다.
-     *         - 정규화 후 표현식이 비어 있으면 `"0"`
-     *         - 계산에 실패하면 `"Error"`
-     *         - 그 외에는 숫자 문자열
-     *           결과가 정수이면 정수 형태로 포맷하고,
-     *           일반적인 크기의 소수이면 소수점 이하 최대 10자리까지 표시하되 뒤의 0은 제거합니다.
-     *           값의 크기가 1e15 이상이거나 0이 아니면서 1e-10보다 작으면,
-     *           소수점 이하 10자리의 과학적 표기법으로 표시합니다.
+     * @param expression The input arithmetic expression. May include digits, `.`, `+`, `-`, `*`, `/`, parentheses, localized operator symbols (`×`, `÷`, `−`), spaces, or newlines.
+     * @return `0` if the normalized expression is empty; `"Error"` if evaluation fails; otherwise the numeric result as a string:
+     *         - If the result is an integer, formatted without a decimal point.
+     *         - If the absolute value is >= 1e15 or nonzero and < 1e-10, formatted in scientific notation with 10 fractional digits.
+     *         - Otherwise formatted with up to 10 fractional digits, trimming trailing zeros and a trailing decimal point.
      */
     fun calculate(expression: String): String {
         return try {

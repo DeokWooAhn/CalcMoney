@@ -76,11 +76,25 @@ class FavoriteViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Update the current base amount and refresh the favorite rates display.
+     *
+     * @param fromAmount The new base amount as entered by the user (string form, e.g. "1", "12.34").
+     */
     fun onBaseAmountChanged(fromAmount: String) {
         currentBaseAmount = fromAmount
         rebuildItems()
     }
 
+    /**
+     * Builds UI items for favorite currency conversions and updates the view state.
+     *
+     * Requests conversion data from the injected use case using the current base currency,
+     * base amount, favorite currency codes, available currencies, and cached rates,
+     * formats each converted amount to two decimal places (Locale.US) and each rate label as
+     * "1 {baseCurrencyCode} = {rate (4 decimals)} {currency.code}", then sets the state's
+     * `isLoading` to `false` and `items` to the resulting list.
+     */
     private fun rebuildItems() {
         val favoriteRates = buildFavoriteRatesUseCase(
             baseCurrency = currentBaseCurrency,

@@ -168,6 +168,12 @@ class CalculatorViewModel @Inject constructor(
         reduce { buildNewExpressionState(state, newExpression, cursorPos - 1) }
     }
 
+    /**
+     * Resets the calculator state to its initial, empty form.
+     *
+     * Clears the expression and cursor, removes preview and converted amounts, clears any repeat operation,
+     * and resets result/error flags and messages.
+     */
     private fun handleClear() = intent {
         reduce {
             state.copy(
@@ -185,13 +191,13 @@ class CalculatorViewModel @Inject constructor(
     }
 
     /**
-     * Evaluate the current expression (optionally applying a repeat operation) and update the view state.
+     * Evaluate the current expression (optionally applying a repeat operation) and update the view state accordingly.
      *
-     * If the expression is empty this intent does nothing. When a numeric expression and a repeat operation
-     * are present, the repeat operation is appended before evaluation. On evaluation error the state is
-     * marked as an error and a snackbar side effect is posted. On success the expression is replaced with
-     * the computed result, preview/converted preview are cleared, the repeat operation is updated, the
-     * result is flagged as a calculated result, and a history entry for the calculation is appended.
+     * If the current expression is empty this intent does nothing. When the expression is a plain number and a
+     * repeat operation exists, that operation is appended before evaluation. On evaluation failure the state is
+     * marked as an error and a snackbar side effect is posted. On successful evaluation the expression is replaced
+     * with the computed result, preview and converted preview are cleared, the repeat operation is updated (if
+     * extractable), the result is marked as a calculated result, and a history entry for the calculation is appended.
      */
     private fun handleCalculate() = intent {
         val expression = state.expression
@@ -323,6 +329,14 @@ class CalculatorViewModel @Inject constructor(
         return buildNewExpressionState(currentState, newExpression, newCursorPos)
     }
 
+    /**
+     * Create a new state by applying a new expression and cursor position, recomputing preview and converted amounts, and clearing calculation-specific flags.
+     *
+     * @param currentState The base state to copy.
+     * @param newExpression The expression to set on the new state.
+     * @param newCursorPos The cursor position to set on the new state.
+     * @return A copy of the state with `expression` and `cursorPosition` updated, `previewResult` recomputed, `repeatOperation` cleared, calculation/error flags reset, and converted amounts recalculated.
+     */
     private fun buildNewExpressionState(
         currentState: CalculatorContract.State,
         newExpression: String,
@@ -387,6 +401,16 @@ class CalculatorViewModel @Inject constructor(
         return expression.substring(startOfNumber, endOfNumber)
     }
 
+    /**
+     * Produces a copy of this state with the converted expression and preview amounts updated
+     * according to the current exchange rate and selected exchange currency.
+     *
+     * The converted values are computed from `expression` and `previewResult` using the state's
+     * `exchangeRate` and `selectedExchangeCurrency`.
+     *
+     * @return A copy of the state where `convertedExpressionAmount` and `convertedPreviewAmount`
+     *         reflect conversions for the current exchange rate and selected currency.
+     */
     private fun CalculatorContract.State.withConvertedAmounts(): CalculatorContract.State {
         return copy(
             convertedExpressionAmount = convertExchangeAmountUseCase.convertExpression(
@@ -402,6 +426,13 @@ class CalculatorViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Sets the main exchange currency, resets exchange-related fields, and fetches the new rate.
+     *
+     * If the provided currency is already the current main exchange currency, no state change or fetch is performed.
+     *
+     * @param currency The currency to use as the main exchange currency.
+     */
     private fun handleSelectMainExchangeCurrency(currency: CurrencyInfo) = intent {
         if (currency.code == state.mainExchangeCurrency?.code) return@intent
 
@@ -417,6 +448,11 @@ class CalculatorViewModel @Inject constructor(
         performFetchExchangeRate()
     }
 
+    /**
+     * Updates the selected exchange currency in state, resets exchange-related exchangeRate and converted amounts, and triggers fetching the updated exchange rate.
+     *
+     * @param currency The currency to set as the selected exchange currency.
+     */
     private fun handleSelectExchangeCurrency(currency: CurrencyInfo) = intent {
         if (currency.code == state.selectedExchangeCurrency?.code) return@intent
 
@@ -432,6 +468,11 @@ class CalculatorViewModel @Inject constructor(
         performFetchExchangeRate()
     }
 
+    /**
+     * Clears the calculator's history list.
+     *
+     * Resets the state's `histories` to an empty list.
+     */
     private fun handleClearHistory() = intent {
         reduce { state.copy(histories = emptyList()) }
     }

@@ -2,6 +2,8 @@ package com.ahn.presentation.ui.screen.calculator
 
 import com.ahn.domain.model.CurrencyInfo
 import com.ahn.domain.usecase.CalculateExpressionUseCase
+import com.ahn.domain.usecase.ConvertExchangeAmountUseCase
+import com.ahn.domain.usecase.ExtractRepeatOperationUseCase
 import com.ahn.domain.usecase.GetExchangeRateUseCase
 import com.ahn.domain.usecase.GetSupportedCurrenciesUseCase
 import io.kotest.core.spec.IsolationMode
@@ -29,11 +31,15 @@ class CalculatorViewModelTest : BehaviorSpec({
     val calculateExpressionUseCase = mockk<CalculateExpressionUseCase>()
     val getSupportedCurrenciesUseCase = mockk<GetSupportedCurrenciesUseCase>()
     val getExchangeRateUseCase = mockk<GetExchangeRateUseCase>()
+    val convertExchangeAmountUseCase = mockk<ConvertExchangeAmountUseCase>()
+    val extractRepeatOperationUseCase = ExtractRepeatOperationUseCase()
 
     fun createViewModel() = CalculatorViewModel(
         calculateExpressionUseCase = calculateExpressionUseCase,
         getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
         getExchangeRateUseCase = getExchangeRateUseCase,
+        convertExchangeAmountUseCase = convertExchangeAmountUseCase,
+        extractRepeatOperationUseCase = extractRepeatOperationUseCase,
     )
 
     val onePlusOneHistory = listOf(
@@ -90,7 +96,17 @@ class CalculatorViewModelTest : BehaviorSpec({
     // InstancePerRoot에서는 매 Then마다 Mock 객체를 초기화해야 함
     beforeEach {
         clearAllMocks()
+
         every { calculateExpressionUseCase.calculate(any()) } returns "0"
+
+        every {
+            convertExchangeAmountUseCase.convertExpression(any(), any(), any())
+        } returns ""
+
+        every {
+            convertExchangeAmountUseCase.convertSingleAmount(any(), any(), any())
+        } returns ""
+
     }
 
     Given("계산기 초기 상태에서") {
@@ -169,6 +185,9 @@ class CalculatorViewModelTest : BehaviorSpec({
                     )
 
                     coEvery { getExchangeRateUseCase("KRW", "VND") } returns 18.5
+                    every {
+                        convertExchangeAmountUseCase.convertExpression("2", 18.5, "VND")
+                    } returns "37 VND"
 
                     val viewModel = createViewModel()
 

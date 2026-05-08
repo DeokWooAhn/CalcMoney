@@ -1,6 +1,7 @@
 package com.ahn.presentation.ui.screen.exchange
 
 import com.ahn.domain.model.CurrencyInfo
+import com.ahn.domain.usecase.CalculateExchangeAmountUseCase
 import com.ahn.domain.usecase.GetExchangeRateUseCase
 import com.ahn.domain.usecase.GetFavoriteCurrenciesUseCase
 import com.ahn.domain.usecase.GetSupportedCurrenciesUseCase
@@ -36,12 +37,14 @@ class ExchangeViewModelTest : BehaviorSpec({
     val getSupportedCurrenciesUseCase = mockk<GetSupportedCurrenciesUseCase>()
     val getFavoriteCurrenciesUseCase = mockk<GetFavoriteCurrenciesUseCase>()
     val toggleFavoriteCurrencyUseCase = mockk<ToggleFavoriteCurrencyUseCase>()
+    val calculateExchangeAmountUseCase = mockk<CalculateExchangeAmountUseCase>()
 
     fun createViewModel() = ExchangeViewModel(
         getExchangeRateUseCase,
         getSupportedCurrenciesUseCase,
         getFavoriteCurrenciesUseCase,
-        toggleFavoriteCurrencyUseCase
+        toggleFavoriteCurrencyUseCase,
+        calculateExchangeAmountUseCase,
     )
 
     beforeEach {
@@ -50,6 +53,7 @@ class ExchangeViewModelTest : BehaviorSpec({
         coEvery { getExchangeRateUseCase(any(), any()) } returns 1500.00
         every { getFavoriteCurrenciesUseCase() } returns MutableStateFlow(emptyList())
         coEvery { toggleFavoriteCurrencyUseCase(any()) } returns Unit
+        every { calculateExchangeAmountUseCase(any(), any()) } returns "1500.00"
     }
     afterEach { Dispatchers.resetMain() }
 
@@ -100,6 +104,8 @@ class ExchangeViewModelTest : BehaviorSpec({
         When("유효한 금액을 입력하면") {
             Then("입력값과 환전 금액이 반영되어야 한다") {
                 runTest {
+                    every { calculateExchangeAmountUseCase("1000", 1500.00) } returns "1500000.00"
+
                     val viewModel = createViewModel()
 
                     viewModel.test(this) {

@@ -4,13 +4,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.ahn.domain.model.CurrencyInfo
 import com.ahn.domain.usecase.CalculateExpressionUseCase
+import com.ahn.domain.usecase.ConvertExchangeAmountUseCase
+import com.ahn.domain.usecase.ExtractRepeatOperationUseCase
 import com.ahn.domain.usecase.GetExchangeRateUseCase
 import com.ahn.domain.usecase.GetSupportedCurrenciesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.container
-import kotlin.math.roundToLong
 import javax.inject.Inject
 
 @HiltViewModel
@@ -18,6 +19,8 @@ class CalculatorViewModel @Inject constructor(
     private val calculateExpressionUseCase: CalculateExpressionUseCase,
     private val getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase,
     private val getExchangeRateUseCase: GetExchangeRateUseCase,
+    private val convertExchangeAmountUseCase: ConvertExchangeAmountUseCase,
+    private val extractRepeatOperationUseCase: ExtractRepeatOperationUseCase,
 ) : ViewModel(), ContainerHost<CalculatorContract.State, CalculatorContract.SideEffect> {
 
     override val container = container(
@@ -181,6 +184,18 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 현재 표현식을 계산하고(필요한 경우 반복 연산을 적용), 화면 상태를 업데이트합니다.
+     *
+     * 표현식이 비어 있으면 이 intent는 아무 작업도 하지 않습니다.
+     * 숫자 표현식과 반복 연산이 모두 존재하는 경우, 계산 전에 반복 연산을 표현식 뒤에 추가합니다.
+     * 계산 중 오류가 발생하면 상태를 오류로 표시하고 스낵바 사이드 이펙트를 발생시킵니다.
+     * 계산에 성공하면 표현식은 계산된 결과로 대체되고,
+     * 미리보기/변환된 미리보기 값은 초기화되며,
+     * 반복 연산이 업데이트되고,
+     * 결과는 계산 완료된 결과로 표시되며,
+     * 해당 계산 내역이 히스토리에 추가됩니다.
+     */
     private fun handleCalculate() = intent {
         val expression = state.expression
         if (expression.isEmpty()) return@intent
@@ -206,7 +221,7 @@ class CalculatorViewModel @Inject constructor(
             return@intent
         }
 
-        val nextRepeatOperation = extractRepeatOperation(expressionToCalculate)
+        val nextRepeatOperation = extractRepeatOperationUseCase(expressionToCalculate)
             ?: state.repeatOperation
 
         val historyItem = CalculatorContract.HistoryItem(
@@ -327,6 +342,15 @@ class CalculatorViewModel @Inject constructor(
         ).withConvertedAmounts()
     }
 
+    /**
+     * Compute a live-preview result for the given arithmetic expression.
+     *
+     * Returns an empty string when the expression is empty, ends with an operator, contains no operator,
+     * represents a lone negative number, or when evaluation fails.
+     *
+     * @param expression The arithmetic expression to evaluate for preview.
+     * @return The evaluated result as a string, or an empty string if no preview is available.
+     */
     private fun calculatePreview(expression: String): String {
         if (expression.isEmpty()) return ""
 
@@ -368,68 +392,17 @@ class CalculatorViewModel @Inject constructor(
 
     private fun CalculatorContract.State.withConvertedAmounts(): CalculatorContract.State {
         return copy(
-            convertedExpressionAmount = convertExpression(
-                expression,
-                exchangeRate,
-                selectedExchangeCurrency?.code
+            convertedExpressionAmount = convertExchangeAmountUseCase.convertExpression(
+                expression = expression,
+                rate = exchangeRate,
+                currencyCode = selectedExchangeCurrency?.code
             ),
-            convertedPreviewAmount = convertSingleAmount(
-                previewResult,
-                exchangeRate,
-                selectedExchangeCurrency?.code
+            convertedPreviewAmount = convertExchangeAmountUseCase.convertSingleAmount(
+                text = previewResult,
+                rate = exchangeRate,
+                currencyCode = selectedExchangeCurrency?.code
             ),
         )
-    }
-
-    private fun convertExpression(
-        expression: String,
-        rate: Double,
-        currencyCode: String?,
-    ): String {
-        if (expression.isEmpty() || rate <= 0.0 || currencyCode == null) return ""
-
-        val result = StringBuilder()
-        val number = StringBuilder()
-
-        fun flushNumber() {
-            if (number.isEmpty()) return
-            val converted = number.toString().toDoubleOrNull()?.let {
-                (it * rate).roundToLong()
-            }
-            if (converted != null) {
-                result.append(converted).append(" ").append(currencyCode)
-            } else {
-                result.append(number)
-            }
-            number.clear()
-        }
-
-        expression.forEach { char ->
-            if (char.isDigit() || char == '.') {
-                number.append(char)
-            } else {
-                flushNumber()
-                result.append(" ").append(char).append(" ")
-            }
-        }
-
-        flushNumber()
-
-        return result.toString().replace(Regex("\\s+"), " ").trim()
-    }
-
-    private fun convertSingleAmount(
-        text: String,
-        rate: Double,
-        currencyCode: String?,
-    ): String {
-        if (text.isEmpty() || rate <= 0.0 || currencyCode == null) return ""
-
-        val amount = text.toDoubleOrNull()
-            ?: calculateExpressionUseCase.calculate(text).takeIf { it != "Error" }?.toDoubleOrNull()
-            ?: return ""
-
-        return "${(amount * rate).roundToLong()} $currencyCode"
     }
 
     private fun handleSelectMainExchangeCurrency(currency: CurrencyInfo) = intent {
@@ -460,19 +433,6 @@ class CalculatorViewModel @Inject constructor(
         }
 
         performFetchExchangeRate()
-    }
-
-    private fun extractRepeatOperation(expression: String): String? {
-        val operatorIndex = expression.indexOfLast { it.toString() in OPERATORS }
-
-        if (operatorIndex <= 0 || operatorIndex == expression.lastIndex) return null
-
-        val operator = expression[operatorIndex].toString()
-        val operand = expression.substring(operatorIndex + 1)
-
-        if (operand.toDoubleOrNull() == null) return null
-
-        return operator + operand
     }
 
     private fun handleClearHistory() = intent {

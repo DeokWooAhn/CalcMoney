@@ -15,11 +15,15 @@ class ExtractRepeatOperationUseCase @Inject constructor() {
         val operator = expression[operatorIndex].toString()
         val operand = expression.substring(operatorIndex + 1)
 
-        if (operand.toDoubleOrNull() == null) {
+        if (!isNumericOperand(operand)) {
             return null
         }
 
         return operator + operand
+    }
+
+    private fun isNumericOperand(operand: String): Boolean {
+        return operand.replace('−', '-').toDoubleOrNull() != null
     }
 
     private fun findLastBinaryOperatorIndex(expression: String): Int {

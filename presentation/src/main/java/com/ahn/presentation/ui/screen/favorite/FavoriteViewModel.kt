@@ -72,16 +72,16 @@ class FavoriteViewModel @Inject constructor(
             if (!isActive) return@launch
 
             cachedRates = nextRates
-            rebuildItems()
+            rebuildItems(finishLoading = true)
         }
     }
 
     fun onBaseAmountChanged(fromAmount: String) {
         currentBaseAmount = fromAmount
-        rebuildItems()
+        rebuildItems(finishLoading = false)
     }
 
-    private fun rebuildItems() {
+    private fun rebuildItems(finishLoading: Boolean = false) {
         val favoriteRates = buildFavoriteRatesUseCase(
             baseCurrency = currentBaseCurrency,
             baseAmount = currentBaseAmount,
@@ -100,9 +100,9 @@ class FavoriteViewModel @Inject constructor(
             )
         }
 
-        _state.update {
-            it.copy(
-                isLoading = false,
+        _state.update { prev ->
+            prev.copy(
+                isLoading = if (finishLoading) false else prev.isLoading,
                 items = items
             )
         }

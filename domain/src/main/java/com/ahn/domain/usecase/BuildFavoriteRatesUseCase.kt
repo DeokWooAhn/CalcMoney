@@ -23,7 +23,7 @@ class BuildFavoriteRatesUseCase @Inject constructor() {
         val baseAmountValue = baseAmount.toDoubleOrNull() ?: 0.0
         val currenciesByCode = availableCurrencies.associateBy { it.code }
 
-        return favoriteCurrencyCodes.mapNotNull { code ->
+        return favoriteCurrencyCodes.distinct().mapNotNull { code ->
             if (code == baseCurrency.code) return@mapNotNull null
 
             val currency = currenciesByCode[code] ?: return@mapNotNull null

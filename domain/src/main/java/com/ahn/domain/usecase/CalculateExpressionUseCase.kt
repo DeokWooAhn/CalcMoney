@@ -5,6 +5,7 @@ import javax.inject.Inject
 import kotlin.math.abs
 
 class CalculateExpressionUseCase @Inject constructor() {
+
     /**
      * 사용자 산술 표현식을 정규화하고 계산한 뒤, 결과를 포맷된 문자열로 반환합니다.
      *
@@ -25,6 +26,7 @@ class CalculateExpressionUseCase @Inject constructor() {
      *           값의 크기가 1e15 이상이거나 0이 아니면서 1e-10보다 작으면,
      *           소수점 이하 10자리의 과학적 표기법으로 표시합니다.
      */
+
     fun calculate(expression: String): String {
         return try {
             val normalized = expression

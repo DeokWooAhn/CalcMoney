@@ -28,6 +28,10 @@ class ExtractRepeatOperationUseCaseTest : DescribeSpec({
             useCase("2×-1") shouldBe "×-1"
         }
 
+        it("유니코드 음수 피연산자도 반복 연산에 포함한다") {
+            useCase("2×−1") shouldBe "×−1"
+        }
+
         it("연산자가 없으면 null을 반환한다") {
             useCase("100") shouldBe null
         }
@@ -42,6 +46,10 @@ class ExtractRepeatOperationUseCaseTest : DescribeSpec({
 
         it("첫 글자가 연산자인 단일 음수는 null을 반환한다") {
             useCase("-10") shouldBe null
+        }
+
+        it("첫 글자가 유니코드 음수인 단일 음수는 null을 반환한다") {
+            useCase("−10") shouldBe null
         }
     }
 })

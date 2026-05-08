@@ -185,13 +185,16 @@ class CalculatorViewModel @Inject constructor(
     }
 
     /**
-     * Evaluate the current expression (optionally applying a repeat operation) and update the view state.
+     * 현재 표현식을 계산하고(필요한 경우 반복 연산을 적용), 화면 상태를 업데이트합니다.
      *
-     * If the expression is empty this intent does nothing. When a numeric expression and a repeat operation
-     * are present, the repeat operation is appended before evaluation. On evaluation error the state is
-     * marked as an error and a snackbar side effect is posted. On success the expression is replaced with
-     * the computed result, preview/converted preview are cleared, the repeat operation is updated, the
-     * result is flagged as a calculated result, and a history entry for the calculation is appended.
+     * 표현식이 비어 있으면 이 intent는 아무 작업도 하지 않습니다.
+     * 숫자 표현식과 반복 연산이 모두 존재하는 경우, 계산 전에 반복 연산을 표현식 뒤에 추가합니다.
+     * 계산 중 오류가 발생하면 상태를 오류로 표시하고 스낵바 사이드 이펙트를 발생시킵니다.
+     * 계산에 성공하면 표현식은 계산된 결과로 대체되고,
+     * 미리보기/변환된 미리보기 값은 초기화되며,
+     * 반복 연산이 업데이트되고,
+     * 결과는 계산 완료된 결과로 표시되며,
+     * 해당 계산 내역이 히스토리에 추가됩니다.
      */
     private fun handleCalculate() = intent {
         val expression = state.expression

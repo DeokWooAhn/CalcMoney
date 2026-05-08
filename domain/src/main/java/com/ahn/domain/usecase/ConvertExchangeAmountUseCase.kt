@@ -6,6 +6,10 @@ import kotlin.math.roundToLong
 class ConvertExchangeAmountUseCase @Inject constructor(
     private val calculateExpressionUseCase: CalculateExpressionUseCase,
 ) {
+    private companion object {
+        val MULTI_SPACE_REGEX = Regex("\\s+")
+    }
+
     fun convertExpression(
         expression: String,
         rate: Double,
@@ -43,7 +47,7 @@ class ConvertExchangeAmountUseCase @Inject constructor(
 
         flushNumber()
 
-        return result.toString().replace(Regex("\\s+"), " ").trim()
+        return result.toString().replace(MULTI_SPACE_REGEX, " ").trim()
     }
 
     fun convertSingleAmount(

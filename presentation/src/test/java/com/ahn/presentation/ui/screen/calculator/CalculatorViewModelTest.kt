@@ -1,9 +1,12 @@
 package com.ahn.presentation.ui.screen.calculator
 
 import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.domain.calculator.usecase.AddCalculatorHistoryUseCase
 import com.ahn.domain.calculator.usecase.CalculateExpressionUseCase
+import com.ahn.domain.calculator.usecase.ClearCalculatorHistoriesUseCase
 import com.ahn.domain.exchange.usecase.ConvertExchangeAmountUseCase
 import com.ahn.domain.calculator.usecase.ExtractRepeatOperationUseCase
+import com.ahn.domain.calculator.usecase.GetCalculatorHistoriesUseCase
 import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
 import com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase
 import io.kotest.core.spec.IsolationMode
@@ -15,6 +18,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -33,6 +37,9 @@ class CalculatorViewModelTest : BehaviorSpec({
     val getExchangeRateUseCase = mockk<GetExchangeRateUseCase>()
     val convertExchangeAmountUseCase = mockk<ConvertExchangeAmountUseCase>()
     val extractRepeatOperationUseCase = ExtractRepeatOperationUseCase()
+    val getCalculatorHistoriesUseCase = mockk<GetCalculatorHistoriesUseCase>()
+    val addCalculatorHistoryUseCase = mockk<AddCalculatorHistoryUseCase>()
+    val clearCalculatorHistoriesUseCase = mockk<ClearCalculatorHistoriesUseCase>()
 
     fun createViewModel() = CalculatorViewModel(
         calculateExpressionUseCase = calculateExpressionUseCase,
@@ -40,6 +47,9 @@ class CalculatorViewModelTest : BehaviorSpec({
         getExchangeRateUseCase = getExchangeRateUseCase,
         convertExchangeAmountUseCase = convertExchangeAmountUseCase,
         extractRepeatOperationUseCase = extractRepeatOperationUseCase,
+        getCalculatorHistoriesUseCase = getCalculatorHistoriesUseCase,
+        addCalculatorHistoryUseCase = addCalculatorHistoryUseCase,
+        clearCalculatorHistoriesUseCase = clearCalculatorHistoriesUseCase,
     )
 
     val onePlusOneHistory = listOf(
@@ -106,6 +116,10 @@ class CalculatorViewModelTest : BehaviorSpec({
         every {
             convertExchangeAmountUseCase.convertSingleAmount(any(), any(), any())
         } returns ""
+
+        every { getCalculatorHistoriesUseCase() } returns MutableStateFlow(emptyList())
+        coEvery { addCalculatorHistoryUseCase(any()) } returns Unit
+        coEvery { clearCalculatorHistoriesUseCase() } returns Unit
 
     }
 

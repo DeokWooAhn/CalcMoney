@@ -3,13 +3,13 @@ package com.ahn.presentation.ui.screen.calculator
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.ahn.domain.calculator.model.CalculatorHistory
+import com.ahn.domain.calculator.usecase.AddCalculatorHistoryUseCase
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.domain.calculator.usecase.CalculateExpressionUseCase
 import com.ahn.domain.calculator.usecase.ClearCalculatorHistoriesUseCase
 import com.ahn.domain.exchange.usecase.ConvertExchangeAmountUseCase
 import com.ahn.domain.calculator.usecase.ExtractRepeatOperationUseCase
 import com.ahn.domain.calculator.usecase.GetCalculatorHistoriesUseCase
-import com.ahn.domain.calculator.usecase.SaveCalculatorHistoriesUseCase
 import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
 import com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,7 +26,7 @@ class CalculatorViewModel @Inject constructor(
     private val convertExchangeAmountUseCase: ConvertExchangeAmountUseCase,
     private val extractRepeatOperationUseCase: ExtractRepeatOperationUseCase,
     private val getCalculatorHistoriesUseCase: GetCalculatorHistoriesUseCase,
-    private val saveCalculatorHistoriesUseCase: SaveCalculatorHistoriesUseCase,
+    private val addCalculatorHistoryUseCase: AddCalculatorHistoryUseCase,
     private val clearCalculatorHistoriesUseCase: ClearCalculatorHistoriesUseCase,
 ) : ViewModel(), ContainerHost<CalculatorContract.State, CalculatorContract.SideEffect> {
 
@@ -241,14 +241,19 @@ class CalculatorViewModel @Inject constructor(
 
         val nextHistories = (state.histories + historyItem).takeLast(MAX_HISTORY_COUNT)
 
-        saveCalculatorHistoriesUseCase(
-            nextHistories.map {
+        runCatching {
+            addCalculatorHistoryUseCase(
                 CalculatorHistory(
-                    expression = it.expression,
-                    result = it.result,
+                    expression = historyItem.expression,
+                    result = historyItem.result,
                 )
-            }
-        )
+            )
+        }.onFailure { e ->
+            Log.e("CalculatorViewModel", "계산 기록 저장 실패", e)
+            postSideEffect(
+                CalculatorContract.SideEffect.ShowSnackBar("계산 기록을 저장하지 못했습니다.")
+            )
+        }
 
         reduce {
             buildNewExpressionState(
@@ -457,8 +462,16 @@ class CalculatorViewModel @Inject constructor(
     }
 
     private fun handleClearHistory() = intent {
-        clearCalculatorHistoriesUseCase()
-        reduce { state.copy(histories = emptyList()) }
+        runCatching {
+            clearCalculatorHistoriesUseCase()
+        }.onSuccess {
+            reduce { state.copy(histories = emptyList()) }
+        }.onFailure { e ->
+            Log.e("CalculatorViewModel", "계산 기록 삭제 실패", e)
+            postSideEffect(
+                CalculatorContract.SideEffect.ShowSnackBar("계산 기록을 삭제하지 못했습니다.")
+            )
+        }
     }
 
     private fun observeHistories() = intent {

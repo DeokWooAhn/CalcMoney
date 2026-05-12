@@ -13,6 +13,10 @@ class CalculatorHistoryRepositoryImpl @Inject constructor(
         return dataSource.getHistories()
     }
 
+    override suspend fun addHistory(history: CalculatorHistory) {
+        dataSource.addHistory(history)
+    }
+
     override suspend fun saveHistories(histories: List<CalculatorHistory>) {
         dataSource.saveHistories(histories)
     }

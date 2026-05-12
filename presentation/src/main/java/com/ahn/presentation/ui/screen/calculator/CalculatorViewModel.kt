@@ -241,7 +241,7 @@ class CalculatorViewModel @Inject constructor(
 
         val nextHistories = (state.histories + historyItem).takeLast(MAX_HISTORY_COUNT)
 
-        runCatching {
+        val isHistorySaved = runCatching {
             addCalculatorHistoryUseCase(
                 CalculatorHistory(
                     expression = historyItem.expression,
@@ -253,7 +253,7 @@ class CalculatorViewModel @Inject constructor(
             postSideEffect(
                 CalculatorContract.SideEffect.ShowSnackBar("계산 기록을 저장하지 못했습니다.")
             )
-        }
+        }.isSuccess
 
         reduce {
             buildNewExpressionState(
@@ -267,7 +267,7 @@ class CalculatorViewModel @Inject constructor(
                 convertedPreviewAmount = "",
                 repeatOperation = nextRepeatOperation,
                 isCalculatedResult = true,
-                histories = nextHistories,
+                histories = if (isHistorySaved) nextHistories else state.histories,
             )
         }
     }

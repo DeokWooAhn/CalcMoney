@@ -2,12 +2,16 @@ package com.ahn.presentation.ui.screen.calculator
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.ahn.domain.model.CurrencyInfo
-import com.ahn.domain.usecase.CalculateExpressionUseCase
-import com.ahn.domain.usecase.ConvertExchangeAmountUseCase
-import com.ahn.domain.usecase.ExtractRepeatOperationUseCase
-import com.ahn.domain.usecase.GetExchangeRateUseCase
-import com.ahn.domain.usecase.GetSupportedCurrenciesUseCase
+import com.ahn.domain.calculator.model.CalculatorHistory
+import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.domain.calculator.usecase.CalculateExpressionUseCase
+import com.ahn.domain.calculator.usecase.ClearCalculatorHistoriesUseCase
+import com.ahn.domain.exchange.usecase.ConvertExchangeAmountUseCase
+import com.ahn.domain.calculator.usecase.ExtractRepeatOperationUseCase
+import com.ahn.domain.calculator.usecase.GetCalculatorHistoriesUseCase
+import com.ahn.domain.calculator.usecase.SaveCalculatorHistoriesUseCase
+import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
+import com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -21,16 +25,21 @@ class CalculatorViewModel @Inject constructor(
     private val getExchangeRateUseCase: GetExchangeRateUseCase,
     private val convertExchangeAmountUseCase: ConvertExchangeAmountUseCase,
     private val extractRepeatOperationUseCase: ExtractRepeatOperationUseCase,
+    private val getCalculatorHistoriesUseCase: GetCalculatorHistoriesUseCase,
+    private val saveCalculatorHistoriesUseCase: SaveCalculatorHistoriesUseCase,
+    private val clearCalculatorHistoriesUseCase: ClearCalculatorHistoriesUseCase,
 ) : ViewModel(), ContainerHost<CalculatorContract.State, CalculatorContract.SideEffect> {
 
     override val container = container(
         initialState = CalculatorContract.State()
     ) {
         performLoadCurrencies()
+        observeHistories()
     }
 
     companion object {
         private const val MAX_NUMBER_LENGTH = 15
+        private const val MAX_HISTORY_COUNT = 20
         private val OPERATORS = listOf("+", "-", "×", "÷")
     }
 
@@ -213,6 +222,7 @@ class CalculatorViewModel @Inject constructor(
             reduce {
                 state.copy(isError = true, errorMessage = "계산 오류")
             }
+
             postSideEffect(
                 CalculatorContract.SideEffect.ShowSnackBar(
                     "계산할 수 없는 수식입니다."
@@ -229,6 +239,17 @@ class CalculatorViewModel @Inject constructor(
             result = result,
         )
 
+        val nextHistories = (state.histories + historyItem).takeLast(MAX_HISTORY_COUNT)
+
+        saveCalculatorHistoriesUseCase(
+            nextHistories.map {
+                CalculatorHistory(
+                    expression = it.expression,
+                    result = it.result,
+                )
+            }
+        )
+
         reduce {
             buildNewExpressionState(
                 currentState = state,
@@ -241,7 +262,7 @@ class CalculatorViewModel @Inject constructor(
                 convertedPreviewAmount = "",
                 repeatOperation = nextRepeatOperation,
                 isCalculatedResult = true,
-                histories = state.histories + historyItem,
+                histories = nextHistories,
             )
         }
     }
@@ -343,13 +364,13 @@ class CalculatorViewModel @Inject constructor(
     }
 
     /**
-     * Compute a live-preview result for the given arithmetic expression.
+     * 주어진 산술 표현식에 대한 실시간 미리보기 결과를 계산합니다.
      *
-     * Returns an empty string when the expression is empty, ends with an operator, contains no operator,
-     * represents a lone negative number, or when evaluation fails.
+     * 표현식이 비어 있거나, 연산자로 끝나거나, 연산자를 포함하지 않거나,
+     * 단독 음수만 나타내거나, 평가에 실패한 경우 빈 문자열을 반환합니다.
      *
-     * @param expression The arithmetic expression to evaluate for preview.
-     * @return The evaluated result as a string, or an empty string if no preview is available.
+     * @param expression 미리보기로 계산할 산술 표현식입니다.
+     * @return 계산된 결과 문자열 또는 미리보기를 제공할 수 없는 경우 빈 문자열입니다.
      */
     private fun calculatePreview(expression: String): String {
         if (expression.isEmpty()) return ""
@@ -436,6 +457,22 @@ class CalculatorViewModel @Inject constructor(
     }
 
     private fun handleClearHistory() = intent {
+        clearCalculatorHistoriesUseCase()
         reduce { state.copy(histories = emptyList()) }
+    }
+
+    private fun observeHistories() = intent {
+        getCalculatorHistoriesUseCase().collect { histories ->
+            reduce {
+                state.copy(
+                    histories = histories.map {
+                        CalculatorContract.HistoryItem(
+                            expression = it.expression,
+                            result = it.result,
+                        )
+                    }
+                )
+            }
+        }
     }
 }

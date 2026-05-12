@@ -1,6 +1,6 @@
 package com.ahn.presentation.ui.screen.exchange
 
-import com.ahn.domain.model.CurrencyInfo
+import com.ahn.domain.currency.model.CurrencyInfo
 
 interface ExchangeContract {
     data class State(

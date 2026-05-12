@@ -59,14 +59,14 @@ fun FavoriteRoute(
 ) {
     val exchangeState by exchangeViewModel.collectAsState()
     val favoriteState by favoriteViewModel.state.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     exchangeViewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
             is ExchangeContract.SideEffect.ShowSnackBar -> {
                 scope.launch {
-                    snackbarHostState.showSnackbarImmediately(sideEffect.message)
+                    snackBarHostState.showSnackbarImmediately(sideEffect.message)
                 }
             }
         }
@@ -92,7 +92,7 @@ fun FavoriteRoute(
         exchangeState = exchangeState,
         favoriteState = favoriteState,
         onExchangeIntent = exchangeViewModel::processIntent,
-        snackbarHostState = snackbarHostState,
+        snackbarHostState = snackBarHostState,
     )
 }
 
@@ -306,7 +306,7 @@ private fun FavoriteRateCardPreview() {
     MaterialTheme {
         FavoriteRateCard(
             item = FavoriteContract.Item(
-                currency = com.ahn.domain.model.CurrencyInfo(
+                currency = com.ahn.domain.currency.model.CurrencyInfo(
                     code = "USD",
                     displayCode = "USD",
                     name = "미국 달러",

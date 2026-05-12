@@ -1,11 +1,11 @@
 package com.ahn.presentation.ui.screen.calculator
 
-import com.ahn.domain.model.CurrencyInfo
-import com.ahn.domain.usecase.CalculateExpressionUseCase
-import com.ahn.domain.usecase.ConvertExchangeAmountUseCase
-import com.ahn.domain.usecase.ExtractRepeatOperationUseCase
-import com.ahn.domain.usecase.GetExchangeRateUseCase
-import com.ahn.domain.usecase.GetSupportedCurrenciesUseCase
+import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.domain.calculator.usecase.CalculateExpressionUseCase
+import com.ahn.domain.exchange.usecase.ConvertExchangeAmountUseCase
+import com.ahn.domain.calculator.usecase.ExtractRepeatOperationUseCase
+import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
+import com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.clearAllMocks

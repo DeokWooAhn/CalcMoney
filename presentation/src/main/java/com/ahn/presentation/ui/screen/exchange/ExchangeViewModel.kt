@@ -1,12 +1,12 @@
 package com.ahn.presentation.ui.screen.exchange
 
 import androidx.lifecycle.ViewModel
-import com.ahn.domain.model.CurrencyInfo
-import com.ahn.domain.usecase.CalculateExchangeAmountUseCase
-import com.ahn.domain.usecase.GetExchangeRateUseCase
-import com.ahn.domain.usecase.GetFavoriteCurrenciesUseCase
-import com.ahn.domain.usecase.GetSupportedCurrenciesUseCase
-import com.ahn.domain.usecase.ToggleFavoriteCurrencyUseCase
+import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.domain.exchange.usecase.CalculateExchangeAmountUseCase
+import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
+import com.ahn.domain.favorite.usecase.GetFavoriteCurrenciesUseCase
+import com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase
+import com.ahn.domain.favorite.usecase.ToggleFavoriteCurrencyUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.Syntax

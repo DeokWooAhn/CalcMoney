@@ -65,7 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.ahn.domain.model.CurrencyInfo
+import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.R
 import com.ahn.presentation.ui.component.CalculatorButton
 import com.ahn.presentation.ui.component.CalculatorIconButton

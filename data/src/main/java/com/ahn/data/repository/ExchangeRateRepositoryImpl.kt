@@ -1,11 +1,11 @@
 package com.ahn.data.repository
 
 import com.ahn.data.remote.ExchangeRateApi
-import com.ahn.domain.repository.ExchangeRateRepository
+import com.ahn.domain.exchange.repository.ExchangeRateRepository
 import javax.inject.Inject
 import com.ahn.data.BuildConfig
 import com.ahn.data.model.ExchangeRateResponse
-import com.ahn.domain.model.CurrencyInfo
+import com.ahn.domain.currency.model.CurrencyInfo
 
 class ExchangeRateRepositoryImpl @Inject constructor(
     private val api: ExchangeRateApi

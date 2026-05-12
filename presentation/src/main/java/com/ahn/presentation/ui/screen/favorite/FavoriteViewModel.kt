@@ -2,9 +2,9 @@ package com.ahn.presentation.ui.screen.favorite
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ahn.domain.model.CurrencyInfo
-import com.ahn.domain.usecase.BuildFavoriteRatesUseCase
-import com.ahn.domain.usecase.GetExchangeRateUseCase
+import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.domain.favorite.usecase.BuildFavoriteRatesUseCase
+import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow

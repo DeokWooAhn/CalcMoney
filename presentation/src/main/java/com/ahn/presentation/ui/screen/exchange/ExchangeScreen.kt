@@ -43,7 +43,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.ahn.domain.model.CurrencyInfo
+import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.ui.component.CurrencySelector
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.ExchangeInputContainer

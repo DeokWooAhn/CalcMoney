@@ -1,6 +1,6 @@
 package com.ahn.presentation.ui.screen.calculator
 
-import com.ahn.domain.model.CurrencyInfo
+import com.ahn.domain.currency.model.CurrencyInfo
 
 interface CalculatorContract {
 

@@ -37,6 +37,21 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.ahn.domain.currency.model.CurrencyInfo
 
+/**
+ * Displays the currently selected currency as a clickable row and opens a picker dialog to change selection.
+ *
+ * When a currency is shown, tapping the row opens a dialog that lists `availableCurrencies` and allows selecting a currency
+ * or toggling favorites. If `selectedCurrency` is null, a fallback text is displayed instead.
+ *
+ * @param selectedCurrency The currently selected currency, or `null` to show the fallback prompt.
+ * @param availableCurrencies The full list of currencies shown in the picker dialog.
+ * @param favoriteCurrencyCodes Live list of favorite currency codes used to render favorite icons.
+ * @param onCurrencySelected Callback invoked with the chosen `CurrencyInfo`; the dialog will be dismissed after selection.
+ * @param onToggleFavorite Callback invoked with a currency code when the favorite toggle is pressed.
+ * @param modifier Modifier applied to the selector UI.
+ * @param backgroundColor Background color for the selected-currency row.
+ * @param textColor Text and icon color for the selected-currency row.
+ */
 @Composable
 fun CurrencySelector(
     selectedCurrency: CurrencyInfo?,

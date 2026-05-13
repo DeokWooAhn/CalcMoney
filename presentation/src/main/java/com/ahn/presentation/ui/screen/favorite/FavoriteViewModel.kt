@@ -33,6 +33,15 @@ class FavoriteViewModel @Inject constructor(
 
     private var cachedRates: Map<String, Double> = emptyMap()
 
+    /**
+     * Updates the view model's exchange inputs, cancels any in-flight load, and (when inputs are valid) starts loading exchange rates for the specified favorite currency codes relative to the given base currency.
+     *
+     * If `fromCurrency` is null or either list is empty, cached rates are cleared and the state is updated to show no items and no loading.
+     *
+     * @param fromCurrency The selected base currency, or `null` to clear and reset the favorites state.
+     * @param favoriteCurrencyCodes Currency codes to load rates for.
+     * @param availableCurrencies Available currency metadata used to validate requested codes.
+     */
     fun onExchangeStateChanged(
         fromCurrency: CurrencyInfo?,
         favoriteCurrencyCodes: List<String>,
@@ -76,11 +85,23 @@ class FavoriteViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Update the current base amount used for conversions and refresh the displayed favorite items without finishing loading.
+     *
+     * @param fromAmount The new base amount as a numeric string (for example, "1" or "12.34").
+     */
     fun onBaseAmountChanged(fromAmount: String) {
         currentBaseAmount = fromAmount
         rebuildItems(finishLoading = false)
     }
 
+    /**
+     * Rebuilds the list of favorite currency display items from the current cached data and updates UI state.
+     *
+     * Builds display models for each favorite currency using the current base currency, base amount, available currencies, and cached rates, formats `convertedAmount` with two decimal places and the rate label with four decimal places, then replaces the state's item list. If `finishLoading` is true, sets the state's `isLoading` to false; otherwise preserves the previous `isLoading` value.
+     *
+     * @param finishLoading When true, set `isLoading` to false after updating items; when false, retain the previous `isLoading` value.
+     */
     private fun rebuildItems(finishLoading: Boolean = false) {
         val favoriteRates = favoriteUseCases.buildFavoriteRates(
             baseCurrency = currentBaseCurrency,

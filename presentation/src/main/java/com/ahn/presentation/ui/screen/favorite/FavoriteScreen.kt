@@ -52,6 +52,16 @@ import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 
+/**
+ * Connects ExchangeViewModel and FavoriteViewModel to the FavoriteScreen UI.
+ *
+ * Observes exchange and favorite state, forwards intents to the exchange view model,
+ * synchronizes relevant exchange state into the favorite view model, and displays
+ * exchange side-effect snackbars through a remembered SnackbarHostState.
+ *
+ * @param exchangeViewModel Source of exchange state, side effects, and intent processing.
+ * @param favoriteViewModel Manages favorite-related state; defaults to an injected Hilt view model.
+ */
 @Composable
 fun FavoriteRoute(
     exchangeViewModel: ExchangeViewModel,

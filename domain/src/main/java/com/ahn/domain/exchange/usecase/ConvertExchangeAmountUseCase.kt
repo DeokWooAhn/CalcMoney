@@ -51,6 +51,14 @@ class ConvertExchangeAmountUseCase @Inject constructor(
         return result.toString().replace(MULTI_SPACE_REGEX, " ").trim()
     }
 
+    /**
+     * Converts a numeric value or arithmetic expression provided as text into the target currency using the given rate.
+     *
+     * @param text A numeric value or arithmetic expression represented as a string.
+     * @param rate Conversion multiplier; must be greater than zero.
+     * @param currencyCode Target currency code (e.g., "USD"); conversion is not performed if this is null.
+     * @return A string in the form "`<amount> <currencyCode>`" where `amount` is the parsed/evaluated value multiplied by `rate` and rounded to the nearest integer, or an empty string if the input is invalid or cannot be parsed/evaluated.
+     */
     fun convertSingleAmount(
         text: String,
         rate: Double,

@@ -7,6 +7,11 @@ import javax.inject.Inject
 class AddCalculatorHistoryUseCase @Inject constructor(
     private val repository: CalculatorHistoryRepository,
 ) {
+    /**
+     * Persists the given CalculatorHistory to storage.
+     *
+     * @param history The CalculatorHistory record to persist.
+     */
     suspend operator fun invoke(history: CalculatorHistory) {
         repository.addHistory(history)
     }

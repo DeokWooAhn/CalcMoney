@@ -20,11 +20,22 @@ abstract class RepositoryModule {
         impl: ExchangeRateRepositoryImpl
     ): ExchangeRateRepository
 
+    /**
+     * Binds FavoriteCurrencyRepositoryImpl to FavoriteCurrencyRepository for Hilt injection.
+     *
+     * @return The FavoriteCurrencyRepository to be provided when the interface is requested.
+     */
     @Binds
     abstract fun bindFavoriteCurrencyRepository(
         impl: FavoriteCurrencyRepositoryImpl
     ): FavoriteCurrencyRepository
 
+    /**
+     * Binds the concrete `CalculatorHistoryRepositoryImpl` to the `CalculatorHistoryRepository` interface for dependency injection.
+     *
+     * @param impl The repository implementation to provide when `CalculatorHistoryRepository` is requested.
+     * @return The bound `CalculatorHistoryRepository` interface.
+     */
     @Binds
     abstract fun bindCalculatorHistoryRepository(
         impl: CalculatorHistoryRepositoryImpl

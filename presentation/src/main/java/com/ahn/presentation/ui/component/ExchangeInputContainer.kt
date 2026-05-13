@@ -25,6 +25,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ahn.domain.currency.model.CurrencyInfo
 
+/**
+ * Renders a labeled exchange input with an amount field and an optional currency selector.
+ *
+ * If `isEditable` is true the amount is editable; otherwise it is displayed as read-only.
+ * The currency selector is shown only when `currency` is non-null.
+ *
+ * @param amount The current amount value as a string.
+ * @param currency The currently selected currency, or `null` to hide the selector.
+ * @param onAmountChange Callback invoked with the new amount string when the amount changes.
+ * @param onCurrencyClick Callback invoked with the selected `CurrencyInfo`.
+ * @param availableCurrencies List of currencies available for selection.
+ * @param favoriteCurrencyCodes List of currency codes marked as favorites.
+ * @param onToggleFavorite Callback invoked with a currency code to toggle its favorite state.
+ * @param isEditable Whether the amount field is editable.
+ * @param label The label text displayed above the input.
+ */
 @Composable
 fun ExchangeInputContainer(
     amount: String,

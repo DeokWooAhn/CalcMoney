@@ -8,6 +8,11 @@ import javax.inject.Inject
 class GetCalculatorHistoriesUseCase @Inject constructor(
     private val repository: CalculatorHistoryRepository,
 ) {
+    /**
+     * Exposes stored calculator history entries as a reactive stream.
+     *
+     * @return A Flow that emits the current list of calculator history entries.
+     */
     operator fun invoke(): Flow<List<CalculatorHistory>> {
         return repository.getHistories()
     }

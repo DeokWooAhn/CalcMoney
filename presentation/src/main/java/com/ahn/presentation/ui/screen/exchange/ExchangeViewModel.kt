@@ -34,6 +34,11 @@ class ExchangeViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Updates the state's `fromAmount` and computes the matching `toAmount` when the input is empty or a valid numeric string.
+     *
+     * @param amount The entered amount as a string; accepted values are an empty string or digits with an optional decimal point (e.g., "123", "12.34", ""). 
+     */
     private fun handleUpdateFromAmount(amount: String) = intent {
         if (amount.isEmpty() || amount.matches(Regex("^\\d*\\.?\\d*$"))) {
             reduce {
@@ -54,6 +59,15 @@ class ExchangeViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Selects the destination currency for conversion.
+     *
+     * If the chosen currency equals the currently selected source currency, the source and
+     * destination currencies are swapped. Otherwise the destination currency is set to the
+     * chosen value and a new exchange rate is fetched.
+     *
+     * @param currency The currency to select as the destination (to) currency.
+     */
     private fun handleSelectToCurrency(currency: CurrencyInfo) = intent {
         if (currency == state.fromCurrency) {
             performSwapCurrencies()
@@ -63,12 +77,25 @@ class ExchangeViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Observes the favorite currency codes stream and updates the state with the latest codes.
+     *
+     * When the observed list emits, `favoriteCurrencyCodes` in the view model state is replaced with the emitted list.
+     */
     private fun observeFavorites() = intent {
         favoriteUseCases.getFavoriteCurrencies().collect { codes ->
             reduce { state.copy(favoriteCurrencyCodes = codes) }
         }
     }
 
+    /**
+     * Toggles whether the specified currency is a favorite and emits a confirmation snackbar.
+     *
+     * If the currency was a favorite, it will be removed and a "removed" snackbar is shown;
+     * otherwise it will be added and an "added" snackbar is shown.
+     *
+     * @param currencyCode The currency code to toggle (e.g., "USD", "KRW").
+     */
     private fun handleToggleFavorite(currencyCode: String) = intent {
         val wasFavorite = currencyCode in state.favoriteCurrencyCodes
 
@@ -82,6 +109,11 @@ class ExchangeViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Loads supported currencies, updates the state's available and selected currencies, and triggers an exchange-rate fetch when both selections are present.
+     *
+     * Updates state to indicate loading, replaces the available currency list, preserves prior selections when possible, and chooses sensible defaults (prefer USD for from, KRW for to) when no preserved selection exists. Clears the loading flag when finished. If both from and to currencies are set after the update, initiates fetching of the exchange rate. On failure, clears the loading flag and emits a snack-bar side effect with an error message.
+     */
     private suspend fun Syntax<ExchangeContract.State, ExchangeContract.SideEffect>.performLoadCurrencies() {
         try {
             reduce { state.copy(isLoading = true) }
@@ -130,6 +162,12 @@ class ExchangeViewModel @Inject constructor(
         performFetchExchangeRate()
     }
 
+    /**
+     * Fetches the latest exchange rate for the currently selected from/to currencies and updates the state.
+     *
+     * Sets `isLoading` while fetching; if the selected currencies change before the response arrives, the result is discarded.
+     * On success updates `exchangeRate`, recalculates `toAmount`, and clears `isLoading`. On failure clears `isLoading` and emits a `ShowSnackBar` side effect with an error message.
+     */
     private suspend fun Syntax<ExchangeContract.State, ExchangeContract.SideEffect>.performFetchExchangeRate() {
         val fromCurrency = state.fromCurrency ?: return
         val toCurrency = state.toCurrency ?: return

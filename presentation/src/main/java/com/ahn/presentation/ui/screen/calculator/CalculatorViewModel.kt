@@ -42,6 +42,22 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Routes a calculator UI intent to the corresponding handler method.
+     *
+     * Dispatches each `CalculatorContract.Intent` to its dedicated handler:
+     * - `Input` -> `handleInput`
+     * - `SelectExchangeCurrency` -> `handleSelectExchangeCurrency`
+     * - `SelectMainExchangeCurrency` -> `handleSelectMainExchangeCurrency`
+     * - `ToggleFavorite` -> `handleToggleFavorite`
+     * - `Delete` -> `handleDelete`
+     * - `Clear` -> `handleClear`
+     * - `Calculate` -> `handleCalculate`
+     * - `SwapExchangeCurrencies` -> `performSwapExchangeCurrencies`
+     * - `ClearHistory` -> `handleClearHistory`
+     *
+     * @param intent The intent to process.
+     */
     fun processIntent(intent: CalculatorContract.Intent) {
         when (intent) {
             is CalculatorContract.Intent.Input -> handleInput(intent.token)
@@ -59,6 +75,11 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Toggles the favorite status of the given currency and posts a snackbar indicating whether it was added or removed.
+     *
+     * @param currencyCode The ISO currency code to toggle in the favorites list.
+     */
     private fun handleToggleFavorite(currencyCode: String) = intent {
         val wasFavorite = currencyCode in state.favoriteCurrencyCodes
 
@@ -72,6 +93,15 @@ class CalculatorViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Processes a calculator input token and performs the corresponding input action.
+     *
+     * Handles number tokens by inserting digits, operator tokens by inserting or replacing operators,
+     * dot tokens by inserting a decimal point (or `0.` when appropriate), and parenthesis tokens by
+     * inserting `(` or `)` according to the current expression context.
+     *
+     * @param token The calculator input token to handle.
+     */
     private fun handleInput(token: CalculatorToken) {
         when (token) {
             is CalculatorToken.Number -> handleNumberInput(token.value)
@@ -276,6 +306,18 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Loads supported currencies, chooses sensible defaults for main and selected exchange currencies,
+     * updates the UI state with available currencies (preserving any existing selections), and triggers
+     * fetching of the current exchange rate.
+     *
+     * Detailed behavior:
+     * - Chooses `mainExchangeCurrency` by preferring the device currency code, then `"KRW"`, then the first available currency.
+     * - Chooses `selectedExchangeCurrency` by preferring `"USD"` that differs from the main currency, then the first currency that differs from the main.
+     * - Preserves `state.mainExchangeCurrency` and `state.selectedExchangeCurrency` when they are already set.
+     * - After updating state, calls `performFetchExchangeRate()` to refresh rates/conversions.
+     * - On exception, posts a snackbar side effect with an error message and logs the error.
+     */
     private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.performLoadCurrencies() {
         try {
             val currencies = exchangeUseCases.getSupportedCurrencies()
@@ -310,12 +352,22 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Retrieve the device's default ISO 4217 currency code, using "KRW" as a fallback.
+     *
+     * @return The device's currency code (e.g., "USD"); returns "KRW" if the code cannot be determined.
+     */
     private fun getDeviceCurrencyCode(): String {
         return runCatching {
             Currency.getInstance(Locale.getDefault()).currencyCode
         }.getOrDefault("KRW")
     }
 
+    /**
+     * Fetches the exchange rate for the currently selected main and sub currencies and updates the UI state with the rate and converted amounts.
+     *
+     * If the selected currencies are the same, sets the rate to `1.0`. On failure posts a snackbar side effect containing the error message.
+     */
     private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.performFetchExchangeRate() {
         val from = state.mainExchangeCurrency ?: return
         val to = state.selectedExchangeCurrency ?: return
@@ -367,6 +419,14 @@ class CalculatorViewModel @Inject constructor(
         return buildNewExpressionState(currentState, newExpression, newCursorPos)
     }
 
+    /**
+     * Create a new UI state with the given expression and cursor position, recalculating derived fields.
+     *
+     * @param currentState The current calculator UI state to copy from.
+     * @param newExpression The expression string to set on the new state.
+     * @param newCursorPos The cursor position index within `newExpression`.
+     * @return A new `CalculatorContract.State` with `expression` and `cursorPosition` updated, `previewResult` recalculated, `repeatOperation` cleared, error flags reset, and converted amounts recomputed.
+     */
     private fun buildNewExpressionState(
         currentState: CalculatorContract.State,
         newExpression: String,
@@ -384,13 +444,14 @@ class CalculatorViewModel @Inject constructor(
     }
 
     /**
-     * 주어진 산술 표현식에 대한 실시간 미리보기 결과를 계산합니다.
+     * Compute a preview result for the given arithmetic expression.
      *
-     * 표현식이 비어 있거나, 연산자로 끝나거나, 연산자를 포함하지 않거나,
-     * 단독 음수만 나타내거나, 평가에 실패한 경우 빈 문자열을 반환합니다.
+     * Returns an empty string when a preview cannot be produced, for example when the
+     * expression is empty, ends with an operator, contains no operators, represents
+     * only a standalone negative number, or when evaluation fails.
      *
-     * @param expression 미리보기로 계산할 산술 표현식입니다.
-     * @return 계산된 결과 문자열 또는 미리보기를 제공할 수 없는 경우 빈 문자열입니다.
+     * @param expression The arithmetic expression to evaluate for preview.
+     * @return The computed result as a string, or an empty string if no preview is available.
      */
     private fun calculatePreview(expression: String): String {
         if (expression.isEmpty()) return ""
@@ -431,6 +492,12 @@ class CalculatorViewModel @Inject constructor(
         return expression.substring(startOfNumber, endOfNumber)
     }
 
+    /**
+     * Updates the state's converted expression and preview amounts using the current exchange rate and selected currency.
+     *
+     * @return A copy of the state with `convertedExpressionAmount` and `convertedPreviewAmount` recalculated based on
+     * the state's `expression`, `previewResult`, `exchangeRate`, and `selectedExchangeCurrency`.
+     */
     private fun CalculatorContract.State.withConvertedAmounts(): CalculatorContract.State {
         return copy(
             convertedExpressionAmount = exchangeUseCases.convertExchangeAmount.convertExpression(
@@ -461,6 +528,11 @@ class CalculatorViewModel @Inject constructor(
         performFetchExchangeRate()
     }
 
+    /**
+     * Selects a new exchange currency, resets exchange-related fields, and fetches the corresponding exchange rate.
+     *
+     * @param currency The currency to select as the sub/converted currency.
+     */
     private fun handleSelectExchangeCurrency(currency: CurrencyInfo) = intent {
         if (currency.code == state.selectedExchangeCurrency?.code) return@intent
 
@@ -476,6 +548,12 @@ class CalculatorViewModel @Inject constructor(
         performFetchExchangeRate()
     }
 
+    /**
+     * Deletes all persisted calculator history and clears the in-memory history list in state.
+     *
+     * On success, updates the view state to an empty history list. On failure, logs the error
+     * and posts a snackbar side effect informing the user that history could not be deleted.
+     */
     private fun handleClearHistory() = intent {
         runCatching {
             calculatorUseCases.clearHistory()
@@ -489,6 +567,13 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Observes persisted calculation history and favorite currency codes and updates the UI state.
+     *
+     * Collects combined flows of saved histories and favorite currencies, maps persisted history entries
+     * to `CalculatorContract.HistoryItem`, and replaces `state.histories` and `state.favoriteCurrencyCodes`
+     * with the latest values.
+     */
     private fun observeSavedData() = intent {
         combine(
             calculatorUseCases.getHistory(),

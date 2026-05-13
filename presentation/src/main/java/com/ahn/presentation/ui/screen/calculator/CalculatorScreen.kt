@@ -85,6 +85,12 @@ import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 
+/**
+ * Composes the calculator route by providing UI state, intent and cursor handlers, and a snackbar host to the screen.
+ *
+ * Collects UI state and ViewModel side effects, showing snackbar messages when requested, and renders [CalculatorScreen]
+ * with the current state and callbacks wired to the provided ViewModel.
+ */
 @Composable
 fun CalculatorRoute(
     viewModel: CalculatorViewModel = hiltViewModel()
@@ -111,6 +117,17 @@ fun CalculatorRoute(
     )
 }
 
+/**
+ * Main calculator UI composable that renders the expression input, result preview, numeric/operator keypad,
+ * exchange currency selectors (with favorites), history overlay, and a snackbar host.
+ *
+ * Requests focus for the input field shortly after composition.
+ *
+ * @param state Current UI state containing the expression, cursor position, preview/result data, available currencies, favorites, and histories.
+ * @param onIntent Callback to dispatch `CalculatorContract.Intent` actions arising from user interactions.
+ * @param onCursorMove Callback invoked with the new cursor position when the text field selection changes locally.
+ * @param snackBarHostState Snackbar host state used to show snackbars; a default instance is provided when not supplied.
+ */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun CalculatorScreen(
@@ -570,6 +587,21 @@ fun CalculatorScreen(
     }
 }
 
+/**
+ * A compact currency selector that shows the currently selected currency and opens a dialog to pick or favorite currencies.
+ *
+ * When tapped (if there are available currencies) the selector opens a dialog that lists currencies with favorite codes
+ * shown first in the order they had when the dialog opened. Selecting a currency invokes `onCurrencySelected` and closes
+ * the dialog. Tapping the favorite icon invokes `onToggleFavorite` for that currency code.
+ *
+ * @param label The label used in the dialog header (e.g., "메인 환율" or "보조 환율").
+ * @param selectedCurrency The currently selected currency, or `null` to show the placeholder text.
+ * @param availableCurrencies The list of currencies to display in the selection dialog.
+ * @param favoriteCurrencyCodes The current list of favorite currency codes; a snapshot of this list is taken when the dialog opens to preserve ordering.
+ * @param onToggleFavorite Callback invoked with a currency code when the user toggles its favorite state.
+ * @param onCurrencySelected Callback invoked with the chosen `CurrencyInfo` when the user selects a currency.
+ * @param modifier Optional `Modifier` to apply to the selector surface.
+ */
 @Composable
 private fun CalculatorExchangeCurrencySelector(
     label: String,

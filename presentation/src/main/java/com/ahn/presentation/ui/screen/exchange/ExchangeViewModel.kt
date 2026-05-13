@@ -2,11 +2,8 @@ package com.ahn.presentation.ui.screen.exchange
 
 import androidx.lifecycle.ViewModel
 import com.ahn.domain.currency.model.CurrencyInfo
-import com.ahn.domain.exchange.usecase.CalculateExchangeAmountUseCase
-import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
-import com.ahn.domain.favorite.usecase.GetFavoriteCurrenciesUseCase
-import com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase
-import com.ahn.domain.favorite.usecase.ToggleFavoriteCurrencyUseCase
+import com.ahn.domain.exchange.usecase.ExchangeUseCases
+import com.ahn.domain.favorite.usecase.FavoriteUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -15,11 +12,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ExchangeViewModel @Inject constructor(
-    private val getExchangeRateUseCase: GetExchangeRateUseCase,
-    private val getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase,
-    private val getFavoriteCurrenciesUseCase: GetFavoriteCurrenciesUseCase,
-    private val toggleFavoriteCurrencyUseCase: ToggleFavoriteCurrencyUseCase,
-    private val calculateExchangeAmountUseCase: CalculateExchangeAmountUseCase,
+    private val exchangeUseCases: ExchangeUseCases,
+    private val favoriteUseCases: FavoriteUseCases,
 ) : ViewModel(), ContainerHost<ExchangeContract.State, ExchangeContract.SideEffect> {
 
     override val container = container(
@@ -45,7 +39,7 @@ class ExchangeViewModel @Inject constructor(
             reduce {
                 state.copy(
                     fromAmount = amount,
-                    toAmount = calculateExchangeAmountUseCase(amount, state.exchangeRate)
+                    toAmount = exchangeUseCases.exchangeAmount(amount, state.exchangeRate)
                 )
             }
         }
@@ -70,7 +64,7 @@ class ExchangeViewModel @Inject constructor(
     }
 
     private fun observeFavorites() = intent {
-        getFavoriteCurrenciesUseCase().collect { codes ->
+        favoriteUseCases.getFavoriteCurrencies().collect { codes ->
             reduce { state.copy(favoriteCurrencyCodes = codes) }
         }
     }
@@ -78,7 +72,7 @@ class ExchangeViewModel @Inject constructor(
     private fun handleToggleFavorite(currencyCode: String) = intent {
         val wasFavorite = currencyCode in state.favoriteCurrencyCodes
 
-        toggleFavoriteCurrencyUseCase(currencyCode)
+        favoriteUseCases.toggleFavoriteCurrency(currencyCode)
 
         postSideEffect(
             ExchangeContract.SideEffect.ShowSnackBar(
@@ -92,7 +86,7 @@ class ExchangeViewModel @Inject constructor(
         try {
             reduce { state.copy(isLoading = true) }
 
-            val currencies = getSupportedCurrenciesUseCase()
+            val currencies = exchangeUseCases.getSupportedCurrencies()
             val krw = currencies.find { it.code == "KRW" }
             val usd = currencies.find { it.code == "USD" }
 
@@ -147,7 +141,7 @@ class ExchangeViewModel @Inject constructor(
             reduce { state.copy(isLoading = true) }
 
             // 여기서 일시 중단(suspend)되어 API 응답을 기다림 (동시성 꼬임 방지)
-            val rate = getExchangeRateUseCase(
+            val rate = exchangeUseCases.getExchangeRate(
                 from = requestedFrom,
                 to = requestedTo,
             )
@@ -160,7 +154,7 @@ class ExchangeViewModel @Inject constructor(
                 state.copy(
                     exchangeRate = rate,
                     isLoading = false,
-                    toAmount = calculateExchangeAmountUseCase(state.fromAmount, rate)
+                    toAmount = exchangeUseCases.exchangeAmount(state.fromAmount, rate)
                 )
             }
         } catch (e: Exception) {

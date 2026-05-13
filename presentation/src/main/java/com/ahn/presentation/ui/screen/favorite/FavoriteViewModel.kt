@@ -3,8 +3,8 @@ package com.ahn.presentation.ui.screen.favorite
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ahn.domain.currency.model.CurrencyInfo
-import com.ahn.domain.favorite.usecase.BuildFavoriteRatesUseCase
-import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
+import com.ahn.domain.exchange.usecase.ExchangeUseCases
+import com.ahn.domain.favorite.usecase.FavoriteUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,8 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FavoriteViewModel @Inject constructor(
-    private val getExchangeRateUseCase: GetExchangeRateUseCase,
-    private val buildFavoriteRatesUseCase: BuildFavoriteRatesUseCase,
+    private val exchangeUseCases: ExchangeUseCases,
+    private val favoriteUseCases: FavoriteUseCases,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(FavoriteContract.State())
@@ -63,7 +63,7 @@ class FavoriteViewModel @Inject constructor(
                 if (byCode[code] == null) continue
 
                 runCatching {
-                    getExchangeRateUseCase(base.code, code)
+                    exchangeUseCases.getExchangeRate(base.code, code)
                 }.onSuccess { rate ->
                     nextRates[code] = rate
                 }
@@ -82,7 +82,7 @@ class FavoriteViewModel @Inject constructor(
     }
 
     private fun rebuildItems(finishLoading: Boolean = false) {
-        val favoriteRates = buildFavoriteRatesUseCase(
+        val favoriteRates = favoriteUseCases.buildFavoriteRates(
             baseCurrency = currentBaseCurrency,
             baseAmount = currentBaseAmount,
             favoriteCurrencyCodes = currentFavoriteCodes,

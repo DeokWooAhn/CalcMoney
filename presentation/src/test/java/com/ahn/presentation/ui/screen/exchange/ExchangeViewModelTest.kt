@@ -2,9 +2,13 @@ package com.ahn.presentation.ui.screen.exchange
 
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.domain.exchange.usecase.CalculateExchangeAmountUseCase
+import com.ahn.domain.exchange.usecase.ConvertExchangeAmountUseCase
+import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
-import com.ahn.domain.favorite.usecase.GetFavoriteCurrenciesUseCase
 import com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase
+import com.ahn.domain.favorite.usecase.BuildFavoriteRatesUseCase
+import com.ahn.domain.favorite.usecase.FavoriteUseCases
+import com.ahn.domain.favorite.usecase.GetFavoriteCurrenciesUseCase
 import com.ahn.domain.favorite.usecase.ToggleFavoriteCurrencyUseCase
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
@@ -38,13 +42,21 @@ class ExchangeViewModelTest : BehaviorSpec({
     val getFavoriteCurrenciesUseCase = mockk<GetFavoriteCurrenciesUseCase>()
     val toggleFavoriteCurrencyUseCase = mockk<ToggleFavoriteCurrencyUseCase>()
     val calculateExchangeAmountUseCase = mockk<CalculateExchangeAmountUseCase>()
+    val convertExchangeAmountUseCase = mockk<ConvertExchangeAmountUseCase>()
+    val buildFavoriteRatesUseCase = mockk<BuildFavoriteRatesUseCase>()
 
     fun createViewModel() = ExchangeViewModel(
-        getExchangeRateUseCase,
-        getSupportedCurrenciesUseCase,
-        getFavoriteCurrenciesUseCase,
-        toggleFavoriteCurrencyUseCase,
-        calculateExchangeAmountUseCase,
+        exchangeUseCases = ExchangeUseCases(
+            exchangeAmount = calculateExchangeAmountUseCase,
+            convertExchangeAmount = convertExchangeAmountUseCase,
+            getExchangeRate = getExchangeRateUseCase,
+            getSupportedCurrencies = getSupportedCurrenciesUseCase,
+        ),
+        favoriteUseCases = FavoriteUseCases(
+            buildFavoriteRates = buildFavoriteRatesUseCase,
+            getFavoriteCurrencies = getFavoriteCurrenciesUseCase,
+            toggleFavoriteCurrency = toggleFavoriteCurrencyUseCase,
+        ),
     )
 
     beforeEach {

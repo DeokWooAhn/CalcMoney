@@ -28,6 +28,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -88,14 +90,14 @@ fun CalculatorRoute(
     viewModel: CalculatorViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
             is CalculatorContract.SideEffect.ShowSnackBar -> {
                 scope.launch {
-                    snackbarHostState.showSnackbarImmediately(sideEffect.message)
+                    snackBarHostState.showSnackbarImmediately(sideEffect.message)
                 }
             }
         }
@@ -105,7 +107,7 @@ fun CalculatorRoute(
         state = state,
         onIntent = viewModel::processIntent,
         onCursorMove = viewModel::updateCursorPosition,
-        snackBarHostState = snackbarHostState
+        snackBarHostState = snackBarHostState
     )
 }
 
@@ -157,6 +159,10 @@ fun CalculatorScreen(
                     label = "메인 환율",
                     selectedCurrency = state.mainExchangeCurrency,
                     availableCurrencies = state.availableCurrencies,
+                    favoriteCurrencyCodes = state.favoriteCurrencyCodes,
+                    onToggleFavorite = {
+                        onIntent(CalculatorContract.Intent.ToggleFavorite(it))
+                    },
                     onCurrencySelected = {
                         onIntent(CalculatorContract.Intent.SelectMainExchangeCurrency(it))
                     },
@@ -186,6 +192,10 @@ fun CalculatorScreen(
                     label = "보조 환율",
                     selectedCurrency = state.selectedExchangeCurrency,
                     availableCurrencies = state.availableCurrencies,
+                    favoriteCurrencyCodes = state.favoriteCurrencyCodes,
+                    onToggleFavorite = {
+                        onIntent(CalculatorContract.Intent.ToggleFavorite(it))
+                    },
                     onCurrencySelected = {
                         onIntent(CalculatorContract.Intent.SelectExchangeCurrency(it))
                     },
@@ -565,10 +575,14 @@ private fun CalculatorExchangeCurrencySelector(
     label: String,
     selectedCurrency: CurrencyInfo?,
     availableCurrencies: List<CurrencyInfo>,
+    favoriteCurrencyCodes: List<String>,
+    onToggleFavorite: (String) -> Unit,
     onCurrencySelected: (CurrencyInfo) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showDialog by remember { mutableStateOf(false) }
+
+    var favoriteCodesSnapshot by remember { mutableStateOf<List<String>>(emptyList()) }
 
     Surface(
         modifier = modifier,
@@ -577,7 +591,10 @@ private fun CalculatorExchangeCurrencySelector(
     ) {
         Row(
             modifier = Modifier
-                .clickable(enabled = availableCurrencies.isNotEmpty()) { showDialog = true }
+                .clickable(enabled = availableCurrencies.isNotEmpty()) {
+                    favoriteCodesSnapshot = favoriteCurrencyCodes
+                    showDialog = true
+                }
                 .padding(horizontal = 15.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
@@ -596,6 +613,20 @@ private fun CalculatorExchangeCurrencySelector(
     }
 
     if (showDialog) {
+        val orderMap = remember(favoriteCodesSnapshot) {
+            favoriteCodesSnapshot.withIndex().associate { it.value to it.index }
+        }
+
+        val sortedCurrencies = remember(availableCurrencies, orderMap) {
+            val favorites = availableCurrencies
+                .filter { it.code in orderMap }
+                .sortedBy { orderMap[it.code] }
+
+            val others = availableCurrencies.filter { it.code !in orderMap }
+
+            favorites + others
+        }
+
         Dialog(onDismissRequest = { showDialog = false }) {
             Surface(
                 shape = RoundedCornerShape(16.dp),
@@ -616,7 +647,7 @@ private fun CalculatorExchangeCurrencySelector(
                     HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
 
                     LazyColumn {
-                        items(availableCurrencies, key = { it.code }) { currency ->
+                        items(sortedCurrencies, key = { it.code }) { currency ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -624,13 +655,13 @@ private fun CalculatorExchangeCurrencySelector(
                                         onCurrencySelected(currency)
                                         showDialog = false
                                     }
-                                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                                    .padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(text = currency.flagEmoji, fontSize = 24.sp)
 
-                                Column {
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = currency.displayCode,
                                         fontWeight = FontWeight.SemiBold,
@@ -639,6 +670,32 @@ private fun CalculatorExchangeCurrencySelector(
                                     Text(
                                         text = currency.name,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        onToggleFavorite(currency.code)
+                                    },
+                                    modifier = Modifier.size(40.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = if (currency.code in favoriteCurrencyCodes) {
+                                            Icons.Default.Favorite
+                                        } else {
+                                            Icons.Default.FavoriteBorder
+                                        },
+                                        contentDescription = if (currency.code in favoriteCurrencyCodes) {
+                                            "즐겨찾기 해제"
+                                        } else {
+                                            "즐겨찾기 추가"
+                                        },
+                                        tint = if (currency.code in favoriteCurrencyCodes) {
+                                            Color.Red
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                        modifier = Modifier.size(22.dp),
                                     )
                                 }
                             }

@@ -48,12 +48,6 @@ class CalculatorHistoryDataSource @Inject constructor(
         }
     }
 
-    suspend fun saveHistories(histories: List<CalculatorHistory>) {
-        context.calculatorHistoryDataStore.edit { prefs ->
-            prefs[key] = encodeHistories(histories)
-        }
-    }
-
     suspend fun clearHistories() {
         context.calculatorHistoryDataStore.edit { prefs ->
             prefs[key] = ""

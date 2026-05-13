@@ -17,6 +17,7 @@ interface CalculatorContract {
         val mainExchangeCurrency: CurrencyInfo? = null,
         val selectedExchangeCurrency: CurrencyInfo? = null,
         val availableCurrencies: List<CurrencyInfo> = emptyList(),
+        val favoriteCurrencyCodes: List<String> = emptyList(),
         val exchangeRate: Double = 0.0,
         val convertedExpressionAmount: String = "",
         val convertedPreviewAmount: String = "",
@@ -32,6 +33,7 @@ interface CalculatorContract {
         data class Input(val token: CalculatorToken) : Intent
         data class SelectMainExchangeCurrency(val currency: CurrencyInfo) : Intent
         data class SelectExchangeCurrency(val currency: CurrencyInfo) : Intent
+        data class ToggleFavorite(val currencyCode: String) : Intent
         object SwapExchangeCurrencies : Intent
         object Delete : Intent
         object Clear : Intent

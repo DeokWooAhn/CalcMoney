@@ -17,10 +17,6 @@ class CalculatorHistoryRepositoryImpl @Inject constructor(
         dataSource.addHistory(history)
     }
 
-    override suspend fun saveHistories(histories: List<CalculatorHistory>) {
-        dataSource.saveHistories(histories)
-    }
-
     override suspend fun clearHistories() {
         dataSource.clearHistories()
     }

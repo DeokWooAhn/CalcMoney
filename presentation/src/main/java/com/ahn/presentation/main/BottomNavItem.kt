@@ -1,9 +1,11 @@
 package com.ahn.presentation.main
 
+import androidx.annotation.StringRes
 import com.ahn.presentation.R
 
 sealed class BottomNavItem(
     val route: String,
+    @param:StringRes
     val titleRes: Int,
     val icon: Int,
     val selectedIcon: Int

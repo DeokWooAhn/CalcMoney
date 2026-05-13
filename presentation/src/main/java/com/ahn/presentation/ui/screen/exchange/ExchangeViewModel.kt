@@ -124,6 +124,7 @@ class ExchangeViewModel @Inject constructor(
                 performFetchExchangeRate()
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             reduce { state.copy(isLoading = false) }
             postSideEffect(
                 ExchangeContract.SideEffect.ShowSnackBar(
@@ -176,6 +177,7 @@ class ExchangeViewModel @Inject constructor(
                 )
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             reduce { state.copy(isLoading = false) }
             postSideEffect(
                 ExchangeContract.SideEffect.ShowSnackBar(

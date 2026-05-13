@@ -264,7 +264,7 @@ private fun FavoriteRateCard(
                 }
                 IconButton(
                     onClick = onRemoveFavorite,
-                    modifier = Modifier.requiredSize(40.dp)
+                    modifier = Modifier.requiredSize(48.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Favorite,

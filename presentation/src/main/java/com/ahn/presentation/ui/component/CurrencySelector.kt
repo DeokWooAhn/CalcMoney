@@ -30,12 +30,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.presentation.R
 
 @Composable
 fun CurrencySelector(
@@ -81,7 +83,7 @@ fun CurrencySelector(
         }
     } ?: run {
         Text(
-            text = "통화 선택",
+            text = stringResource(R.string.select_currency),
             color = textColor,
             modifier = modifier.padding(12.dp, 8.dp)
         )
@@ -136,7 +138,7 @@ private fun CurrencyPickerDialog(
         ) {
             Column {
                 Text(
-                    text = "통화 선택",
+                    text = stringResource(R.string.select_currency),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -205,7 +207,11 @@ private fun CurrencyItem(
         IconButton(onClick = onToggleFavorite, modifier = Modifier.size(40.dp)) {
             Icon(
                 imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                contentDescription = if (isFavorite) "즐겨찾기 해제" else "즐겨찾기 추가",
+                contentDescription = if (isFavorite) {
+                    stringResource(R.string.remove_favorite)
+                } else {
+                    stringResource(R.string.add_favorite)
+                },
                 tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(22.dp)
             )
@@ -217,9 +223,9 @@ private fun CurrencyItem(
 @Composable
 fun CurrencySelectorPreview() {
     val sampleCurrencies = listOf(
-        CurrencyInfo("KRW", "KRW", "대한민국 원", "🇰🇷"),
-        CurrencyInfo("USD", "USD", "미국 달러", "🇺🇸"),
-        CurrencyInfo("JPY", "JPY", "일본 엔", "🇯🇵"),
+        CurrencyInfo("KRW", "KRW", stringResource(R.string.preview_currency_krw), "🇰🇷"),
+        CurrencyInfo("USD", "USD", stringResource(R.string.preview_currency_usd), "🇺🇸"),
+        CurrencyInfo("JPY", "JPY", stringResource(R.string.preview_currency_jpy), "🇯🇵"),
     )
 
     var selected by remember { mutableStateOf(sampleCurrencies[0]) }
@@ -249,7 +255,7 @@ fun CurrencyItemPreview() {
             currency = CurrencyInfo(
                 "KRW",
                 "KRW",
-                "대한민국 원",
+                stringResource(R.string.preview_currency_krw),
                 "🇰🇷"
             ),
             isSelected = true,
@@ -261,7 +267,7 @@ fun CurrencyItemPreview() {
             currency = CurrencyInfo(
                 "USD",
                 "USD",
-                "미국 달러",
+                stringResource(R.string.preview_currency_usd),
                 "🇺🇸"
             ),
             isSelected = false,

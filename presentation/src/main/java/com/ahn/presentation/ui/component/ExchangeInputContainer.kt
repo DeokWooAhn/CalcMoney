@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -24,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.presentation.R
 
 @Composable
 fun ExchangeInputContainer(
@@ -101,14 +103,19 @@ fun ExchangeInputContainerPreview() {
     MaterialTheme {
         ExchangeInputContainer(
             amount = "1000",
-            currency = CurrencyInfo(code = "USD", displayCode = "USD", name = "미국 달러", flagEmoji = "🇺🇸"),
+            currency = CurrencyInfo(
+                code = "USD",
+                displayCode = "USD",
+                name = stringResource(R.string.preview_currency_usd),
+                flagEmoji = "🇺🇸",
+            ),
             onAmountChange = {},
             onCurrencyClick = {},
             availableCurrencies = emptyList(),
             favoriteCurrencyCodes = emptyList(),
             onToggleFavorite = {},
             isEditable = true,
-            label = "보낼 금액"
+            label = stringResource(R.string.preview_send_amount)
         )
     }
 }

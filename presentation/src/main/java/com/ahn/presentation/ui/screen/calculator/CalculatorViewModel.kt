@@ -3,38 +3,34 @@ package com.ahn.presentation.ui.screen.calculator
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.ahn.domain.calculator.model.CalculatorHistory
-import com.ahn.domain.calculator.usecase.AddCalculatorHistoryUseCase
+import com.ahn.domain.calculator.usecase.CalculatorUseCases
 import com.ahn.domain.currency.model.CurrencyInfo
-import com.ahn.domain.calculator.usecase.CalculateExpressionUseCase
-import com.ahn.domain.calculator.usecase.ClearCalculatorHistoriesUseCase
-import com.ahn.domain.exchange.usecase.ConvertExchangeAmountUseCase
-import com.ahn.domain.calculator.usecase.ExtractRepeatOperationUseCase
-import com.ahn.domain.calculator.usecase.GetCalculatorHistoriesUseCase
-import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
-import com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase
+import com.ahn.domain.exchange.usecase.ExchangeUseCases
+import com.ahn.domain.favorite.usecase.FavoriteUseCases
+import com.ahn.presentation.R
+import com.ahn.presentation.util.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.combine
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.container
+import java.util.Currency
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
-    private val calculateExpressionUseCase: CalculateExpressionUseCase,
-    private val getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase,
-    private val getExchangeRateUseCase: GetExchangeRateUseCase,
-    private val convertExchangeAmountUseCase: ConvertExchangeAmountUseCase,
-    private val extractRepeatOperationUseCase: ExtractRepeatOperationUseCase,
-    private val getCalculatorHistoriesUseCase: GetCalculatorHistoriesUseCase,
-    private val addCalculatorHistoryUseCase: AddCalculatorHistoryUseCase,
-    private val clearCalculatorHistoriesUseCase: ClearCalculatorHistoriesUseCase,
+    private val calculatorUseCases: CalculatorUseCases,
+    private val exchangeUseCases: ExchangeUseCases,
+    private val favoriteUseCases: FavoriteUseCases,
 ) : ViewModel(), ContainerHost<CalculatorContract.State, CalculatorContract.SideEffect> {
 
     override val container = container(
         initialState = CalculatorContract.State()
     ) {
         performLoadCurrencies()
-        observeHistories()
+        observeSavedData()
     }
 
     companion object {
@@ -52,19 +48,40 @@ class CalculatorViewModel @Inject constructor(
     fun processIntent(intent: CalculatorContract.Intent) {
         when (intent) {
             is CalculatorContract.Intent.Input -> handleInput(intent.token)
-            is CalculatorContract.Intent.SelectExchangeCurrency -> handleSelectExchangeCurrency(
-                intent.currency
-            )
+            is CalculatorContract.Intent.SelectExchangeCurrency -> handleSelectExchangeCurrency(intent.currency)
+            is CalculatorContract.Intent.SelectMainExchangeCurrency -> handleSelectMainExchangeCurrency(intent.currency)
+
+            is CalculatorContract.Intent.ToggleFavorite -> handleToggleFavorite(intent.currencyCode)
 
             is CalculatorContract.Intent.Delete -> handleDelete()
             is CalculatorContract.Intent.Clear -> handleClear()
             is CalculatorContract.Intent.Calculate -> handleCalculate()
-            is CalculatorContract.Intent.SelectMainExchangeCurrency -> handleSelectMainExchangeCurrency(
-                intent.currency
-            )
 
             CalculatorContract.Intent.SwapExchangeCurrencies -> intent { performSwapExchangeCurrencies() }
             CalculatorContract.Intent.ClearHistory -> handleClearHistory()
+        }
+    }
+
+    private fun handleToggleFavorite(currencyCode: String) = intent {
+        val wasFavorite = currencyCode in state.favoriteCurrencyCodes
+
+        runCatching {
+            favoriteUseCases.toggleFavoriteCurrency(currencyCode)
+        }.onSuccess {
+            postSideEffect(
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(
+                        if (wasFavorite) R.string.favorite_removed else R.string.favorite_added
+                    )
+                )
+            )
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+            postSideEffect(
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(R.string.favorite_change_failed)
+                )
+            )
         }
     }
 
@@ -84,7 +101,10 @@ class CalculatorViewModel @Inject constructor(
         if (!canInsertNumber(expression, cursorPosition)) {
             postSideEffect(
                 CalculatorContract.SideEffect.ShowSnackBar(
-                    "숫자는 최대 $MAX_NUMBER_LENGTH 자리까지 입력 가능합니다."
+                    UiText.StringResource(
+                        R.string.max_number_length_error,
+                        listOf(MAX_NUMBER_LENGTH),
+                    )
                 )
             )
             return@intent
@@ -216,22 +236,25 @@ class CalculatorViewModel @Inject constructor(
                 expression
             }
 
-        val result = calculateExpressionUseCase.calculate(expressionToCalculate)
+        val result = calculatorUseCases.calculateExpression.calculate(expressionToCalculate)
 
         if (result == "Error") {
             reduce {
-                state.copy(isError = true, errorMessage = "계산 오류")
+                state.copy(
+                    isError = true,
+                    errorMessage = UiText.StringResource(R.string.calculator_error),
+                )
             }
 
             postSideEffect(
                 CalculatorContract.SideEffect.ShowSnackBar(
-                    "계산할 수 없는 수식입니다."
+                    UiText.StringResource(R.string.invalid_expression)
                 )
             )
             return@intent
         }
 
-        val nextRepeatOperation = extractRepeatOperationUseCase(expressionToCalculate)
+        val nextRepeatOperation = calculatorUseCases.extractRepeatOperation(expressionToCalculate)
             ?: state.repeatOperation
 
         val historyItem = CalculatorContract.HistoryItem(
@@ -242,16 +265,19 @@ class CalculatorViewModel @Inject constructor(
         val nextHistories = (state.histories + historyItem).takeLast(MAX_HISTORY_COUNT)
 
         val isHistorySaved = runCatching {
-            addCalculatorHistoryUseCase(
+            calculatorUseCases.addHistory(
                 CalculatorHistory(
                     expression = historyItem.expression,
                     result = historyItem.result,
                 )
             )
         }.onFailure { e ->
-            Log.e("CalculatorViewModel", "계산 기록 저장 실패", e)
+            if (e is CancellationException) throw e
+            Log.e("CalculatorViewModel", "Failed to save calculator history.", e)
             postSideEffect(
-                CalculatorContract.SideEffect.ShowSnackBar("계산 기록을 저장하지 못했습니다.")
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(R.string.calculator_history_save_failed)
+                )
             )
         }.isSuccess
 
@@ -274,9 +300,14 @@ class CalculatorViewModel @Inject constructor(
 
     private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.performLoadCurrencies() {
         try {
-            val currencies = getSupportedCurrenciesUseCase()
-            val mainCurrency = currencies.find { it.code == "KRW" } ?: currencies.firstOrNull()
-            val subCurrency = currencies.find { it.code == "USD" }
+            val currencies = exchangeUseCases.getSupportedCurrencies()
+            val deviceCurrencyCode = getDeviceCurrencyCode()
+
+            val mainCurrency = currencies.find { it.code == deviceCurrencyCode }
+                ?: currencies.find { it.code == "KRW" }
+                ?: currencies.firstOrNull()
+
+            val subCurrency = currencies.find { it.code == "USD" && it.code != mainCurrency?.code }
                 ?: currencies.firstOrNull { it.code != mainCurrency?.code }
 
             reduce {
@@ -289,16 +320,28 @@ class CalculatorViewModel @Inject constructor(
 
             performFetchExchangeRate()
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             postSideEffect(
-                CalculatorContract.SideEffect.ShowSnackBar("통화 목록을 불러올 수 없습니다: ${e.message}")
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(
+                        R.string.load_currency_list_failed,
+                        listOf(e.message.orEmpty()),
+                    )
+                )
             )
 
             Log.e(
                 "CalculatorViewModel",
-                "통화 목록을 불러올 수 없습니다.",
+                "Failed to load currency list.",
                 e
             )
         }
+    }
+
+    private fun getDeviceCurrencyCode(): String {
+        return runCatching {
+            Currency.getInstance(Locale.getDefault()).currencyCode
+        }.getOrDefault("KRW")
     }
 
     private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.performFetchExchangeRate() {
@@ -309,7 +352,7 @@ class CalculatorViewModel @Inject constructor(
             val rate = if (from.code == to.code) {
                 1.0
             } else {
-                getExchangeRateUseCase(from = from.code, to = to.code)
+                exchangeUseCases.getExchangeRate(from = from.code, to = to.code)
             }
 
             reduce {
@@ -317,7 +360,12 @@ class CalculatorViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             postSideEffect(
-                CalculatorContract.SideEffect.ShowSnackBar("환율 정보를 가져올 수 없습니다: ${e.message}")
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(
+                        R.string.load_exchange_rate_failed,
+                        listOf(e.message.orEmpty()),
+                    )
+                )
             )
         }
     }
@@ -390,7 +438,7 @@ class CalculatorViewModel @Inject constructor(
             return ""
         }
 
-        val result = calculateExpressionUseCase.calculate(expression)
+        val result = calculatorUseCases.calculateExpression.calculate(expression)
         return if (result == "Error") "" else result
     }
 
@@ -418,12 +466,12 @@ class CalculatorViewModel @Inject constructor(
 
     private fun CalculatorContract.State.withConvertedAmounts(): CalculatorContract.State {
         return copy(
-            convertedExpressionAmount = convertExchangeAmountUseCase.convertExpression(
+            convertedExpressionAmount = exchangeUseCases.convertExchangeAmount.convertExpression(
                 expression = expression,
                 rate = exchangeRate,
                 currencyCode = selectedExchangeCurrency?.code
             ),
-            convertedPreviewAmount = convertExchangeAmountUseCase.convertSingleAmount(
+            convertedPreviewAmount = exchangeUseCases.convertExchangeAmount.convertSingleAmount(
                 text = previewResult,
                 rate = exchangeRate,
                 currencyCode = selectedExchangeCurrency?.code
@@ -463,19 +511,26 @@ class CalculatorViewModel @Inject constructor(
 
     private fun handleClearHistory() = intent {
         runCatching {
-            clearCalculatorHistoriesUseCase()
+            calculatorUseCases.clearHistory()
         }.onSuccess {
             reduce { state.copy(histories = emptyList()) }
         }.onFailure { e ->
-            Log.e("CalculatorViewModel", "계산 기록 삭제 실패", e)
+            Log.e("CalculatorViewModel", "Failed to clear calculator history.", e)
             postSideEffect(
-                CalculatorContract.SideEffect.ShowSnackBar("계산 기록을 삭제하지 못했습니다.")
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(R.string.calculator_history_delete_failed)
+                )
             )
         }
     }
 
-    private fun observeHistories() = intent {
-        getCalculatorHistoriesUseCase().collect { histories ->
+    private fun observeSavedData() = intent {
+        combine(
+            calculatorUseCases.getHistory(),
+            favoriteUseCases.getFavoriteCurrencies(),
+        ) { histories, favoriteCodes ->
+            histories to favoriteCodes
+        }.collect { (histories, favoriteCodes) ->
             reduce {
                 state.copy(
                     histories = histories.map {
@@ -483,7 +538,8 @@ class CalculatorViewModel @Inject constructor(
                             expression = it.expression,
                             result = it.result,
                         )
-                    }
+                    },
+                    favoriteCurrencyCodes = favoriteCodes,
                 )
             }
         }

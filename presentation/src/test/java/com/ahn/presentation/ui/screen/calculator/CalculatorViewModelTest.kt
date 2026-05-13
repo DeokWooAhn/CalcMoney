@@ -3,12 +3,19 @@ package com.ahn.presentation.ui.screen.calculator
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.domain.calculator.usecase.AddCalculatorHistoryUseCase
 import com.ahn.domain.calculator.usecase.CalculateExpressionUseCase
+import com.ahn.domain.calculator.usecase.CalculatorUseCases
 import com.ahn.domain.calculator.usecase.ClearCalculatorHistoriesUseCase
+import com.ahn.domain.exchange.usecase.CalculateExchangeAmountUseCase
 import com.ahn.domain.exchange.usecase.ConvertExchangeAmountUseCase
 import com.ahn.domain.calculator.usecase.ExtractRepeatOperationUseCase
 import com.ahn.domain.calculator.usecase.GetCalculatorHistoriesUseCase
+import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
 import com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase
+import com.ahn.domain.favorite.usecase.BuildFavoriteRatesUseCase
+import com.ahn.domain.favorite.usecase.FavoriteUseCases
+import com.ahn.domain.favorite.usecase.GetFavoriteCurrenciesUseCase
+import com.ahn.domain.favorite.usecase.ToggleFavoriteCurrencyUseCase
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.clearAllMocks
@@ -25,6 +32,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.orbitmvi.orbit.test.OrbitTestContext
 import org.orbitmvi.orbit.test.test
+import com.ahn.presentation.R
+import com.ahn.presentation.util.UiText
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CalculatorViewModelTest : BehaviorSpec({
@@ -40,16 +49,31 @@ class CalculatorViewModelTest : BehaviorSpec({
     val getCalculatorHistoriesUseCase = mockk<GetCalculatorHistoriesUseCase>()
     val addCalculatorHistoryUseCase = mockk<AddCalculatorHistoryUseCase>()
     val clearCalculatorHistoriesUseCase = mockk<ClearCalculatorHistoriesUseCase>()
+    val calculateExchangeAmountUseCase = mockk<CalculateExchangeAmountUseCase>()
+    val getFavoriteCurrenciesUseCase = mockk<GetFavoriteCurrenciesUseCase>()
+    val toggleFavoriteCurrencyUseCase = mockk<ToggleFavoriteCurrencyUseCase>()
+    val buildFavoriteRatesUseCase = mockk<BuildFavoriteRatesUseCase>()
+    val favoriteCurrencyCodesFlow = MutableStateFlow<List<String>>(emptyList())
 
     fun createViewModel() = CalculatorViewModel(
-        calculateExpressionUseCase = calculateExpressionUseCase,
-        getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
-        getExchangeRateUseCase = getExchangeRateUseCase,
-        convertExchangeAmountUseCase = convertExchangeAmountUseCase,
-        extractRepeatOperationUseCase = extractRepeatOperationUseCase,
-        getCalculatorHistoriesUseCase = getCalculatorHistoriesUseCase,
-        addCalculatorHistoryUseCase = addCalculatorHistoryUseCase,
-        clearCalculatorHistoriesUseCase = clearCalculatorHistoriesUseCase,
+        calculatorUseCases = CalculatorUseCases(
+            addHistory = addCalculatorHistoryUseCase,
+            calculateExpression = calculateExpressionUseCase,
+            clearHistory = clearCalculatorHistoriesUseCase,
+            extractRepeatOperation = extractRepeatOperationUseCase,
+            getHistory = getCalculatorHistoriesUseCase,
+        ),
+        exchangeUseCases = ExchangeUseCases(
+            exchangeAmount = calculateExchangeAmountUseCase,
+            convertExchangeAmount = convertExchangeAmountUseCase,
+            getExchangeRate = getExchangeRateUseCase,
+            getSupportedCurrencies = getSupportedCurrenciesUseCase,
+        ),
+        favoriteUseCases = FavoriteUseCases(
+            buildFavoriteRates = buildFavoriteRatesUseCase,
+            getFavoriteCurrencies = getFavoriteCurrenciesUseCase,
+            toggleFavoriteCurrency = toggleFavoriteCurrencyUseCase,
+        ),
     )
 
     val onePlusOneHistory = listOf(
@@ -108,6 +132,8 @@ class CalculatorViewModelTest : BehaviorSpec({
         clearAllMocks()
 
         every { calculateExpressionUseCase.calculate(any()) } returns "0"
+        coEvery { getSupportedCurrenciesUseCase() } returns emptyList()
+        coEvery { getExchangeRateUseCase(any(), any()) } returns 1.0
 
         every {
             convertExchangeAmountUseCase.convertExpression(any(), any(), any())
@@ -120,6 +146,9 @@ class CalculatorViewModelTest : BehaviorSpec({
         every { getCalculatorHistoriesUseCase() } returns MutableStateFlow(emptyList())
         coEvery { addCalculatorHistoryUseCase(any()) } returns Unit
         coEvery { clearCalculatorHistoriesUseCase() } returns Unit
+        favoriteCurrencyCodesFlow.value = emptyList()
+        every { getFavoriteCurrenciesUseCase() } returns favoriteCurrencyCodesFlow
+        coEvery { toggleFavoriteCurrencyUseCase(any()) } returns Unit
 
     }
 
@@ -285,6 +314,88 @@ class CalculatorViewModelTest : BehaviorSpec({
 
                         coVerify(exactly = 1) { getExchangeRateUseCase("KRW", "USD") }
                         coVerify(exactly = 1) { getExchangeRateUseCase("USD", "KRW") }
+                    }
+                }
+            }
+        }
+    }
+
+    Given("즐겨찾기 통화 목록이 변경되면") {
+        When("GetFavoriteCurrenciesUseCase가 새 목록을 방출하면") {
+            Then("계산기 상태의 favoriteCurrencyCodes에 반영되어야 한다") {
+                runTest {
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        favoriteCurrencyCodesFlow.value = listOf("USD", "JPY")
+
+                        expectState {
+                            copy(favoriteCurrencyCodes = listOf("USD", "JPY"))
+                        }
+
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+    }
+
+    Given("즐겨찾기 되지 않은 통화가 있을 때") {
+        When("해당 통화의 하트 버튼을 누르면") {
+            Then("즐겨찾기 토글 UseCase를 호출하고 추가 스낵바를 보여줘야 한다") {
+                runTest {
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.ToggleFavorite("USD")
+                        )
+
+                        expectSideEffect(
+                            CalculatorContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_added))
+                        )
+
+                        coVerify(exactly = 1) {
+                            toggleFavoriteCurrencyUseCase("USD")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Given("이미 즐겨찾기 된 통화가 있을 때") {
+        When("해당 통화의 하트 버튼을 누르면") {
+            Then("즐겨찾기 토글 UseCase를 호출하고 해제 스낵바를 보여줘야 한다") {
+                runTest {
+                    favoriteCurrencyCodesFlow.value = listOf("USD")
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+                        expectState {
+                            copy(favoriteCurrencyCodes = listOf("USD"))
+                        }
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.ToggleFavorite("USD")
+                        )
+
+                        expectSideEffect(
+                            CalculatorContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_removed))
+                        )
+
+                        coVerify(exactly = 1) {
+                            toggleFavoriteCurrencyUseCase("USD")
+                        }
+
+                        cancelAndIgnoreRemainingItems()
                     }
                 }
             }
@@ -644,12 +755,12 @@ class CalculatorViewModelTest : BehaviorSpec({
 
                         // 3. 상태 검증 (에러 상태로 변경됨)
                         expectState {
-                            copy(isError = true, errorMessage = "계산 오류")
+                            copy(isError = true, errorMessage = UiText.StringResource(R.string.calculator_error))
                         }
 
                         // 4. Turbine 없이 Orbit 내장 기능으로 SideEffect 검증
                         expectSideEffect(
-                            CalculatorContract.SideEffect.ShowSnackBar("계산할 수 없는 수식입니다.")
+                            CalculatorContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.invalid_expression))
                         )
                     }
                 }

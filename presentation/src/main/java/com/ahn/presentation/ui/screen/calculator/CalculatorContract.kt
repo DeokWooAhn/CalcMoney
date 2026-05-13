@@ -1,6 +1,7 @@
 package com.ahn.presentation.ui.screen.calculator
 
 import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.presentation.util.UiText
 
 interface CalculatorContract {
 
@@ -17,6 +18,7 @@ interface CalculatorContract {
         val mainExchangeCurrency: CurrencyInfo? = null,
         val selectedExchangeCurrency: CurrencyInfo? = null,
         val availableCurrencies: List<CurrencyInfo> = emptyList(),
+        val favoriteCurrencyCodes: List<String> = emptyList(),
         val exchangeRate: Double = 0.0,
         val convertedExpressionAmount: String = "",
         val convertedPreviewAmount: String = "",
@@ -24,7 +26,7 @@ interface CalculatorContract {
         val repeatOperation: String? = null, // 마지막 연산자 저장 (반복 계산용)
         val histories: List<HistoryItem> = emptyList(),
         val isError: Boolean = false,
-        val errorMessage: String? = null
+        val errorMessage: UiText? = null
     )
 
     // 2. 의도: 추상화된 입력
@@ -32,6 +34,7 @@ interface CalculatorContract {
         data class Input(val token: CalculatorToken) : Intent
         data class SelectMainExchangeCurrency(val currency: CurrencyInfo) : Intent
         data class SelectExchangeCurrency(val currency: CurrencyInfo) : Intent
+        data class ToggleFavorite(val currencyCode: String) : Intent
         object SwapExchangeCurrencies : Intent
         object Delete : Intent
         object Clear : Intent
@@ -41,7 +44,7 @@ interface CalculatorContract {
 
     // 3. 부수 효과: 일회성 이벤트
     sealed interface SideEffect {
-        data class ShowSnackBar(val message: String) : SideEffect
+        data class ShowSnackBar(val message: UiText) : SideEffect
     }
 }
 

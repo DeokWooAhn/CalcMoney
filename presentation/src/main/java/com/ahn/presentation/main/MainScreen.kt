@@ -26,7 +26,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ahn.presentation.R
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -38,6 +40,7 @@ fun MainScreen(
     navController: NavHostController = rememberNavController()
 ) {
     val context = LocalContext.current
+    val backPressExitMessage = stringResource(R.string.back_press_exit)
 
     val statusBarPadding = WindowInsets
         .statusBars
@@ -66,7 +69,7 @@ fun MainScreen(
             (context as? Activity)?.finish()
         } else {
             lastBackPressedTime = currentTime
-            Toast.makeText(context, "뒤로가기를 한 번 더 누르면 앱이 종료됩니다.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, backPressExitMessage, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -89,7 +92,7 @@ fun MainScreen(
                         icon = {
                             Icon(
                                 painterResource(if (selected) item.selectedIcon else item.icon),
-                                contentDescription = item.title,
+                                contentDescription = stringResource(item.titleRes),
                                 tint = MaterialTheme.colorScheme.onBackground
                             )
                         },

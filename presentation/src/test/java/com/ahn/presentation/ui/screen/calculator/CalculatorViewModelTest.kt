@@ -32,6 +32,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.orbitmvi.orbit.test.OrbitTestContext
 import org.orbitmvi.orbit.test.test
+import com.ahn.presentation.R
+import com.ahn.presentation.util.UiText
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CalculatorViewModelTest : BehaviorSpec({
@@ -355,7 +357,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                         )
 
                         expectSideEffect(
-                            CalculatorContract.SideEffect.ShowSnackBar("즐겨찾기에 추가되었습니다.")
+                            CalculatorContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_added))
                         )
 
                         coVerify(exactly = 1) {
@@ -386,7 +388,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                         )
 
                         expectSideEffect(
-                            CalculatorContract.SideEffect.ShowSnackBar("즐겨찾기가 해제되었습니다.")
+                            CalculatorContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_removed))
                         )
 
                         coVerify(exactly = 1) {
@@ -753,12 +755,12 @@ class CalculatorViewModelTest : BehaviorSpec({
 
                         // 3. 상태 검증 (에러 상태로 변경됨)
                         expectState {
-                            copy(isError = true, errorMessage = "계산 오류")
+                            copy(isError = true, errorMessage = UiText.StringResource(R.string.calculator_error))
                         }
 
                         // 4. Turbine 없이 Orbit 내장 기능으로 SideEffect 검증
                         expectSideEffect(
-                            CalculatorContract.SideEffect.ShowSnackBar("계산할 수 없는 수식입니다.")
+                            CalculatorContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.invalid_expression))
                         )
                     }
                 }

@@ -4,7 +4,10 @@ import androidx.lifecycle.ViewModel
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
+import com.ahn.presentation.R
+import com.ahn.presentation.util.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.container
@@ -72,14 +75,24 @@ class ExchangeViewModel @Inject constructor(
     private fun handleToggleFavorite(currencyCode: String) = intent {
         val wasFavorite = currencyCode in state.favoriteCurrencyCodes
 
-        favoriteUseCases.toggleFavoriteCurrency(currencyCode)
-
-        postSideEffect(
-            ExchangeContract.SideEffect.ShowSnackBar(
-                if (wasFavorite) "즐겨찾기가 해제되었습니다."
-                else "즐겨찾기에 추가되었습니다."
+        runCatching {
+            favoriteUseCases.toggleFavoriteCurrency(currencyCode)
+        }.onSuccess {
+            postSideEffect(
+                ExchangeContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(
+                        if (wasFavorite) R.string.favorite_removed else R.string.favorite_added
+                    )
+                )
             )
-        )
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+            postSideEffect(
+                ExchangeContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(R.string.favorite_change_failed)
+                )
+            )
+        }
     }
 
     private suspend fun Syntax<ExchangeContract.State, ExchangeContract.SideEffect>.performLoadCurrencies() {
@@ -113,7 +126,12 @@ class ExchangeViewModel @Inject constructor(
         } catch (e: Exception) {
             reduce { state.copy(isLoading = false) }
             postSideEffect(
-                ExchangeContract.SideEffect.ShowSnackBar("통화 목록을 불러올 수 없습니다: ${e.message}")
+                ExchangeContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(
+                        R.string.load_currency_list_failed,
+                        listOf(e.message.orEmpty()),
+                    )
+                )
             )
         }
     }
@@ -160,7 +178,12 @@ class ExchangeViewModel @Inject constructor(
         } catch (e: Exception) {
             reduce { state.copy(isLoading = false) }
             postSideEffect(
-                ExchangeContract.SideEffect.ShowSnackBar("환율 정보를 가져올 수 없습니다: ${e.message}")
+                ExchangeContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(
+                        R.string.load_exchange_rate_failed,
+                        listOf(e.message.orEmpty()),
+                    )
+                )
             )
         }
     }

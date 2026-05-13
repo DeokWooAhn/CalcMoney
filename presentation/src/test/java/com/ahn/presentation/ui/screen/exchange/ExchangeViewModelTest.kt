@@ -23,6 +23,8 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.orbitmvi.orbit.test.test
+import com.ahn.presentation.R
+import com.ahn.presentation.util.UiText
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ExchangeViewModelTest : BehaviorSpec({
@@ -189,7 +191,7 @@ class ExchangeViewModelTest : BehaviorSpec({
 
                         // 4. 에러 스낵바 SideEffect 발생 검증
                         expectSideEffect(
-                            ExchangeContract.SideEffect.ShowSnackBar("통화 목록을 불러올 수 없습니다: Network Error")
+                            ExchangeContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.load_currency_list_failed, listOf("Network Error")))
                         )
                         cancelAndIgnoreRemainingItems()
                     }
@@ -228,7 +230,7 @@ class ExchangeViewModelTest : BehaviorSpec({
 
                         // SideEffect 검증
                         expectSideEffect(
-                            ExchangeContract.SideEffect.ShowSnackBar("환율 정보를 가져올 수 없습니다: Network Error")
+                            ExchangeContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.load_exchange_rate_failed, listOf("Network Error")))
                         )
                         cancelAndIgnoreRemainingItems()
                     }
@@ -277,7 +279,7 @@ class ExchangeViewModelTest : BehaviorSpec({
 
                         // postSideEffect가 Flow collect의 reduce보다 먼저 스트림에 올 수 있음
                         expectSideEffect(
-                            ExchangeContract.SideEffect.ShowSnackBar("즐겨찾기에 추가되었습니다.")
+                            ExchangeContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_added))
                         )
                         expectState {
                             copy(favoriteCurrencyCodes = listOf("USD"))
@@ -329,7 +331,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                         containerHost.processIntent(ExchangeContract.Intent.ToggleFavorite("USD"))
 
                         expectSideEffect(
-                            ExchangeContract.SideEffect.ShowSnackBar("즐겨찾기가 해제되었습니다.")
+                            ExchangeContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_removed))
                         )
                         expectState { copy(favoriteCurrencyCodes = emptyList()) }
                         cancelAndIgnoreRemainingItems()

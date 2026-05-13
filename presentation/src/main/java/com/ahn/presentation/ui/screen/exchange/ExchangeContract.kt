@@ -1,6 +1,7 @@
 package com.ahn.presentation.ui.screen.exchange
 
 import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.presentation.util.UiText
 
 interface ExchangeContract {
     data class State(
@@ -24,6 +25,6 @@ interface ExchangeContract {
     }
 
     sealed interface SideEffect {
-        data class ShowSnackBar(val message: String) : SideEffect
+        data class ShowSnackBar(val message: UiText) : SideEffect
     }
 }

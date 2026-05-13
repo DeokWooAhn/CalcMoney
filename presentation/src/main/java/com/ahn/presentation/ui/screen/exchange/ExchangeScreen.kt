@@ -36,6 +36,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -44,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.presentation.R
 import com.ahn.presentation.ui.component.CurrencySelector
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.ExchangeInputContainer
@@ -60,12 +63,13 @@ fun ExchangeRoute(
     val state by viewModel.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
             is ExchangeContract.SideEffect.ShowSnackBar -> {
                 scope.launch {
-                    snackbarHostState.showSnackbarImmediately(sideEffect.message)
+                    snackbarHostState.showSnackbarImmediately(sideEffect.message.asString(context))
                 }
             }
         }
@@ -93,7 +97,7 @@ fun ExchangeScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "환율",
+                        text = stringResource(R.string.exchange_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                     )
@@ -126,7 +130,7 @@ fun ExchangeScreen(
                 favoriteCurrencyCodes = state.favoriteCurrencyCodes,
                 onToggleFavorite = { onIntent(ExchangeContract.Intent.ToggleFavorite(it)) },
                 isEditable = true,
-                label = "기준 금액",
+                label = stringResource(R.string.base_amount),
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -143,7 +147,7 @@ fun ExchangeScreen(
                 IconButton(onClick = { onIntent(ExchangeContract.Intent.SwapCurrencies) }) {
                     Icon(
                         imageVector = Icons.Default.SwapVert,
-                        contentDescription = "통화 교환",
+                        contentDescription = stringResource(R.string.swap_currency),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(28.dp)
                     )
@@ -161,7 +165,7 @@ fun ExchangeScreen(
                 favoriteCurrencyCodes = state.favoriteCurrencyCodes,
                 onToggleFavorite = { onIntent(ExchangeContract.Intent.ToggleFavorite(it)) },
                 isEditable = false,
-                label = "받을 금액",
+                label = stringResource(R.string.target_amount),
             )
 
             state.fromCurrency?.let { from ->

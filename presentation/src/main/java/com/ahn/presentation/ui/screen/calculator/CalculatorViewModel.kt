@@ -7,7 +7,10 @@ import com.ahn.domain.calculator.usecase.CalculatorUseCases
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
+import com.ahn.presentation.R
+import com.ahn.presentation.util.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.combine
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -62,14 +65,24 @@ class CalculatorViewModel @Inject constructor(
     private fun handleToggleFavorite(currencyCode: String) = intent {
         val wasFavorite = currencyCode in state.favoriteCurrencyCodes
 
-        favoriteUseCases.toggleFavoriteCurrency(currencyCode)
-
-        postSideEffect(
-            CalculatorContract.SideEffect.ShowSnackBar(
-                if (wasFavorite) "즐겨찾기가 해제되었습니다."
-                else "즐겨찾기에 추가되었습니다."
+        runCatching {
+            favoriteUseCases.toggleFavoriteCurrency(currencyCode)
+        }.onSuccess {
+            postSideEffect(
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(
+                        if (wasFavorite) R.string.favorite_removed else R.string.favorite_added
+                    )
+                )
             )
-        )
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+            postSideEffect(
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(R.string.favorite_change_failed)
+                )
+            )
+        }
     }
 
     private fun handleInput(token: CalculatorToken) {
@@ -88,7 +101,10 @@ class CalculatorViewModel @Inject constructor(
         if (!canInsertNumber(expression, cursorPosition)) {
             postSideEffect(
                 CalculatorContract.SideEffect.ShowSnackBar(
-                    "숫자는 최대 $MAX_NUMBER_LENGTH 자리까지 입력 가능합니다."
+                    UiText.StringResource(
+                        R.string.max_number_length_error,
+                        listOf(MAX_NUMBER_LENGTH),
+                    )
                 )
             )
             return@intent
@@ -224,12 +240,15 @@ class CalculatorViewModel @Inject constructor(
 
         if (result == "Error") {
             reduce {
-                state.copy(isError = true, errorMessage = "계산 오류")
+                state.copy(
+                    isError = true,
+                    errorMessage = UiText.StringResource(R.string.calculator_error),
+                )
             }
 
             postSideEffect(
                 CalculatorContract.SideEffect.ShowSnackBar(
-                    "계산할 수 없는 수식입니다."
+                    UiText.StringResource(R.string.invalid_expression)
                 )
             )
             return@intent
@@ -253,9 +272,12 @@ class CalculatorViewModel @Inject constructor(
                 )
             )
         }.onFailure { e ->
-            Log.e("CalculatorViewModel", "계산 기록 저장 실패", e)
+            if (e is CancellationException) throw e
+            Log.e("CalculatorViewModel", "Failed to save calculator history.", e)
             postSideEffect(
-                CalculatorContract.SideEffect.ShowSnackBar("계산 기록을 저장하지 못했습니다.")
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(R.string.calculator_history_save_failed)
+                )
             )
         }.isSuccess
 
@@ -299,12 +321,17 @@ class CalculatorViewModel @Inject constructor(
             performFetchExchangeRate()
         } catch (e: Exception) {
             postSideEffect(
-                CalculatorContract.SideEffect.ShowSnackBar("통화 목록을 불러올 수 없습니다: ${e.message}")
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(
+                        R.string.load_currency_list_failed,
+                        listOf(e.message.orEmpty()),
+                    )
+                )
             )
 
             Log.e(
                 "CalculatorViewModel",
-                "통화 목록을 불러올 수 없습니다.",
+                "Failed to load currency list.",
                 e
             )
         }
@@ -332,7 +359,12 @@ class CalculatorViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             postSideEffect(
-                CalculatorContract.SideEffect.ShowSnackBar("환율 정보를 가져올 수 없습니다: ${e.message}")
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(
+                        R.string.load_exchange_rate_failed,
+                        listOf(e.message.orEmpty()),
+                    )
+                )
             )
         }
     }
@@ -482,9 +514,11 @@ class CalculatorViewModel @Inject constructor(
         }.onSuccess {
             reduce { state.copy(histories = emptyList()) }
         }.onFailure { e ->
-            Log.e("CalculatorViewModel", "계산 기록 삭제 실패", e)
+            Log.e("CalculatorViewModel", "Failed to clear calculator history.", e)
             postSideEffect(
-                CalculatorContract.SideEffect.ShowSnackBar("계산 기록을 삭제하지 못했습니다.")
+                CalculatorContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(R.string.calculator_history_delete_failed)
+                )
             )
         }
     }

@@ -4,20 +4,20 @@ import com.ahn.presentation.R
 
 sealed class BottomNavItem(
     val route: String,
-    val title: String,
+    val titleRes: Int,
     val icon: Int,
     val selectedIcon: Int
 ) {
     data object Calculator : BottomNavItem(
         Route.CALCULATOR,
-        "계산기",
+        R.string.bottom_nav_calculator,
         R.drawable.img_outline_calculate,
         R.drawable.img_calculator
     )
 
     data object Exchange : BottomNavItem(
         Route.EXCHANGE,
-        "환율",
+        R.string.bottom_nav_exchange,
         R.drawable.img_exchange,
         R.drawable.img_outline_currency_exchange
     )
@@ -25,7 +25,7 @@ sealed class BottomNavItem(
     data object Favorite :
         BottomNavItem(
             Route.FAVORITE,
-            "즐겨찾기",
+            R.string.bottom_nav_favorite,
             R.drawable.img_favorite_border,
             R.drawable.img_favorite
         )
@@ -33,7 +33,7 @@ sealed class BottomNavItem(
     data object Settings :
         BottomNavItem(
             Route.SETTINGS,
-            "설정",
+            R.string.bottom_nav_settings,
             R.drawable.img_outline_settings,
             R.drawable.img_settings
         )

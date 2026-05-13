@@ -37,12 +37,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ahn.presentation.R
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.ExchangeInputContainer
 import com.ahn.presentation.ui.screen.exchange.ExchangeContract
@@ -61,12 +64,13 @@ fun FavoriteRoute(
     val favoriteState by favoriteViewModel.state.collectAsState()
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     exchangeViewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
             is ExchangeContract.SideEffect.ShowSnackBar -> {
                 scope.launch {
-                    snackBarHostState.showSnackbarImmediately(sideEffect.message)
+                    snackBarHostState.showSnackbarImmediately(sideEffect.message.asString(context))
                 }
             }
         }
@@ -110,7 +114,7 @@ fun FavoriteScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "즐겨찾기",
+                        text = stringResource(R.string.favorite_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                     )
@@ -138,7 +142,7 @@ fun FavoriteScreen(
                 favoriteCurrencyCodes = exchangeState.favoriteCurrencyCodes,
                 onToggleFavorite = { onExchangeIntent(ExchangeContract.Intent.ToggleFavorite(it)) },
                 isEditable = true,
-                label = "기준 금액",
+                label = stringResource(R.string.base_amount),
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -164,7 +168,7 @@ fun FavoriteScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = "즐겨찾기한 통화가 없습니다.",
+                            text = stringResource(R.string.empty_favorite_currency),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -179,7 +183,7 @@ fun FavoriteScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = "환율 정보를 불러올 수 없습니다.",
+                            text = stringResource(R.string.favorite_rate_load_failed),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -264,7 +268,7 @@ private fun FavoriteRateCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Favorite,
-                        contentDescription = "즐겨찾기 해제",
+                        contentDescription = stringResource(R.string.remove_favorite),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }
@@ -309,7 +313,7 @@ private fun FavoriteRateCardPreview() {
                 currency = com.ahn.domain.currency.model.CurrencyInfo(
                     code = "USD",
                     displayCode = "USD",
-                    name = "미국 달러",
+                    name = stringResource(R.string.preview_currency_usd),
                     flagEmoji = "🇺🇸"
                 ),
                 convertedAmount = "1,433.20",

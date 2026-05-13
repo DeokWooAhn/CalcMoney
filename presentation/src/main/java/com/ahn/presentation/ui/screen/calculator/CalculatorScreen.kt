@@ -55,6 +55,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -92,12 +93,13 @@ fun CalculatorRoute(
     val state by viewModel.collectAsState()
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
             is CalculatorContract.SideEffect.ShowSnackBar -> {
                 scope.launch {
-                    snackBarHostState.showSnackbarImmediately(sideEffect.message)
+                    snackBarHostState.showSnackbarImmediately(sideEffect.message.asString(context))
                 }
             }
         }
@@ -156,7 +158,7 @@ fun CalculatorScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 CalculatorExchangeCurrencySelector(
-                    label = "메인 환율",
+                    label = stringResource(R.string.main_exchange_currency),
                     selectedCurrency = state.mainExchangeCurrency,
                     availableCurrencies = state.availableCurrencies,
                     favoriteCurrencyCodes = state.favoriteCurrencyCodes,
@@ -181,7 +183,7 @@ fun CalculatorScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.SwapHoriz,
-                            contentDescription = "환율 통화 교환",
+                            contentDescription = stringResource(R.string.swap_exchange_currency),
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(20.dp),
                         )
@@ -189,7 +191,7 @@ fun CalculatorScreen(
                 }
 
                 CalculatorExchangeCurrencySelector(
-                    label = "보조 환율",
+                    label = stringResource(R.string.sub_exchange_currency),
                     selectedCurrency = state.selectedExchangeCurrency,
                     availableCurrencies = state.availableCurrencies,
                     favoriteCurrencyCodes = state.favoriteCurrencyCodes,
@@ -601,7 +603,7 @@ private fun CalculatorExchangeCurrencySelector(
         ) {
             Text(
                 text = selectedCurrency?.let { "${it.flagEmoji} ${it.code}" }
-                    ?: "통화 선택",
+                    ?: stringResource(R.string.select_currency),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -637,7 +639,7 @@ private fun CalculatorExchangeCurrencySelector(
             ) {
                 Column {
                     Text(
-                        text = "$label 선택",
+                        text = stringResource(R.string.select_currency_with_label, label),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -686,9 +688,9 @@ private fun CalculatorExchangeCurrencySelector(
                                             Icons.Default.FavoriteBorder
                                         },
                                         contentDescription = if (currency.code in favoriteCurrencyCodes) {
-                                            "즐겨찾기 해제"
+                                            stringResource(R.string.remove_favorite)
                                         } else {
-                                            "즐겨찾기 추가"
+                                            stringResource(R.string.add_favorite)
                                         },
                                         tint = if (currency.code in favoriteCurrencyCodes) {
                                             Color.Red
@@ -812,7 +814,7 @@ private fun CalculatorHistoryPanel(
                     .width(150.dp),
             ) {
                 Text(
-                    text = "계산 기록 삭제",
+                    text = stringResource(R.string.delete_calculator_history),
                     fontSize = 14.sp
                 )
             }
@@ -836,8 +838,18 @@ fun CalculatorScreenPreview() {
                 expression = "100+200",
                 cursorPosition = 2,
                 previewResult = "300",
-                mainExchangeCurrency = CurrencyInfo("KRW", "KRW", "대한민국 원", "🇰🇷"),
-                selectedExchangeCurrency = CurrencyInfo("USD", "USD", "미국 달러", "🇺🇸"),
+                mainExchangeCurrency = CurrencyInfo(
+                    "KRW",
+                    "KRW",
+                    stringResource(R.string.preview_currency_krw),
+                    "🇰🇷",
+                ),
+                selectedExchangeCurrency = CurrencyInfo(
+                    "USD",
+                    "USD",
+                    stringResource(R.string.preview_currency_usd),
+                    "🇺🇸",
+                ),
             ),
             onCursorMove = { },
             onIntent = { },

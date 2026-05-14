@@ -1,10 +1,20 @@
 package com.ahn.presentation.ui.screen.calculator
 
 import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.domain.currency.model.CalculatorCurrencySelection
 import com.ahn.domain.calculator.usecase.AddCalculatorHistoryUseCase
 import com.ahn.domain.calculator.usecase.CalculateExpressionUseCase
 import com.ahn.domain.calculator.usecase.CalculatorUseCases
 import com.ahn.domain.calculator.usecase.ClearCalculatorHistoriesUseCase
+import com.ahn.domain.currency.usecase.CurrencySelectionUseCases
+import com.ahn.domain.currency.usecase.GetCalculatorSelectionUseCase
+import com.ahn.domain.currency.usecase.GetExchangeSelectionUseCase
+import com.ahn.domain.currency.usecase.SaveCalculatorMainCurrencyUseCase
+import com.ahn.domain.currency.usecase.SaveCalculatorSelectionUseCase
+import com.ahn.domain.currency.usecase.SaveCalculatorSubCurrencyUseCase
+import com.ahn.domain.currency.usecase.SaveExchangeFromCurrencyUseCase
+import com.ahn.domain.currency.usecase.SaveExchangeSelectionUseCase
+import com.ahn.domain.currency.usecase.SaveExchangeToCurrencyUseCase
 import com.ahn.domain.exchange.usecase.CalculateExchangeAmountUseCase
 import com.ahn.domain.exchange.usecase.ConvertExchangeAmountUseCase
 import com.ahn.domain.calculator.usecase.ExtractRepeatOperationUseCase
@@ -53,6 +63,14 @@ class CalculatorViewModelTest : BehaviorSpec({
     val getFavoriteCurrenciesUseCase = mockk<GetFavoriteCurrenciesUseCase>()
     val toggleFavoriteCurrencyUseCase = mockk<ToggleFavoriteCurrencyUseCase>()
     val buildFavoriteRatesUseCase = mockk<BuildFavoriteRatesUseCase>()
+    val getCalculatorSelectionUseCase = mockk<GetCalculatorSelectionUseCase>()
+    val saveCalculatorMainCurrencyUseCase = mockk<SaveCalculatorMainCurrencyUseCase>()
+    val saveCalculatorSubCurrencyUseCase = mockk<SaveCalculatorSubCurrencyUseCase>()
+    val saveCalculatorSelectionUseCase = mockk<SaveCalculatorSelectionUseCase>()
+    val getExchangeSelectionUseCase = mockk<GetExchangeSelectionUseCase>()
+    val saveExchangeFromCurrencyUseCase = mockk<SaveExchangeFromCurrencyUseCase>()
+    val saveExchangeToCurrencyUseCase = mockk<SaveExchangeToCurrencyUseCase>()
+    val saveExchangeSelectionUseCase = mockk<SaveExchangeSelectionUseCase>()
     val favoriteCurrencyCodesFlow = MutableStateFlow<List<String>>(emptyList())
 
     fun createViewModel() = CalculatorViewModel(
@@ -73,6 +91,16 @@ class CalculatorViewModelTest : BehaviorSpec({
             buildFavoriteRates = buildFavoriteRatesUseCase,
             getFavoriteCurrencies = getFavoriteCurrenciesUseCase,
             toggleFavoriteCurrency = toggleFavoriteCurrencyUseCase,
+        ),
+        currencySelectionUseCases = CurrencySelectionUseCases(
+            getCalculatorSelection = getCalculatorSelectionUseCase,
+            saveCalculatorMainCurrency = saveCalculatorMainCurrencyUseCase,
+            saveCalculatorSubCurrency = saveCalculatorSubCurrencyUseCase,
+            saveCalculatorSelection = saveCalculatorSelectionUseCase,
+            getExchangeSelection = getExchangeSelectionUseCase,
+            saveExchangeFromCurrency = saveExchangeFromCurrencyUseCase,
+            saveExchangeToCurrency = saveExchangeToCurrencyUseCase,
+            saveExchangeSelection = saveExchangeSelectionUseCase,
         ),
     )
 
@@ -146,6 +174,13 @@ class CalculatorViewModelTest : BehaviorSpec({
         every { getCalculatorHistoriesUseCase() } returns MutableStateFlow(emptyList())
         coEvery { addCalculatorHistoryUseCase(any()) } returns Unit
         coEvery { clearCalculatorHistoriesUseCase() } returns Unit
+        coEvery { getCalculatorSelectionUseCase() } returns CalculatorCurrencySelection(
+            mainCode = null,
+            subCode = null,
+        )
+        coEvery { saveCalculatorMainCurrencyUseCase(any()) } returns Unit
+        coEvery { saveCalculatorSubCurrencyUseCase(any()) } returns Unit
+        coEvery { saveCalculatorSelectionUseCase(any(), any()) } returns Unit
         favoriteCurrencyCodesFlow.value = emptyList()
         every { getFavoriteCurrenciesUseCase() } returns favoriteCurrencyCodesFlow
         coEvery { toggleFavoriteCurrencyUseCase(any()) } returns Unit
@@ -153,6 +188,42 @@ class CalculatorViewModelTest : BehaviorSpec({
     }
 
     Given("계산기 초기 상태에서") {
+        When("저장된 계산기 통화 코드가 있으면") {
+            Then("저장된 main/sub 통화로 초기화되어야 한다") {
+                runTest {
+                    val krw = CurrencyInfo("KRW", "KRW", "대한민국 원", "🇰🇷")
+                    val usd = CurrencyInfo("USD", "USD", "미국 달러", "🇺🇸")
+                    val jpy = CurrencyInfo("JPY", "JPY", "일본 엔", "🇯🇵")
+                    val currencies = listOf(krw, usd, jpy)
+
+                    coEvery { getSupportedCurrenciesUseCase() } returns currencies
+                    coEvery { getCalculatorSelectionUseCase() } returns CalculatorCurrencySelection(
+                        mainCode = "JPY",
+                        subCode = "USD",
+                    )
+                    coEvery { getExchangeRateUseCase("JPY", "USD") } returns 0.007
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        expectState {
+                            copy(
+                                availableCurrencies = currencies,
+                                mainExchangeCurrency = jpy,
+                                selectedExchangeCurrency = usd,
+                            )
+                        }
+                        expectState { copy(exchangeRate = 0.007) }
+
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+
         When("5를 입력하면") {
             Then("expression은 '5'이어야 한다") {
                 runTest {
@@ -241,12 +312,18 @@ class CalculatorViewModelTest : BehaviorSpec({
                             CalculatorContract.Intent.SelectMainExchangeCurrency(krw)
                         )
                         expectState { copy(mainExchangeCurrency = krw) }
+                        coVerify(exactly = 1) {
+                            saveCalculatorMainCurrencyUseCase("KRW")
+                        }
 
                         containerHost.processIntent(
                             CalculatorContract.Intent.SelectExchangeCurrency(vnd)
                         )
                         expectState { copy(selectedExchangeCurrency = vnd) }
                         expectState { copy(exchangeRate = 18.5) }
+                        coVerify(exactly = 1) {
+                            saveCalculatorSubCurrencyUseCase("VND")
+                        }
 
                         containerHost.processIntent(
                             CalculatorContract.Intent.Input(CalculatorToken.Number("2"))
@@ -314,6 +391,9 @@ class CalculatorViewModelTest : BehaviorSpec({
 
                         coVerify(exactly = 1) { getExchangeRateUseCase("KRW", "USD") }
                         coVerify(exactly = 1) { getExchangeRateUseCase("USD", "KRW") }
+                        coVerify(exactly = 1) {
+                            saveCalculatorSelectionUseCase("USD", "KRW")
+                        }
                     }
                 }
             }

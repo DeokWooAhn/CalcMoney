@@ -4,12 +4,15 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,10 +27,11 @@ class FavoriteCurrencyDataSource @Inject constructor(
     private val key = stringPreferencesKey("favorite_codes")
 
     fun getFavoriteCodes(): Flow<List<String>> {
-        return context.dataStore.data.map { prefs ->
-            val raw = prefs[key] ?: ""
-            if (raw.isEmpty()) emptyList() else raw.split(",")
-        }
+        return context.dataStore.data
+            .safePreferences()
+            .map { prefs ->
+                getCurrent(prefs)
+            }
     }
 
     suspend fun addFavorite(code: String) {
@@ -47,12 +51,23 @@ class FavoriteCurrencyDataSource @Inject constructor(
     }
 
     suspend fun isFavorite(code: String): Boolean {
-        val current = context.dataStore.data.first()[key] ?: ""
-        return code in current.split(",")
+        val current = context.dataStore.data
+            .safePreferences()
+            .map { prefs -> getCurrent(prefs) }
+            .first()
+        return code in current
     }
 
     private fun getCurrent(prefs: Preferences): List<String> {
         val raw = prefs[key] ?: ""
         return if (raw.isEmpty()) emptyList() else raw.split(",")
+    }
+
+    private fun Flow<Preferences>.safePreferences() = catch { exception ->
+        if (exception is IOException) {
+            emit(emptyPreferences())
+        } else {
+            throw exception
+        }
     }
 }

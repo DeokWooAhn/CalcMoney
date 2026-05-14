@@ -1,9 +1,11 @@
 package com.ahn.data.di
 
 import com.ahn.data.repository.CalculatorHistoryRepositoryImpl
+import com.ahn.data.repository.CurrencySelectionRepositoryImpl
 import com.ahn.data.repository.ExchangeRateRepositoryImpl
 import com.ahn.data.repository.FavoriteCurrencyRepositoryImpl
 import com.ahn.domain.calculator.repository.CalculatorHistoryRepository
+import com.ahn.domain.currency.repository.CurrencySelectionRepository
 import com.ahn.domain.exchange.repository.ExchangeRateRepository
 import com.ahn.domain.favorite.repository.FavoriteCurrencyRepository
 import dagger.Binds
@@ -29,4 +31,10 @@ abstract class RepositoryModule {
     abstract fun bindCalculatorHistoryRepository(
         impl: CalculatorHistoryRepositoryImpl
     ): CalculatorHistoryRepository
+
+    @Binds
+    abstract fun bindCurrencySelectionRepository(
+        impl: CurrencySelectionRepositoryImpl
+    ): CurrencySelectionRepository
+
 }

@@ -329,8 +329,8 @@ class CalculatorViewModel @Inject constructor(
             reduce {
                 state.copy(
                     availableCurrencies = currencies,
-                    mainExchangeCurrency = state.mainExchangeCurrency ?: mainCurrency,
-                    selectedExchangeCurrency = state.selectedExchangeCurrency ?: subCurrency,
+                    mainExchangeCurrency = mainCurrency,
+                    selectedExchangeCurrency = subCurrency,
                 )
             }
 

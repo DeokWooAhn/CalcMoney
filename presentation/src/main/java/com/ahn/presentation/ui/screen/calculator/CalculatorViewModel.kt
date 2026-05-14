@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.ahn.domain.calculator.model.CalculatorHistory
 import com.ahn.domain.calculator.usecase.CalculatorUseCases
+import com.ahn.domain.currency.model.CalculatorCurrencySelection
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.domain.currency.usecase.CurrencySelectionUseCases
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
@@ -304,14 +305,14 @@ class CalculatorViewModel @Inject constructor(
         try {
             val currencies = exchangeUseCases.getSupportedCurrencies()
             val deviceCurrencyCode = getDeviceCurrencyCode()
-            val savedSelection = currencySelectionUseCases.getCalculatorSelection()
+            val savedSelection = getSavedCalculatorSelectionOrNull()
 
             val preservedMain = state.mainExchangeCurrency?.let { current ->
                 currencies.find { it.code == current.code }
             }
 
             val mainCurrency = preservedMain
-                ?: currencies.find { it.code == savedSelection.mainCode }
+                ?: currencies.find { it.code == savedSelection?.mainCode }
                 ?: currencies.find { it.code == deviceCurrencyCode }
                 ?: currencies.find { it.code == "KRW" }
                 ?: currencies.firstOrNull()
@@ -321,7 +322,7 @@ class CalculatorViewModel @Inject constructor(
             }
 
             val subCurrency = preservedSub
-                ?: currencies.find { it.code == savedSelection.subCode && it.code != mainCurrency?.code }
+                ?: currencies.find { it.code == savedSelection?.subCode && it.code != mainCurrency?.code }
                 ?: currencies.find { it.code == "USD" && it.code != mainCurrency?.code }
                 ?: currencies.firstOrNull { it.code != mainCurrency?.code }
 
@@ -357,6 +358,17 @@ class CalculatorViewModel @Inject constructor(
         return runCatching {
             Currency.getInstance(Locale.getDefault()).currencyCode
         }.getOrDefault("KRW")
+    }
+
+    private suspend fun getSavedCalculatorSelectionOrNull(): CalculatorCurrencySelection? {
+        return try {
+            currencySelectionUseCases.getCalculatorSelection()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("CalculatorViewModel", "Failed to load saved calculator currency selection.", e)
+            null
+        }
     }
 
     private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.performFetchExchangeRate() {
@@ -399,10 +411,12 @@ class CalculatorViewModel @Inject constructor(
             )
         }
 
-        currencySelectionUseCases.saveCalculatorSelection(
-            mainCode = to.code,
-            subCode = from.code,
-        )
+        saveCalculatorSelectionBestEffort {
+            currencySelectionUseCases.saveCalculatorSelection(
+                mainCode = to.code,
+                subCode = from.code,
+            )
+        }
 
         performFetchExchangeRate()
     }
@@ -502,7 +516,9 @@ class CalculatorViewModel @Inject constructor(
     private fun handleSelectMainExchangeCurrency(currency: CurrencyInfo) = intent {
         if (currency.code == state.mainExchangeCurrency?.code) return@intent
 
-        currencySelectionUseCases.saveCalculatorMainCurrency(currency.code)
+        saveCalculatorSelectionBestEffort {
+            currencySelectionUseCases.saveCalculatorMainCurrency(currency.code)
+        }
 
         reduce {
             state.copy(
@@ -519,7 +535,9 @@ class CalculatorViewModel @Inject constructor(
     private fun handleSelectExchangeCurrency(currency: CurrencyInfo) = intent {
         if (currency.code == state.selectedExchangeCurrency?.code) return@intent
 
-        currencySelectionUseCases.saveCalculatorSubCurrency(currency.code)
+        saveCalculatorSelectionBestEffort {
+            currencySelectionUseCases.saveCalculatorSubCurrency(currency.code)
+        }
 
         reduce {
             state.copy(
@@ -531,6 +549,16 @@ class CalculatorViewModel @Inject constructor(
         }
 
         performFetchExchangeRate()
+    }
+
+    private suspend fun saveCalculatorSelectionBestEffort(action: suspend () -> Unit) {
+        try {
+            action()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("CalculatorViewModel", "Failed to save calculator currency selection.", e)
+        }
     }
 
     private fun handleClearHistory() = intent {

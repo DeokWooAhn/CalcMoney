@@ -1,7 +1,9 @@
 package com.ahn.presentation.ui.screen.exchange
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.domain.currency.model.ExchangeCurrencySelection
 import com.ahn.domain.currency.usecase.CurrencySelectionUseCases
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
@@ -54,7 +56,9 @@ class ExchangeViewModel @Inject constructor(
         if (currency == state.toCurrency) {
             performSwapCurrencies()
         } else {
-            currencySelectionUseCases.saveExchangeFromCurrency(currency.code)
+            saveExchangeSelectionBestEffort {
+                currencySelectionUseCases.saveExchangeFromCurrency(currency.code)
+            }
 
             reduce { state.copy(fromCurrency = currency) }
             performFetchExchangeRate()
@@ -65,7 +69,9 @@ class ExchangeViewModel @Inject constructor(
         if (currency == state.fromCurrency) {
             performSwapCurrencies()
         } else {
-            currencySelectionUseCases.saveExchangeToCurrency(currency.code)
+            saveExchangeSelectionBestEffort {
+                currencySelectionUseCases.saveExchangeToCurrency(currency.code)
+            }
 
             reduce { state.copy(toCurrency = currency) }
             performFetchExchangeRate()
@@ -108,14 +114,14 @@ class ExchangeViewModel @Inject constructor(
             val currencies = exchangeUseCases.getSupportedCurrencies()
             val krw = currencies.find { it.code == "KRW" }
             val usd = currencies.find { it.code == "USD" }
-            val savedSelection = currencySelectionUseCases.getExchangeSelection()
+            val savedSelection = getSavedExchangeSelectionOrNull()
 
             val preservedFrom = state.fromCurrency?.let { current ->
                 currencies.find { it.code == current.code }
             }
 
             val fromCurrency = preservedFrom
-                ?: currencies.find { it.code == savedSelection.fromCode }
+                ?: currencies.find { it.code == savedSelection?.fromCode }
                 ?: usd
                 ?: currencies.firstOrNull()
                 ?: state.fromCurrency
@@ -125,7 +131,7 @@ class ExchangeViewModel @Inject constructor(
             }
 
             val toCurrency = preservedTo
-                ?: currencies.find { it.code == savedSelection.toCode && it.code != fromCurrency?.code }
+                ?: currencies.find { it.code == savedSelection?.toCode && it.code != fromCurrency?.code }
                 ?: krw?.takeIf { it.code != fromCurrency?.code }
                 ?: currencies.firstOrNull { it.code != fromCurrency?.code }
                 ?: state.toCurrency
@@ -169,12 +175,35 @@ class ExchangeViewModel @Inject constructor(
             )
         }
 
-        currencySelectionUseCases.saveExchangeSelection(
-            fromCode = newFrom.code,
-            toCode = newTo.code,
-        )
+        saveExchangeSelectionBestEffort {
+            currencySelectionUseCases.saveExchangeSelection(
+                fromCode = newFrom.code,
+                toCode = newTo.code,
+            )
+        }
 
         performFetchExchangeRate()
+    }
+
+    private suspend fun getSavedExchangeSelectionOrNull(): ExchangeCurrencySelection? {
+        return try {
+            currencySelectionUseCases.getExchangeSelection()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("ExchangeViewModel", "Failed to load saved exchange currency selection.", e)
+            null
+        }
+    }
+
+    private suspend fun saveExchangeSelectionBestEffort(action: suspend () -> Unit) {
+        try {
+            action()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("ExchangeViewModel", "Failed to save exchange currency selection.", e)
+        }
     }
 
     private suspend fun Syntax<ExchangeContract.State, ExchangeContract.SideEffect>.performFetchExchangeRate() {

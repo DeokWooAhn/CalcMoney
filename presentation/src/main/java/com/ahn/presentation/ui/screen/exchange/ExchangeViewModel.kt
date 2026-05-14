@@ -2,6 +2,7 @@ package com.ahn.presentation.ui.screen.exchange
 
 import androidx.lifecycle.ViewModel
 import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.domain.currency.usecase.CurrencySelectionUseCases
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
 import com.ahn.presentation.R
@@ -17,6 +18,7 @@ import javax.inject.Inject
 class ExchangeViewModel @Inject constructor(
     private val exchangeUseCases: ExchangeUseCases,
     private val favoriteUseCases: FavoriteUseCases,
+    private val currencySelectionUseCases: CurrencySelectionUseCases,
 ) : ViewModel(), ContainerHost<ExchangeContract.State, ExchangeContract.SideEffect> {
 
     override val container = container(
@@ -52,6 +54,8 @@ class ExchangeViewModel @Inject constructor(
         if (currency == state.toCurrency) {
             performSwapCurrencies()
         } else {
+            currencySelectionUseCases.saveExchangeFromCurrency(currency.code)
+
             reduce { state.copy(fromCurrency = currency) }
             performFetchExchangeRate()
         }
@@ -61,6 +65,8 @@ class ExchangeViewModel @Inject constructor(
         if (currency == state.fromCurrency) {
             performSwapCurrencies()
         } else {
+            currencySelectionUseCases.saveExchangeToCurrency(currency.code)
+
             reduce { state.copy(toCurrency = currency) }
             performFetchExchangeRate()
         }
@@ -102,20 +108,33 @@ class ExchangeViewModel @Inject constructor(
             val currencies = exchangeUseCases.getSupportedCurrencies()
             val krw = currencies.find { it.code == "KRW" }
             val usd = currencies.find { it.code == "USD" }
+            val savedSelection = currencySelectionUseCases.getExchangeSelection()
 
             val preservedFrom = state.fromCurrency?.let { current ->
                 currencies.find { it.code == current.code }
             }
 
+            val fromCurrency = preservedFrom
+                ?: currencies.find { it.code == savedSelection.fromCode }
+                ?: usd
+                ?: currencies.firstOrNull()
+                ?: state.fromCurrency
+
             val preservedTo = state.toCurrency?.let { current ->
                 currencies.find { it.code == current.code }
             }
 
+            val toCurrency = preservedTo
+                ?: currencies.find { it.code == savedSelection.toCode && it.code != fromCurrency?.code }
+                ?: krw?.takeIf { it.code != fromCurrency?.code }
+                ?: currencies.firstOrNull { it.code != fromCurrency?.code }
+                ?: state.toCurrency
+
             reduce {
                 state.copy(
                     availableCurrencies = currencies,
-                    fromCurrency = preservedFrom ?: usd ?: currencies.firstOrNull() ?: state.fromCurrency,
-                    toCurrency = preservedTo ?: krw ?: currencies.getOrNull(1) ?: currencies.firstOrNull() ?: state.toCurrency,
+                    fromCurrency = fromCurrency,
+                    toCurrency = toCurrency,
                     isLoading = false
                 )
             }
@@ -138,14 +157,23 @@ class ExchangeViewModel @Inject constructor(
     }
 
     private suspend fun Syntax<ExchangeContract.State, ExchangeContract.SideEffect>.performSwapCurrencies() {
+        val newFrom = state.toCurrency ?: return
+        val newTo = state.fromCurrency ?: return
+        val newFromAmount = state.toAmount.ifEmpty { "1" }
+
         reduce {
-            val newFromAmount = state.toAmount.ifEmpty { "1" }
             state.copy(
-                fromCurrency = state.toCurrency,
-                toCurrency = state.fromCurrency,
+                fromCurrency = newFrom,
+                toCurrency = newTo,
                 fromAmount = newFromAmount
             )
         }
+
+        currencySelectionUseCases.saveExchangeSelection(
+            fromCode = newFrom.code,
+            toCode = newTo.code,
+        )
+
         performFetchExchangeRate()
     }
 

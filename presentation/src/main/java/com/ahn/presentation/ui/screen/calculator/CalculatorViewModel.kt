@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import com.ahn.domain.calculator.model.CalculatorHistory
 import com.ahn.domain.calculator.usecase.CalculatorUseCases
 import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.domain.currency.usecase.CurrencySelectionUseCases
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
 import com.ahn.presentation.R
@@ -24,6 +25,7 @@ class CalculatorViewModel @Inject constructor(
     private val calculatorUseCases: CalculatorUseCases,
     private val exchangeUseCases: ExchangeUseCases,
     private val favoriteUseCases: FavoriteUseCases,
+    private val currencySelectionUseCases: CurrencySelectionUseCases,
 ) : ViewModel(), ContainerHost<CalculatorContract.State, CalculatorContract.SideEffect> {
 
     override val container = container(
@@ -302,12 +304,25 @@ class CalculatorViewModel @Inject constructor(
         try {
             val currencies = exchangeUseCases.getSupportedCurrencies()
             val deviceCurrencyCode = getDeviceCurrencyCode()
+            val savedSelection = currencySelectionUseCases.getCalculatorSelection()
 
-            val mainCurrency = currencies.find { it.code == deviceCurrencyCode }
+            val preservedMain = state.mainExchangeCurrency?.let { current ->
+                currencies.find { it.code == current.code }
+            }
+
+            val mainCurrency = preservedMain
+                ?: currencies.find { it.code == savedSelection.mainCode }
+                ?: currencies.find { it.code == deviceCurrencyCode }
                 ?: currencies.find { it.code == "KRW" }
                 ?: currencies.firstOrNull()
 
-            val subCurrency = currencies.find { it.code == "USD" && it.code != mainCurrency?.code }
+            val preservedSub = state.selectedExchangeCurrency?.let { current ->
+                currencies.find { it.code == current.code && it.code != mainCurrency?.code }
+            }
+
+            val subCurrency = preservedSub
+                ?: currencies.find { it.code == savedSelection.subCode && it.code != mainCurrency?.code }
+                ?: currencies.find { it.code == "USD" && it.code != mainCurrency?.code }
                 ?: currencies.firstOrNull { it.code != mainCurrency?.code }
 
             reduce {
@@ -383,6 +398,11 @@ class CalculatorViewModel @Inject constructor(
                 convertedPreviewAmount = "",
             )
         }
+
+        currencySelectionUseCases.saveCalculatorSelection(
+            mainCode = to.code,
+            subCode = from.code,
+        )
 
         performFetchExchangeRate()
     }
@@ -482,6 +502,8 @@ class CalculatorViewModel @Inject constructor(
     private fun handleSelectMainExchangeCurrency(currency: CurrencyInfo) = intent {
         if (currency.code == state.mainExchangeCurrency?.code) return@intent
 
+        currencySelectionUseCases.saveCalculatorMainCurrency(currency.code)
+
         reduce {
             state.copy(
                 mainExchangeCurrency = currency,
@@ -496,6 +518,8 @@ class CalculatorViewModel @Inject constructor(
 
     private fun handleSelectExchangeCurrency(currency: CurrencyInfo) = intent {
         if (currency.code == state.selectedExchangeCurrency?.code) return@intent
+
+        currencySelectionUseCases.saveCalculatorSubCurrency(currency.code)
 
         reduce {
             state.copy(

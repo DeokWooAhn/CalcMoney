@@ -1,6 +1,16 @@
 package com.ahn.presentation.ui.screen.exchange
 
 import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.domain.currency.model.ExchangeCurrencySelection
+import com.ahn.domain.currency.usecase.CurrencySelectionUseCases
+import com.ahn.domain.currency.usecase.GetCalculatorSelectionUseCase
+import com.ahn.domain.currency.usecase.GetExchangeSelectionUseCase
+import com.ahn.domain.currency.usecase.SaveCalculatorMainCurrencyUseCase
+import com.ahn.domain.currency.usecase.SaveCalculatorSelectionUseCase
+import com.ahn.domain.currency.usecase.SaveCalculatorSubCurrencyUseCase
+import com.ahn.domain.currency.usecase.SaveExchangeFromCurrencyUseCase
+import com.ahn.domain.currency.usecase.SaveExchangeSelectionUseCase
+import com.ahn.domain.currency.usecase.SaveExchangeToCurrencyUseCase
 import com.ahn.domain.exchange.usecase.CalculateExchangeAmountUseCase
 import com.ahn.domain.exchange.usecase.ConvertExchangeAmountUseCase
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
@@ -13,6 +23,7 @@ import com.ahn.domain.favorite.usecase.ToggleFavoriteCurrencyUseCase
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +57,14 @@ class ExchangeViewModelTest : BehaviorSpec({
     val calculateExchangeAmountUseCase = mockk<CalculateExchangeAmountUseCase>()
     val convertExchangeAmountUseCase = mockk<ConvertExchangeAmountUseCase>()
     val buildFavoriteRatesUseCase = mockk<BuildFavoriteRatesUseCase>()
+    val getCalculatorSelectionUseCase = mockk<GetCalculatorSelectionUseCase>()
+    val saveCalculatorMainCurrencyUseCase = mockk<SaveCalculatorMainCurrencyUseCase>()
+    val saveCalculatorSubCurrencyUseCase = mockk<SaveCalculatorSubCurrencyUseCase>()
+    val saveCalculatorSelectionUseCase = mockk<SaveCalculatorSelectionUseCase>()
+    val getExchangeSelectionUseCase = mockk<GetExchangeSelectionUseCase>()
+    val saveExchangeFromCurrencyUseCase = mockk<SaveExchangeFromCurrencyUseCase>()
+    val saveExchangeToCurrencyUseCase = mockk<SaveExchangeToCurrencyUseCase>()
+    val saveExchangeSelectionUseCase = mockk<SaveExchangeSelectionUseCase>()
 
     fun createViewModel() = ExchangeViewModel(
         exchangeUseCases = ExchangeUseCases(
@@ -59,6 +78,16 @@ class ExchangeViewModelTest : BehaviorSpec({
             getFavoriteCurrencies = getFavoriteCurrenciesUseCase,
             toggleFavoriteCurrency = toggleFavoriteCurrencyUseCase,
         ),
+        currencySelectionUseCases = CurrencySelectionUseCases(
+            getCalculatorSelection = getCalculatorSelectionUseCase,
+            saveCalculatorMainCurrency = saveCalculatorMainCurrencyUseCase,
+            saveCalculatorSubCurrency = saveCalculatorSubCurrencyUseCase,
+            saveCalculatorSelection = saveCalculatorSelectionUseCase,
+            getExchangeSelection = getExchangeSelectionUseCase,
+            saveExchangeFromCurrency = saveExchangeFromCurrencyUseCase,
+            saveExchangeToCurrency = saveExchangeToCurrencyUseCase,
+            saveExchangeSelection = saveExchangeSelectionUseCase,
+        ),
     )
 
     beforeEach {
@@ -68,6 +97,13 @@ class ExchangeViewModelTest : BehaviorSpec({
         every { getFavoriteCurrenciesUseCase() } returns MutableStateFlow(emptyList())
         coEvery { toggleFavoriteCurrencyUseCase(any()) } returns Unit
         every { calculateExchangeAmountUseCase(any(), any()) } returns "1500.00"
+        coEvery { getExchangeSelectionUseCase() } returns ExchangeCurrencySelection(
+            fromCode = null,
+            toCode = null,
+        )
+        coEvery { saveExchangeFromCurrencyUseCase(any()) } returns Unit
+        coEvery { saveExchangeToCurrencyUseCase(any()) } returns Unit
+        coEvery { saveExchangeSelectionUseCase(any(), any()) } returns Unit
     }
     afterEach { Dispatchers.resetMain() }
 
@@ -107,6 +143,210 @@ class ExchangeViewModelTest : BehaviorSpec({
                             )
                         }
                         // observeFavorites() 무한 collect 때문에 joinIntents가 끝나지 않음 → 컨테이너 취소 필요
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+
+        When("저장된 환율 화면 통화 코드가 있으면") {
+            Then("저장된 from/to 통화로 초기화되어야 한다") {
+                runTest {
+                    coEvery { getExchangeSelectionUseCase() } returns ExchangeCurrencySelection(
+                        fromCode = "KRW",
+                        toCode = "USD",
+                    )
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                availableCurrencies = mockCurrencies,
+                                fromCurrency = krw,
+                                toCurrency = usd,
+                            )
+                        }
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                exchangeRate = 1500.00,
+                                toAmount = "1500.00",
+                            )
+                        }
+
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+    }
+
+    Given("환율 화면에서 통화를 선택할 때") {
+        When("from 통화를 변경하면") {
+            Then("선택한 from 통화 코드가 저장되어야 한다") {
+                runTest {
+                    val jpy = CurrencyInfo("JPY", "JPY", "일본 엔", "🇯🇵")
+                    val currencies = mockCurrencies + jpy
+
+                    coEvery { getSupportedCurrenciesUseCase() } returns currencies
+                    coEvery { getExchangeRateUseCase("JPY", "KRW") } returns 9.0
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                availableCurrencies = currencies,
+                                fromCurrency = usd,
+                                toCurrency = krw,
+                            )
+                        }
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                exchangeRate = 1500.00,
+                                toAmount = "1500.00",
+                            )
+                        }
+
+                        containerHost.processIntent(ExchangeContract.Intent.SelectFromCurrency(jpy))
+
+                        expectState { copy(fromCurrency = jpy) }
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                exchangeRate = 9.0,
+                                toAmount = "1500.00",
+                            )
+                        }
+
+                        coVerify(exactly = 1) {
+                            saveExchangeFromCurrencyUseCase("JPY")
+                        }
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+
+        When("to 통화를 변경하면") {
+            Then("선택한 to 통화 코드가 저장되어야 한다") {
+                runTest {
+                    val jpy = CurrencyInfo("JPY", "JPY", "일본 엔", "🇯🇵")
+                    val currencies = mockCurrencies + jpy
+
+                    coEvery { getSupportedCurrenciesUseCase() } returns currencies
+                    coEvery { getExchangeRateUseCase("USD", "JPY") } returns 150.0
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                availableCurrencies = currencies,
+                                fromCurrency = usd,
+                                toCurrency = krw,
+                            )
+                        }
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                exchangeRate = 1500.00,
+                                toAmount = "1500.00",
+                            )
+                        }
+
+                        containerHost.processIntent(ExchangeContract.Intent.SelectToCurrency(jpy))
+
+                        expectState { copy(toCurrency = jpy) }
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                exchangeRate = 150.0,
+                                toAmount = "1500.00",
+                            )
+                        }
+
+                        coVerify(exactly = 1) {
+                            saveExchangeToCurrencyUseCase("JPY")
+                        }
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+
+        When("통화를 스왑하면") {
+            Then("스왑된 from/to 통화 코드가 저장되어야 한다") {
+                runTest {
+                    coEvery { getExchangeRateUseCase("KRW", "USD") } returns 0.001
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                availableCurrencies = mockCurrencies,
+                                fromCurrency = usd,
+                                toCurrency = krw,
+                            )
+                        }
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                exchangeRate = 1500.00,
+                                toAmount = "1500.00",
+                            )
+                        }
+
+                        containerHost.processIntent(ExchangeContract.Intent.SwapCurrencies)
+
+                        expectState {
+                            copy(
+                                fromCurrency = krw,
+                                toCurrency = usd,
+                                fromAmount = "1500.00",
+                            )
+                        }
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                exchangeRate = 0.001,
+                                toAmount = "1500.00",
+                            )
+                        }
+
+                        coVerify(exactly = 1) {
+                            saveExchangeSelectionUseCase("KRW", "USD")
+                        }
                         cancelAndIgnoreRemainingItems()
                     }
                 }

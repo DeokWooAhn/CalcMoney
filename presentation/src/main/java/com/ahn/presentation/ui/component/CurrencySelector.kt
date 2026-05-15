@@ -49,6 +49,7 @@ fun CurrencySelector(
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color.Black,
     textColor: Color = Color.White,
+    dialogTitle: String = stringResource(R.string.select_currency),
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var favoriteCodesSnapshot by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -95,6 +96,7 @@ fun CurrencySelector(
             selectedCurrency = selectedCurrency,
             favoriteCurrencyCodesForSort = favoriteCodesSnapshot,
             favoriteCurrencyCodesForIcon = favoriteCurrencyCodes,
+            title = dialogTitle,
             onDismiss = { showDialog = false },
             onCurrencySelected = { currency ->
                 onCurrencySelected(currency)
@@ -102,120 +104,6 @@ fun CurrencySelector(
             },
             onToggleFavorite = onToggleFavorite,
         )
-    }
-}
-
-@Composable
-private fun CurrencyPickerDialog(
-    currencies: List<CurrencyInfo>,
-    selectedCurrency: CurrencyInfo?,
-    favoriteCurrencyCodesForSort: List<String>,
-    favoriteCurrencyCodesForIcon: List<String>,
-    onDismiss: () -> Unit,
-    onCurrencySelected: (CurrencyInfo) -> Unit,
-    onToggleFavorite: (String) -> Unit,
-) {
-    val orderMap = remember(favoriteCurrencyCodesForSort) {
-        favoriteCurrencyCodesForSort.withIndex().associate { it.value to it.index }
-    }
-
-    val sortedCurrencies = remember(currencies, orderMap) {
-        val favorites = currencies
-            .filter { it.code in orderMap }
-            .sortedBy { orderMap[it.code] }
-
-        val others = currencies.filter { it.code !in orderMap }
-        favorites + others
-    }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 500.dp)
-        ) {
-            Column {
-                Text(
-                    text = stringResource(R.string.select_currency),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(20.dp),
-                )
-
-                HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
-
-                LazyColumn {
-                    items(sortedCurrencies, key = { it.code }) { currency ->
-                        CurrencyItem(
-                            currency = currency,
-                            isSelected = currency == selectedCurrency,
-                            isFavorite = currency.code in favoriteCurrencyCodesForIcon,
-                            onClick = { onCurrencySelected(currency) },
-                            onToggleFavorite = { onToggleFavorite(currency.code) },
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CurrencyItem(
-    currency: CurrencyInfo,
-    isSelected: Boolean,
-    isFavorite: Boolean,
-    onClick: () -> Unit,
-    onToggleFavorite: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .background(
-                if (isSelected)
-                    MaterialTheme.colorScheme.surfaceVariant
-                else
-                    Color.Transparent
-            )
-            .padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = currency.flagEmoji,
-            fontSize = 28.sp
-        )
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = currency.displayCode,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = currency.name,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        IconButton(onClick = onToggleFavorite, modifier = Modifier.size(40.dp)) {
-            Icon(
-                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                contentDescription = if (isFavorite) {
-                    stringResource(R.string.remove_favorite)
-                } else {
-                    stringResource(R.string.add_favorite)
-                },
-                tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(22.dp)
-            )
-        }
     }
 }
 
@@ -237,43 +125,7 @@ fun CurrencySelectorPreview() {
         favoriteCurrencyCodes = favorites,
         onCurrencySelected = { selected = it },
         onToggleFavorite = { code ->
-            favorites = if (code in favorites) {
-                favorites - code
-            } else {
-                favorites + code
-            }
-        }
+            favorites = if (code in favorites) favorites - code else favorites + code
+        },
     )
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFF1E1E1E)
-@Composable
-fun CurrencyItemPreview() {
-    Column {
-        // 선택된 상태
-        CurrencyItem(
-            currency = CurrencyInfo(
-                "KRW",
-                "KRW",
-                stringResource(R.string.preview_currency_krw),
-                "🇰🇷"
-            ),
-            isSelected = true,
-            isFavorite = true,
-            onClick = {},
-            onToggleFavorite = {}
-        )
-        CurrencyItem(
-            currency = CurrencyInfo(
-                "USD",
-                "USD",
-                stringResource(R.string.preview_currency_usd),
-                "🇺🇸"
-            ),
-            isSelected = false,
-            isFavorite = true,
-            onClick = {},
-            onToggleFavorite = {}
-        )
-    }
 }

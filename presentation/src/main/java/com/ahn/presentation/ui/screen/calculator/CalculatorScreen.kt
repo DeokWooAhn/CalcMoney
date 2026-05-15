@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,11 +27,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -66,12 +62,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.R
 import com.ahn.presentation.ui.component.CalculatorButton
 import com.ahn.presentation.ui.component.CalculatorIconButton
+import com.ahn.presentation.ui.component.CurrencyPickerDialog
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.DeleteCalculatorButton
 import com.ahn.presentation.ui.theme.buttonFunction
@@ -583,7 +579,6 @@ private fun CalculatorExchangeCurrencySelector(
     modifier: Modifier = Modifier,
 ) {
     var showDialog by remember { mutableStateOf(false) }
-
     var favoriteCodesSnapshot by remember { mutableStateOf<List<String>>(emptyList()) }
 
     Surface(
@@ -615,97 +610,19 @@ private fun CalculatorExchangeCurrencySelector(
     }
 
     if (showDialog) {
-        val orderMap = remember(favoriteCodesSnapshot) {
-            favoriteCodesSnapshot.withIndex().associate { it.value to it.index }
-        }
-
-        val sortedCurrencies = remember(availableCurrencies, orderMap) {
-            val favorites = availableCurrencies
-                .filter { it.code in orderMap }
-                .sortedBy { orderMap[it.code] }
-
-            val others = availableCurrencies.filter { it.code !in orderMap }
-
-            favorites + others
-        }
-
-        Dialog(onDismissRequest = { showDialog = false }) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surface,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 500.dp),
-            ) {
-                Column {
-                    Text(
-                        text = stringResource(R.string.select_currency_with_label, label),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(20.dp),
-                    )
-
-                    HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
-
-                    LazyColumn {
-                        items(sortedCurrencies, key = { it.code }) { currency ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onCurrencySelected(currency)
-                                        showDialog = false
-                                    }
-                                    .padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(text = currency.flagEmoji, fontSize = 24.sp)
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = currency.displayCode,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                    Text(
-                                        text = currency.name,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        onToggleFavorite(currency.code)
-                                    },
-                                    modifier = Modifier.size(40.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = if (currency.code in favoriteCurrencyCodes) {
-                                            Icons.Default.Favorite
-                                        } else {
-                                            Icons.Default.FavoriteBorder
-                                        },
-                                        contentDescription = if (currency.code in favoriteCurrencyCodes) {
-                                            stringResource(R.string.remove_favorite)
-                                        } else {
-                                            stringResource(R.string.add_favorite)
-                                        },
-                                        tint = if (currency.code in favoriteCurrencyCodes) {
-                                            Color.Red
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        },
-                                        modifier = Modifier.size(22.dp),
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        CurrencyPickerDialog(
+            currencies = availableCurrencies,
+            selectedCurrency = selectedCurrency,
+            favoriteCurrencyCodesForSort = favoriteCodesSnapshot,
+            favoriteCurrencyCodesForIcon = favoriteCurrencyCodes,
+            title = stringResource(R.string.select_currency_with_label, label),
+            onDismiss = { showDialog = false },
+            onCurrencySelected = { currency ->
+                onCurrencySelected(currency)
+                showDialog = false
+            },
+            onToggleFavorite = onToggleFavorite,
+        )
     }
 }
 

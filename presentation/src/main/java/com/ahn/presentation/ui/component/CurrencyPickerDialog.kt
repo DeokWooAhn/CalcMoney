@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import com.ahn.presentation.R
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.presentation.R
 
 @Composable
 fun CurrencyPickerDialog(
@@ -57,6 +57,9 @@ fun CurrencyPickerDialog(
         val others = currencies.filter { it.code !in orderMap }
 
         favorites + others
+    }
+    val favoriteCurrencyCodeSet = remember(favoriteCurrencyCodesForIcon) {
+        favoriteCurrencyCodesForIcon.toSet()
     }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -83,7 +86,7 @@ fun CurrencyPickerDialog(
                         CurrencyPickerItem(
                             currency = currency,
                             isSelected = currency == selectedCurrency,
-                            isFavorite = currency.code in favoriteCurrencyCodesForIcon,
+                            isFavorite = currency.code in favoriteCurrencyCodeSet,
                             onClick = { onCurrencySelected(currency) },
                             onToggleFavorite = { onToggleFavorite(currency.code) },
                         )
@@ -102,10 +105,19 @@ private fun CurrencyPickerItem(
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
 ) {
+    val selectCurrencyLabel = stringResource(
+        R.string.select_currency_accessibility,
+        currency.displayCode,
+        currency.name,
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(
+                onClickLabel = selectCurrencyLabel,
+                onClick = onClick,
+            )
             .background(
                 if (isSelected) {
                     MaterialTheme.colorScheme.surfaceVariant

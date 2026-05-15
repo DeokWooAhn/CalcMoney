@@ -39,6 +39,21 @@ import androidx.compose.ui.window.Dialog
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.R
 
+/**
+ * Displays a currency chip showing the currently selected currency (flag and code) or a prompt to select a currency, and opens a currency picker dialog when tapped.
+ *
+ * If `selectedCurrency` is null, a prompt text is shown; otherwise the chip shows the currency's flag, code, and a dropdown icon. Tapping the chip opens a dialog populated with `availableCurrencies` and current favorites.
+ *
+ * @param selectedCurrency The currently selected currency, or `null` to show the selection prompt.
+ * @param availableCurrencies The list of currencies shown in the picker dialog.
+ * @param favoriteCurrencyCodes Currency codes marked as favorites; used to indicate and sort favorites in the dialog.
+ * @param onCurrencySelected Callback invoked with the currency chosen in the dialog.
+ * @param onToggleFavorite Callback invoked with a currency code when its favorite state is toggled.
+ * @param modifier Modifier applied to the chip or prompt.
+ * @param backgroundColor Background color for the chip.
+ * @param textColor Text and icon color for the chip and prompt.
+ * @param dialogTitle Title text displayed at the top of the currency picker dialog.
+ */
 @Composable
 fun CurrencySelector(
     selectedCurrency: CurrencyInfo?,
@@ -107,6 +122,13 @@ fun CurrencySelector(
     }
 }
 
+/**
+ * Preview of CurrencySelector demonstrating selection and favorites behavior with sample currencies.
+ *
+ * Initializes three sample currencies (KRW, USD, JPY), sets KRW as the initially selected currency,
+ * and marks USD and JPY as initial favorites. Interactions update the selected currency and toggle
+ * favorite membership for the corresponding currency code.
+ */
 @Preview
 @Composable
 fun CurrencySelectorPreview() {

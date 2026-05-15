@@ -568,6 +568,22 @@ fun CalculatorScreen(
     }
 }
 
+/**
+ * Displays a clickable currency selector that opens a currency picker dialog for choosing or favoriting a currency.
+ *
+ * When tapped (and when `availableCurrencies` is not empty) the selector opens a `CurrencyPickerDialog`. The dialog
+ * shows `availableCurrencies`, highlights `selectedCurrency`, allows toggling favorites via `onToggleFavorite`, and
+ * returns the chosen currency through `onCurrencySelected`. A snapshot of `favoriteCurrencyCodes` is captured when the
+ * dialog opens and is used for dialog sorting.
+ *
+ * @param label Short label used as the dialog title context.
+ * @param selectedCurrency Currently selected currency, or `null` if none is selected.
+ * @param availableCurrencies List of currencies that can be selected.
+ * @param favoriteCurrencyCodes Current favorite currency codes used to display favorite icons in the dialog.
+ * @param onToggleFavorite Callback invoked with a currency code to toggle its favorite state.
+ * @param onCurrencySelected Callback invoked with the currency selected in the dialog.
+ * @param modifier Modifier for styling and layout.
+ */
 @Composable
 private fun CalculatorExchangeCurrencySelector(
     label: String,

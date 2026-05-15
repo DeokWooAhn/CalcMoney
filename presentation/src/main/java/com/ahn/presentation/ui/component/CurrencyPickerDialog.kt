@@ -34,6 +34,18 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.ahn.domain.currency.model.CurrencyInfo
 
+/**
+ * Shows a dialog that lets the user pick a currency, displays favorite currencies first in the given sort order, and allows toggling favorites.
+ *
+ * @param currencies The list of currencies to display.
+ * @param selectedCurrency The currently selected currency, or `null` if none.
+ * @param favoriteCurrencyCodesForSort Favorite currency codes that determine ordering; favorites appear first in the order provided.
+ * @param favoriteCurrencyCodesForIcon Favorite currency codes that should render with the filled favorite icon.
+ * @param title The dialog title text.
+ * @param onDismiss Called when the dialog is dismissed.
+ * @param onCurrencySelected Called with the currency chosen by the user.
+ * @param onToggleFavorite Called with a currency code when its favorite icon is toggled.
+ */
 @Composable
 fun CurrencyPickerDialog(
     currencies: List<CurrencyInfo>,
@@ -94,6 +106,19 @@ fun CurrencyPickerDialog(
     }
 }
 
+/**
+ * Renders a selectable currency row showing the flag, currency code and name, and a favorite toggle.
+ *
+ * The row is visually highlighted when `isSelected` is true. The favorite icon appears filled when
+ * `isFavorite` is true. Tapping the row invokes `onClick`; tapping the favorite icon invokes
+ * `onToggleFavorite`.
+ *
+ * @param currency The currency data to display.
+ * @param isSelected Whether this row represents the currently selected currency.
+ * @param isFavorite Whether the currency is marked as a favorite (controls icon appearance).
+ * @param onClick Called when the row is clicked.
+ * @param onToggleFavorite Called when the favorite icon is clicked.
+ */
 @Composable
 private fun CurrencyPickerItem(
     currency: CurrencyInfo,

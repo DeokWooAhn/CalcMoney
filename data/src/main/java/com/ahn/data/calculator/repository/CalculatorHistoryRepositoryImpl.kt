@@ -1,6 +1,6 @@
-package com.ahn.data.repository
+package com.ahn.data.calculator.repository
 
-import com.ahn.data.local.CalculatorHistoryDataSource
+import com.ahn.data.calculator.local.datasource.CalculatorHistoryDataSource
 import com.ahn.domain.calculator.model.CalculatorHistory
 import com.ahn.domain.calculator.repository.CalculatorHistoryRepository
 import kotlinx.coroutines.flow.Flow

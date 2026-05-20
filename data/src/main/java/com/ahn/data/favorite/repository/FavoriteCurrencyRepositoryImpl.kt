@@ -1,6 +1,6 @@
-package com.ahn.data.repository
+package com.ahn.data.favorite.repository
 
-import com.ahn.data.local.FavoriteCurrencyDataSource
+import com.ahn.data.favorite.local.datasource.FavoriteCurrencyDataSource
 import com.ahn.domain.favorite.repository.FavoriteCurrencyRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject

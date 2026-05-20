@@ -1,6 +1,6 @@
-package com.ahn.data.repository
+package com.ahn.data.currency.repository
 
-import com.ahn.data.local.CurrencySelectionDataSource
+import com.ahn.data.currency.local.datasource.CurrencySelectionDataSource
 import com.ahn.domain.currency.repository.CurrencySelectionRepository
 import javax.inject.Inject
 

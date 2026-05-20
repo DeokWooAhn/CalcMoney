@@ -740,11 +740,12 @@ private fun CalculatorHistoryPanel(
 }
 
 /**
- * Preview of the CalculatorScreen populated with example state and currencies.
+ * 예시 상태와 통화 목록이 채워진 CalculatorScreen의 프리뷰입니다.
  *
- * Renders a Surface containing CalculatorScreen configured with a sample expression ("100+200"),
- * a preview result ("300"), cursor position, and two example currencies (KRW and USD). Callback
- * handlers are no-ops to allow composable preview rendering in the IDE.
+ * 샘플 수식("100+200"), 프리뷰 결과("300"), 커서 위치,
+ * 그리고 두 개의 예시 통화(KRW, USD)가 설정된 CalculatorScreen을
+ * Surface 안에 렌더링합니다. 콜백 핸들러는 IDE에서 Composable 프리뷰가
+ * 렌더링될 수 있도록 아무 동작도 하지 않는 no-op으로 설정되어 있습니다.
  */
 @Preview(showBackground = true)
 @Composable

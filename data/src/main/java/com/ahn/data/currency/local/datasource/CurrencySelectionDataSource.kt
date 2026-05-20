@@ -1,4 +1,4 @@
-package com.ahn.data.local
+package com.ahn.data.currency.local.datasource
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -10,6 +10,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.ahn.domain.currency.model.CalculatorCurrencySelection
 import com.ahn.domain.currency.model.ExchangeCurrencySelection
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -92,7 +93,7 @@ class CurrencySelectionDataSource @Inject constructor(
         }
     }
 
-    private fun kotlinx.coroutines.flow.Flow<Preferences>.safePreferences() = catch { exception ->
+    private fun Flow<Preferences>.safePreferences() = catch { exception ->
         if (exception is IOException) {
             emit(emptyPreferences())
         } else {

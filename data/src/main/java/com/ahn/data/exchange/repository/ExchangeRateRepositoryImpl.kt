@@ -9,6 +9,7 @@ import com.ahn.data.exchange.mapper.toEntity
 import com.ahn.data.exchange.remote.datasource.ExchangeRateRemoteDataSource
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.domain.exchange.repository.ExchangeRateRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
@@ -46,6 +47,7 @@ class ExchangeRateRepositoryImpl @Inject constructor(
                 localDataSource.replaceRates(valid)
                 valid
             }.getOrElse { error ->
+                if (error is CancellationException) throw error
                 cached.ifEmpty { throw error }
             }
         }

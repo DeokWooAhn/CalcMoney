@@ -27,6 +27,7 @@ object DatabaseModule {
     }
 
     @Provides
+    @Singleton
     fun provideExchangeRateDao(
         database: CalcMoneyDatabase,
     ): ExchangeRateDao = database.exchangeRateDao()

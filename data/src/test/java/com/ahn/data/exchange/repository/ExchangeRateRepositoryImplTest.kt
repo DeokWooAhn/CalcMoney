@@ -12,6 +12,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.just
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import java.io.IOException
 
@@ -74,6 +75,21 @@ class ExchangeRateRepositoryImplTest : DescribeSpec({
         }
 
         context("캐시 만료 후 원격 요청이 실패하면") {
+            it("취소 예외는 기존 캐시로 대체하지 않고 그대로 던진다") {
+                runTest {
+                    coEvery { localDataSource.getCachedRates() } returns listOf(
+                        usdEntity(baseRate = 1300.0),
+                    )
+                    coEvery { localDataSource.getLatestFetchedAt() } returns oldFetchedAt()
+                    coEvery { remoteDataSource.fetchExchangeRates(any()) } throws CancellationException("cancelled")
+
+                    shouldThrow<CancellationException> {
+                        repository.getExchangeRate(from = "USD", to = "KRW")
+                    }
+                    coVerify(exactly = 0) { localDataSource.replaceRates(any()) }
+                }
+            }
+
             it("기존 캐시가 있을 때 만료된 Room 캐시로 대체한다") {
                 runTest {
                     coEvery { localDataSource.getCachedRates() } returns listOf(

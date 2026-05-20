@@ -14,6 +14,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
+    /**
+     * Provides the application's CalcMoneyDatabase instance.
+     *
+     * @param context The application [Context] used to construct the Room database.
+     * @return A configured [CalcMoneyDatabase] backed by the "calc_money.db" file.
+     */
     @Provides
     @Singleton
     fun provideDatabase(
@@ -26,6 +32,12 @@ object DatabaseModule {
         ).build()
     }
 
+    /**
+     * Exposes the ExchangeRateDao from the application's CalcMoneyDatabase.
+     *
+     * @param database The CalcMoneyDatabase instance to retrieve the DAO from.
+     * @return The ExchangeRateDao used to access exchange rate entities.
+     */
     @Provides
     fun provideExchangeRateDao(
         database: CalcMoneyDatabase,

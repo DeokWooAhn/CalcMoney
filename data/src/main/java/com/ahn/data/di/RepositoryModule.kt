@@ -1,9 +1,9 @@
 package com.ahn.data.di
 
-import com.ahn.data.repository.CalculatorHistoryRepositoryImpl
-import com.ahn.data.repository.CurrencySelectionRepositoryImpl
-import com.ahn.data.repository.ExchangeRateRepositoryImpl
-import com.ahn.data.repository.FavoriteCurrencyRepositoryImpl
+import com.ahn.data.calculator.repository.CalculatorHistoryRepositoryImpl
+import com.ahn.data.currency.repository.CurrencySelectionRepositoryImpl
+import com.ahn.data.exchange.repository.ExchangeRateRepositoryImpl
+import com.ahn.data.favorite.repository.FavoriteCurrencyRepositoryImpl
 import com.ahn.domain.calculator.repository.CalculatorHistoryRepository
 import com.ahn.domain.currency.repository.CurrencySelectionRepository
 import com.ahn.domain.exchange.repository.ExchangeRateRepository
@@ -32,6 +32,12 @@ abstract class RepositoryModule {
         impl: CalculatorHistoryRepositoryImpl
     ): CalculatorHistoryRepository
 
+    /**
+     * Binds a CurrencySelectionRepository implementation into the Dagger graph.
+     *
+     * @param impl The concrete CurrencySelectionRepositoryImpl to be provided wherever CurrencySelectionRepository is required.
+     * @return The bound CurrencySelectionRepository interface.
+     */
     @Binds
     abstract fun bindCurrencySelectionRepository(
         impl: CurrencySelectionRepositoryImpl

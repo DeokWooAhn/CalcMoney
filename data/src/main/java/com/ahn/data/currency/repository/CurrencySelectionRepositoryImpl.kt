@@ -1,6 +1,6 @@
-package com.ahn.data.repository
+package com.ahn.data.currency.repository
 
-import com.ahn.data.local.CurrencySelectionDataSource
+import com.ahn.data.currency.local.datasource.CurrencySelectionDataSource
 import com.ahn.domain.currency.repository.CurrencySelectionRepository
 import javax.inject.Inject
 
@@ -32,6 +32,12 @@ class CurrencySelectionRepositoryImpl @Inject constructor(
         dataSource.saveExchangeToCurrencyCode(code)
     }
 
+    /**
+     * Saves the selected exchange currency pair.
+     *
+     * @param fromCode The source currency code (origin), e.g. "USD".
+     * @param toCode The target currency code (destination), e.g. "KRW".
+     */
     override suspend fun saveExchangeSelection(fromCode: String, toCode: String) {
         dataSource.saveExchangeSelection(fromCode, toCode)
     }

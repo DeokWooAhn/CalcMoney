@@ -1,6 +1,6 @@
-package com.ahn.data.remote
+package com.ahn.data.exchange.remote.api
 
-import com.ahn.data.model.ExchangeRateResponse
+import com.ahn.data.exchange.remote.dto.ExchangeRateResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get

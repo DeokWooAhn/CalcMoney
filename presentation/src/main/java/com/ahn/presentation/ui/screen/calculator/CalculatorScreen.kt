@@ -665,6 +665,16 @@ private fun CalculatorHistoryOverlay(
     }
 }
 
+/**
+ * Displays a scrollable panel of past calculator entries and a button to clear them.
+ *
+ * The list shows entries with the most recent history first and will scroll to the most
+ * recent item whenever the number of histories changes and the list is not empty.
+ *
+ * @param histories A list of calculator history items to display; newer items appear at the top.
+ * @param onClearHistory Callback invoked when the clear-history button is pressed.
+ * @param modifier Modifier applied to the outer surface of the panel.
+ */
 @Composable
 private fun CalculatorHistoryPanel(
     histories: List<CalculatorContract.HistoryItem>,
@@ -740,11 +750,11 @@ private fun CalculatorHistoryPanel(
 }
 
 /**
- * Preview of the CalculatorScreen populated with example state and currencies.
+ * Preview of CalculatorScreen populated with example state and currencies.
  *
- * Renders a Surface containing CalculatorScreen configured with a sample expression ("100+200"),
- * a preview result ("300"), cursor position, and two example currencies (KRW and USD). Callback
- * handlers are no-ops to allow composable preview rendering in the IDE.
+ * Renders CalculatorScreen inside a Surface using a sample expression ("100+200"),
+ * a preview result ("300"), cursor position 2, and example currencies (KRW and USD).
+ * Callback handlers are no-ops so the composable can be rendered in the IDE preview.
  */
 @Preview(showBackground = true)
 @Composable

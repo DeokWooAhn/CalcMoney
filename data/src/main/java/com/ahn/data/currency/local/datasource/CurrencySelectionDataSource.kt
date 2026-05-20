@@ -1,4 +1,4 @@
-package com.ahn.data.local
+package com.ahn.data.currency.local.datasource
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -10,6 +10,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.ahn.domain.currency.model.CalculatorCurrencySelection
 import com.ahn.domain.currency.model.ExchangeCurrencySelection
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -85,6 +86,12 @@ class CurrencySelectionDataSource @Inject constructor(
         }
     }
 
+    /**
+     * Saves the exchange currency selection to persistent preferences.
+     *
+     * @param fromCode The currency code to set as the "from" currency.
+     * @param toCode The currency code to set as the "to" currency.
+     */
     suspend fun saveExchangeSelection(fromCode: String, toCode: String) {
         context.currencySelectionDataStore.edit { prefs ->
             prefs[exchangeFromCurrencyCodeKey] = fromCode
@@ -92,7 +99,15 @@ class CurrencySelectionDataSource @Inject constructor(
         }
     }
 
-    private fun kotlinx.coroutines.flow.Flow<Preferences>.safePreferences() = catch { exception ->
+    /**
+     * Recovers a preferences Flow from IO errors by emitting empty preferences when an [IOException] occurs.
+     *
+     * The resulting Flow rethrows non-IO exceptions.
+     *
+     * @receiver The source Flow of [Preferences].
+     * @return A Flow that emits the original preferences values, or `emptyPreferences()` when an [IOException] is thrown by the source.
+     */
+    private fun Flow<Preferences>.safePreferences() = catch { exception ->
         if (exception is IOException) {
             emit(emptyPreferences())
         } else {

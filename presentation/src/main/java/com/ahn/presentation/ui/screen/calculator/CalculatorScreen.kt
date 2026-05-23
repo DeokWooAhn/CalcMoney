@@ -201,7 +201,7 @@ fun CalculatorScreen(
                 )
             }
 
-            // Display Area
+            // 표시 영역
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -278,12 +278,12 @@ fun CalculatorScreen(
                 }
             }
 
-            // Button Grid
+            // 버튼 그리드
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                // Row 1: AC, (), Divide
+                // 1행: AC, (), 나누기
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -348,7 +348,7 @@ fun CalculatorScreen(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            // Row 2: 7, 8, 9, Multiply
+                            // 2행: 7, 8, 9, 곱하기
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -400,7 +400,7 @@ fun CalculatorScreen(
                                 )
                             }
 
-                            // Row 3: 4, 5, 6, Subtract
+                            // 3행: 4, 5, 6, 빼기
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -452,7 +452,7 @@ fun CalculatorScreen(
                                 )
                             }
 
-                            // Row 4: 1, 2, 3, Add
+                            // 4행: 1, 2, 3, 더하기
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -504,7 +504,7 @@ fun CalculatorScreen(
                                 )
                             }
 
-                            // Row 5: 0 (double width), ., =
+                            // 5행: 0(두 칸), ., =
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -666,14 +666,13 @@ private fun CalculatorHistoryOverlay(
 }
 
 /**
- * Displays a scrollable panel of past calculator entries and a button to clear them.
+ * 계산 기록 목록과 기록 삭제 버튼을 표시하는 패널입니다.
  *
- * The list shows entries with the most recent history first and will scroll to the most
- * recent item whenever the number of histories changes and the list is not empty.
+ * 최신 기록이 위에 보이도록 표시하며, 기록 수가 바뀌면 가장 최근 항목으로 스크롤합니다.
  *
- * @param histories A list of calculator history items to display; newer items appear at the top.
- * @param onClearHistory Callback invoked when the clear-history button is pressed.
- * @param modifier Modifier applied to the outer surface of the panel.
+ * @param histories 표시할 계산 기록 목록입니다.
+ * @param onClearHistory 기록 삭제 버튼을 눌렀을 때 실행할 콜백입니다.
+ * @param modifier 패널 외부 Surface에 적용할 Modifier입니다.
  */
 @Composable
 private fun CalculatorHistoryPanel(
@@ -749,13 +748,6 @@ private fun CalculatorHistoryPanel(
     }
 }
 
-/**
- * Preview of CalculatorScreen populated with example state and currencies.
- *
- * Renders CalculatorScreen inside a Surface using a sample expression ("100+200"),
- * a preview result ("300"), cursor position 2, and example currencies (KRW and USD).
- * Callback handlers are no-ops so the composable can be rendered in the IDE preview.
- */
 @Preview(showBackground = true)
 @Composable
 fun CalculatorScreenPreview() {

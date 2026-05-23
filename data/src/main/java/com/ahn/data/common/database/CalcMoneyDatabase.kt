@@ -11,10 +11,5 @@ import com.ahn.data.exchange.local.entity.ExchangeRateEntity
     exportSchema = true,
 )
 abstract class CalcMoneyDatabase : RoomDatabase() {
-    /**
- * Provides the DAO for accessing and manipulating exchange rate records.
- *
- * @return The [ExchangeRateDao] used to query and update exchange rate entities.
- */
-abstract fun exchangeRateDao(): ExchangeRateDao
+    abstract fun exchangeRateDao(): ExchangeRateDao
 }

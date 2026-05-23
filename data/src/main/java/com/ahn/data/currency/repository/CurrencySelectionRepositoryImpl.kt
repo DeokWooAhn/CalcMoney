@@ -32,12 +32,6 @@ class CurrencySelectionRepositoryImpl @Inject constructor(
         dataSource.saveExchangeToCurrencyCode(code)
     }
 
-    /**
-     * Saves the selected exchange currency pair.
-     *
-     * @param fromCode The source currency code (origin), e.g. "USD".
-     * @param toCode The target currency code (destination), e.g. "KRW".
-     */
     override suspend fun saveExchangeSelection(fromCode: String, toCode: String) {
         dataSource.saveExchangeSelection(fromCode, toCode)
     }

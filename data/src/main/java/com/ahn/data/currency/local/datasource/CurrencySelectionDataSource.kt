@@ -86,12 +86,6 @@ class CurrencySelectionDataSource @Inject constructor(
         }
     }
 
-    /**
-     * Saves the exchange currency selection to persistent preferences.
-     *
-     * @param fromCode The currency code to set as the "from" currency.
-     * @param toCode The currency code to set as the "to" currency.
-     */
     suspend fun saveExchangeSelection(fromCode: String, toCode: String) {
         context.currencySelectionDataStore.edit { prefs ->
             prefs[exchangeFromCurrencyCodeKey] = fromCode
@@ -100,12 +94,9 @@ class CurrencySelectionDataSource @Inject constructor(
     }
 
     /**
-     * Recovers a preferences Flow from IO errors by emitting empty preferences when an [IOException] occurs.
+     * DataStore 읽기 중 [IOException]이 발생하면 빈 Preferences를 방출해 Flow를 복구합니다.
      *
-     * The resulting Flow rethrows non-IO exceptions.
-     *
-     * @receiver The source Flow of [Preferences].
-     * @return A Flow that emits the original preferences values, or `emptyPreferences()` when an [IOException] is thrown by the source.
+     * IO 오류가 아닌 예외는 그대로 다시 던집니다.
      */
     private fun Flow<Preferences>.safePreferences() = catch { exception ->
         if (exception is IOException) {

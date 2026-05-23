@@ -59,7 +59,7 @@ android {
 dependencies {
     implementation(project(":domain"))
 
-    // AndroidX Core & UI
+    // AndroidX 코어 및 UI
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity)
@@ -68,7 +68,7 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.material)
 
-    // Compose BOM & UI
+    // Compose BOM 및 UI
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.ui)
@@ -77,11 +77,11 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material.icons.extended)
 
-    // Debug
+    // 디버그
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // Unit Tset
+    // 단위 테스트
     testImplementation(libs.junit)
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
@@ -90,7 +90,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
 
-    // Android Instrumented Test
+    // Android 계측 테스트
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.espresso.core)
@@ -98,14 +98,14 @@ dependencies {
 
     // Orbit MVI
     implementation(libs.orbit.viewmodel)
-    implementation(libs.orbit.compose)  // Compose integration
-    testImplementation(libs.orbit.test)  // Testing
+    implementation(libs.orbit.compose)  // Compose 연동
+    testImplementation(libs.orbit.test)  // 테스트
 
-    // Navigation
+    // 내비게이션
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
 
-    // DI
+    // 의존성 주입
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
 }

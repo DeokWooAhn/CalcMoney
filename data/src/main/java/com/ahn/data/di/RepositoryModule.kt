@@ -32,12 +32,6 @@ abstract class RepositoryModule {
         impl: CalculatorHistoryRepositoryImpl
     ): CalculatorHistoryRepository
 
-    /**
-     * Binds a CurrencySelectionRepository implementation into the Dagger graph.
-     *
-     * @param impl The concrete CurrencySelectionRepositoryImpl to be provided wherever CurrencySelectionRepository is required.
-     * @return The bound CurrencySelectionRepository interface.
-     */
     @Binds
     abstract fun bindCurrencySelectionRepository(
         impl: CurrencySelectionRepositoryImpl

@@ -80,7 +80,7 @@ dependencies {
     // Kotlinx Serialization (JSON 파싱)
     implementation(libs.kotlinx.serialization.json)
 
-    // Okhttp
+    // OkHttp
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
 

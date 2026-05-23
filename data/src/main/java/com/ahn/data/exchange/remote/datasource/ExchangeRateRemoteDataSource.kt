@@ -9,10 +9,10 @@ class ExchangeRateRemoteDataSource @Inject constructor(
     private val api: ExchangeRateApi,
 ) {
     /**
-     * Fetches exchange rate entries from the remote API.
+     * 원격 API에서 환율 목록을 가져옵니다.
      *
-     * @param searchDate Optional date string supplied as the API's `searchData` parameter; defaults to an empty string.
-     * @return A list of `ExchangeRateResponse` objects returned by the remote API.
+     * @param searchDate API의 `searchData` 파라미터로 전달할 조회 날짜입니다. 기본값은 빈 문자열입니다.
+     * @return 원격 API가 반환한 환율 응답 목록입니다.
      */
     suspend fun fetchExchangeRates(searchDate: String = ""): List<ExchangeRateResponse> {
         return api.getExchangeRate(

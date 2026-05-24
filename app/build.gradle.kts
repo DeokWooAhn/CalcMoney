@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.hilt)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.google.services)
     id("com.google.devtools.ksp")
 }
 
@@ -58,8 +59,13 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":presentation"))
 
+    // DI
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.bundles.firebase)
 
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.core.ktx)

@@ -27,14 +27,14 @@ class ExchangeRateRepositoryImpl @Inject constructor(
     private val refreshMutex = Mutex()
 
     /**
-     * Obtain the current list of exchange rate entities, using cached values when the cache is still fresh
-     * or fetching from the remote data source and updating the cache when necessary.
+     * 현재 사용할 환율 목록을 가져옵니다.
      *
-     * The function ensures only one refresh runs at a time.
+     * 캐시가 유효하면 로컬 데이터를 사용하고, 캐시가 만료되었으면 원격 데이터를 가져와 캐시를 갱신합니다.
+     * 동시에 여러 갱신 작업이 실행되지 않도록 [refreshMutex]로 보호합니다.
      *
-     * @return The current list of `ExchangeRateEntity` objects (from cache if fresh, otherwise the freshly fetched-and-cached list).
-     * @throws IllegalStateException if the remote response contains no valid rate entries and no cached rates are available.
-     * @throws Exception if fetching or storing remote data fails and no cached rates are available; the original error is rethrown.
+     * @return 유효한 캐시 또는 새로 가져와 저장한 환율 엔티티 목록입니다.
+     * @throws IllegalStateException 원격 응답에 유효한 환율이 없고 사용할 캐시도 없을 때 발생합니다.
+     * @throws Exception 원격 조회 또는 로컬 저장에 실패했고 사용할 캐시도 없을 때 원래 예외를 다시 던집니다.
      */
     private suspend fun fetchRatesIfNeeded(): List<ExchangeRateEntity> {
         return refreshMutex.withLock {
@@ -64,12 +64,12 @@ class ExchangeRateRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Get the exchange rate from one currency to another.
+     * 기준 통화에서 대상 통화로 변환할 환율을 계산합니다.
      *
-     * @param from The source currency code (e.g., "USD").
-     * @param to The target currency code (e.g., "KRW").
-     * @return The multiplier to convert one unit of `from` into units of `to`.
-     * @throws IllegalStateException if either currency code is not available in the current rates (message: `ERROR_EXCHANGE_RATE_NOT_FOUND`).
+     * @param from 기준 통화 코드입니다.
+     * @param to 대상 통화 코드입니다.
+     * @return `from` 1단위를 `to` 단위로 변환하기 위한 배율입니다.
+     * @throws IllegalStateException 현재 환율 목록에서 둘 중 하나의 통화 코드를 찾을 수 없을 때 발생합니다.
      */
     override suspend fun getExchangeRate(from: String, to: String): Double {
         if (from == to) return 1.0
@@ -82,11 +82,9 @@ class ExchangeRateRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Returns the list of supported currencies, ensuring KRW is included.
+     * 지원 통화 목록을 반환합니다.
      *
-     * The list contains KRW plus currencies derived from the available exchange rates and is deduplicated by currency `code`.
-     *
-     * @return A list of `CurrencyInfo` objects including KRW and currencies from the current rate set, with duplicates removed by `code`.
+     * 기준 통화인 KRW를 항상 포함하고, 현재 환율 목록에서 얻은 통화를 더한 뒤 통화 코드 기준으로 중복을 제거합니다.
      */
     override suspend fun getSupportedCurrencies(): List<CurrencyInfo> {
         val rates = fetchRatesIfNeeded()
@@ -96,10 +94,10 @@ class ExchangeRateRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Map an exchange rate API result code to a user-facing error message.
+     * 환율 API 결과 코드를 사용자에게 보여줄 오류 메시지로 변환합니다.
      *
-     * @param resultCode The API's result code from the exchange rate response, or `null` if unavailable.
-     * @return Specific message for result codes `2`, `3`, and `4`; otherwise `ERROR_EXCHANGE_RATE_NOT_FOUND`.
+     * @param resultCode 환율 응답의 결과 코드입니다. 값이 없으면 `null`입니다.
+     * @return 코드 2, 3, 4에 해당하는 메시지입니다. 그 외에는 기본 환율 없음 메시지를 반환합니다.
      */
     private fun apiErrorMessage(resultCode: Int?): String {
         return when (resultCode) {

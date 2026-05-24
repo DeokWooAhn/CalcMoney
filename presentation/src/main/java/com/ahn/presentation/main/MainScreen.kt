@@ -6,9 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.Icon
@@ -80,15 +78,12 @@ fun MainScreen(
             .background(MaterialTheme.colorScheme.background)
             .padding(top = statusBarPadding),
         bottomBar = {
-            NavigationBar(
-                modifier = Modifier.height(65.dp)
-            ) {
+            NavigationBar {
                 items.forEach { item ->
                     val selected =
                         currentDestination?.hierarchy?.any { it.route == item.route } == true
 
                     NavigationBarItem(
-                        modifier = Modifier.fillMaxHeight(),
                         icon = {
                             Icon(
                                 painterResource(if (selected) item.selectedIcon else item.icon),

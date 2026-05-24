@@ -21,12 +21,6 @@ class FavoriteCurrencyRepositoryImpl @Inject constructor(
         dataSource.removeFavorite(currencyCode)
     }
 
-    /**
-     * Checks whether the given currency code is marked as a favorite.
-     *
-     * @param currencyCode The currency code to check.
-     * @return `true` if the currency code is marked as a favorite, `false` otherwise.
-     */
     override suspend fun isFavorite(currencyCode: String): Boolean {
         return dataSource.isFavorite(currencyCode)
     }

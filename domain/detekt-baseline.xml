@@ -1,0 +1,104 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>BlankLineBeforeDeclaration:CalculatorHistoryRepository.kt:CalculatorHistoryRepository$suspend fun addHistory(history: CalculatorHistory)</ID>
+    <ID>BlankLineBeforeDeclaration:CalculatorHistoryRepository.kt:CalculatorHistoryRepository$suspend fun clearHistories()</ID>
+    <ID>BlankLineBeforeDeclaration:CurrencySelectionRepository.kt:CurrencySelectionRepository$suspend fun saveCalculatorMainCurrencyCode(code: String)</ID>
+    <ID>BlankLineBeforeDeclaration:CurrencySelectionRepository.kt:CurrencySelectionRepository$suspend fun saveCalculatorSelection(mainCode: String, subCode: String)</ID>
+    <ID>BlankLineBeforeDeclaration:CurrencySelectionRepository.kt:CurrencySelectionRepository$suspend fun saveCalculatorSubCurrencyCode(code: String)</ID>
+    <ID>BlankLineBeforeDeclaration:CurrencySelectionRepository.kt:CurrencySelectionRepository$suspend fun saveExchangeFromCurrencyCode(code: String)</ID>
+    <ID>BlankLineBeforeDeclaration:CurrencySelectionRepository.kt:CurrencySelectionRepository$suspend fun saveExchangeSelection(fromCode: String, toCode: String)</ID>
+    <ID>BlankLineBeforeDeclaration:CurrencySelectionRepository.kt:CurrencySelectionRepository$suspend fun saveExchangeToCurrencyCode(code: String)</ID>
+    <ID>BlankLineBeforeDeclaration:ExchangeRateRepository.kt:ExchangeRateRepository$suspend fun getSupportedCurrencies(): List&lt;CurrencyInfo&gt;</ID>
+    <ID>BlankLineBeforeDeclaration:FavoriteCurrencyRepository.kt:FavoriteCurrencyRepository$suspend fun addFavorite(currencyCode: String)</ID>
+    <ID>BlankLineBeforeDeclaration:FavoriteCurrencyRepository.kt:FavoriteCurrencyRepository$suspend fun isFavorite(currencyCode: String): Boolean</ID>
+    <ID>BlankLineBeforeDeclaration:FavoriteCurrencyRepository.kt:FavoriteCurrencyRepository$suspend fun removeFavorite(currencyCode: String)</ID>
+    <ID>ChainMethodContinuation:CalculateExpressionUseCase.kt:CalculateExpressionUseCase$.</ID>
+    <ID>ChainMethodContinuation:ConvertExchangeAmountUseCase.kt:ConvertExchangeAmountUseCase$.</ID>
+    <ID>ClassSignature:AddCalculatorHistoryUseCase.kt:AddCalculatorHistoryUseCase</ID>
+    <ID>ClassSignature:AddCalculatorHistoryUseCaseTest.kt:AddCalculatorHistoryUseCaseTest : DescribeSpec</ID>
+    <ID>ClassSignature:BuildFavoriteRatesUseCaseTest.kt:BuildFavoriteRatesUseCaseTest : DescribeSpec</ID>
+    <ID>ClassSignature:CalculateExchangeAmountUseCaseTest.kt:CalculateExchangeAmountUseCaseTest : DescribeSpec</ID>
+    <ID>ClassSignature:CalculateExpressionUseCaseTest.kt:CalculateExpressionUseCaseTest : DescribeSpec</ID>
+    <ID>ClassSignature:CalculatorHistory.kt:CalculatorHistory</ID>
+    <ID>ClassSignature:ClearCalculatorHistoriesUseCase.kt:ClearCalculatorHistoriesUseCase</ID>
+    <ID>ClassSignature:ConvertExchangeAmountUseCaseTest.kt:ConvertExchangeAmountUseCaseTest : DescribeSpec</ID>
+    <ID>ClassSignature:CurrencyInfo.kt:CurrencyInfo</ID>
+    <ID>ClassSignature:CurrencySelection.kt:CalculatorCurrencySelection</ID>
+    <ID>ClassSignature:CurrencySelection.kt:ExchangeCurrencySelection</ID>
+    <ID>ClassSignature:ExtractRepeatOperationUseCaseTest.kt:ExtractRepeatOperationUseCaseTest : DescribeSpec</ID>
+    <ID>ClassSignature:GetCalculatorHistoriesUseCase.kt:GetCalculatorHistoriesUseCase</ID>
+    <ID>ClassSignature:GetCalculatorSelectionUseCase.kt:GetCalculatorSelectionUseCase</ID>
+    <ID>ClassSignature:GetExchangeRateUseCase.kt:GetExchangeRateUseCase</ID>
+    <ID>ClassSignature:GetExchangeSelectionUseCase.kt:GetExchangeSelectionUseCase</ID>
+    <ID>ClassSignature:GetFavoriteCurrenciesUseCase.kt:GetFavoriteCurrenciesUseCase</ID>
+    <ID>ClassSignature:GetSupportedCurrenciesUseCase.kt:GetSupportedCurrenciesUseCase</ID>
+    <ID>ClassSignature:SaveCalculatorMainCurrencyUseCase.kt:SaveCalculatorMainCurrencyUseCase</ID>
+    <ID>ClassSignature:SaveCalculatorSelectionUseCase.kt:SaveCalculatorSelectionUseCase</ID>
+    <ID>ClassSignature:SaveCalculatorSubCurrencyUseCase.kt:SaveCalculatorSubCurrencyUseCase</ID>
+    <ID>ClassSignature:SaveExchangeFromCurrencyUseCase.kt:SaveExchangeFromCurrencyUseCase</ID>
+    <ID>ClassSignature:SaveExchangeSelectionUseCase.kt:SaveExchangeSelectionUseCase</ID>
+    <ID>ClassSignature:SaveExchangeToCurrencyUseCase.kt:SaveExchangeToCurrencyUseCase</ID>
+    <ID>ClassSignature:ToggleFavoriteCurrencyUseCase.kt:ToggleFavoriteCurrencyUseCase</ID>
+    <ID>ClassSignature:ToggleFavoriteCurrencyUseCaseTest.kt:ToggleFavoriteCurrencyUseCaseTest : BehaviorSpec</ID>
+    <ID>FinalNewline:BuildFavoriteRatesUseCase.kt:com.ahn.domain.favorite.usecase.BuildFavoriteRatesUseCase.kt</ID>
+    <ID>FinalNewline:CalculateExchangeAmountUseCase.kt:com.ahn.domain.exchange.usecase.CalculateExchangeAmountUseCase.kt</ID>
+    <ID>FinalNewline:CalculateExchangeAmountUseCaseTest.kt:com.ahn.domain.exchange.usecase.CalculateExchangeAmountUseCaseTest.kt</ID>
+    <ID>FinalNewline:CalculateExpressionUseCase.kt:com.ahn.domain.calculator.usecase.CalculateExpressionUseCase.kt</ID>
+    <ID>FinalNewline:CalculateExpressionUseCaseTest.kt:com.ahn.domain.calculator.usecase.CalculateExpressionUseCaseTest.kt</ID>
+    <ID>FinalNewline:ClearCalculatorHistoriesUseCase.kt:com.ahn.domain.calculator.usecase.ClearCalculatorHistoriesUseCase.kt</ID>
+    <ID>FinalNewline:CurrencySelection.kt:com.ahn.domain.currency.model.CurrencySelection.kt</ID>
+    <ID>FinalNewline:CurrencySelectionRepository.kt:com.ahn.domain.currency.repository.CurrencySelectionRepository.kt</ID>
+    <ID>FinalNewline:CurrencySelectionUseCases.kt:com.ahn.domain.currency.usecase.CurrencySelectionUseCases.kt</ID>
+    <ID>FinalNewline:ExchangeRateRepository.kt:com.ahn.domain.exchange.repository.ExchangeRateRepository.kt</ID>
+    <ID>FinalNewline:ExchangeUseCases.kt:com.ahn.domain.exchange.usecase.ExchangeUseCases.kt</ID>
+    <ID>FinalNewline:FavoriteCurrencyRepository.kt:com.ahn.domain.favorite.repository.FavoriteCurrencyRepository.kt</ID>
+    <ID>FinalNewline:FavoriteUseCases.kt:com.ahn.domain.favorite.usecase.FavoriteUseCases.kt</ID>
+    <ID>FinalNewline:GetCalculatorHistoriesUseCase.kt:com.ahn.domain.calculator.usecase.GetCalculatorHistoriesUseCase.kt</ID>
+    <ID>FinalNewline:GetCalculatorSelectionUseCase.kt:com.ahn.domain.currency.usecase.GetCalculatorSelectionUseCase.kt</ID>
+    <ID>FinalNewline:GetExchangeRateUseCase.kt:com.ahn.domain.exchange.usecase.GetExchangeRateUseCase.kt</ID>
+    <ID>FinalNewline:GetExchangeSelectionUseCase.kt:com.ahn.domain.currency.usecase.GetExchangeSelectionUseCase.kt</ID>
+    <ID>FinalNewline:GetFavoriteCurrenciesUseCase.kt:com.ahn.domain.favorite.usecase.GetFavoriteCurrenciesUseCase.kt</ID>
+    <ID>FinalNewline:GetSupportedCurrenciesUseCase.kt:com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase.kt</ID>
+    <ID>FinalNewline:SaveCalculatorMainCurrencyUseCase.kt:com.ahn.domain.currency.usecase.SaveCalculatorMainCurrencyUseCase.kt</ID>
+    <ID>FinalNewline:SaveCalculatorSelectionUseCase.kt:com.ahn.domain.currency.usecase.SaveCalculatorSelectionUseCase.kt</ID>
+    <ID>FinalNewline:SaveCalculatorSubCurrencyUseCase.kt:com.ahn.domain.currency.usecase.SaveCalculatorSubCurrencyUseCase.kt</ID>
+    <ID>FinalNewline:SaveExchangeSelectionUseCase.kt:com.ahn.domain.currency.usecase.SaveExchangeSelectionUseCase.kt</ID>
+    <ID>FinalNewline:SaveExchangeToCurrencyUseCase.kt:com.ahn.domain.currency.usecase.SaveExchangeToCurrencyUseCase.kt</ID>
+    <ID>FinalNewline:ToggleFavoriteCurrencyUseCase.kt:com.ahn.domain.favorite.usecase.ToggleFavoriteCurrencyUseCase.kt</ID>
+    <ID>FunctionExpressionBody:ExtractRepeatOperationUseCase.kt:ExtractRepeatOperationUseCase${ return operand.replace('−', '-').toDoubleOrNull() != null }</ID>
+    <ID>FunctionExpressionBody:GetCalculatorHistoriesUseCase.kt:GetCalculatorHistoriesUseCase${ return repository.getHistories() }</ID>
+    <ID>FunctionExpressionBody:GetExchangeRateUseCase.kt:GetExchangeRateUseCase${ return repository.getExchangeRate(from, to) }</ID>
+    <ID>FunctionExpressionBody:GetFavoriteCurrenciesUseCase.kt:GetFavoriteCurrenciesUseCase${ return repository.getFavoriteCurrencyCodes() }</ID>
+    <ID>FunctionExpressionBody:GetSupportedCurrenciesUseCase.kt:GetSupportedCurrenciesUseCase${ return repository.getSupportedCurrencies() }</ID>
+    <ID>FunctionSignature:CalculateExchangeAmountUseCase.kt:CalculateExchangeAmountUseCase$operator fun invoke( fromAmount: String, rate: Double, ): String</ID>
+    <ID>FunctionSignature:ConvertExchangeAmountUseCase.kt:ConvertExchangeAmountUseCase$fun convertExpression( expression: String, rate: Double, currencyCode: String?, ): String</ID>
+    <ID>FunctionSignature:ConvertExchangeAmountUseCase.kt:ConvertExchangeAmountUseCase$fun convertSingleAmount( text: String, rate: Double, currencyCode: String?, ): String</ID>
+    <ID>IfElseWrapping:CalculateExpressionUseCase.kt:CalculateExpressionUseCase.&lt;no name provided&gt;$if (eat('*'.code)) x *= parseFactor() else if (eat('/'.code)) x /= parseFactor() else return x</ID>
+    <ID>IfElseWrapping:CalculateExpressionUseCase.kt:CalculateExpressionUseCase.&lt;no name provided&gt;$if (eat('+'.code)) x += parseTerm() else if (eat('-'.code)) x -= parseTerm() else return x</ID>
+    <ID>IfElseWrapping:CalculateExpressionUseCase.kt:CalculateExpressionUseCase.&lt;no name provided&gt;$if (eat('-'.code)) x -= parseTerm() else return x</ID>
+    <ID>IfElseWrapping:CalculateExpressionUseCase.kt:CalculateExpressionUseCase.&lt;no name provided&gt;$if (eat('/'.code)) x /= parseFactor() else return x</ID>
+    <ID>MultiLineIfElse:CalculateExpressionUseCase.kt:CalculateExpressionUseCase.&lt;no name provided&gt;$return x</ID>
+    <ID>MultiLineIfElse:CalculateExpressionUseCase.kt:CalculateExpressionUseCase.&lt;no name provided&gt;$x *= parseFactor()</ID>
+    <ID>MultiLineIfElse:CalculateExpressionUseCase.kt:CalculateExpressionUseCase.&lt;no name provided&gt;$x += parseTerm()</ID>
+    <ID>MultiLineIfElse:CalculateExpressionUseCase.kt:CalculateExpressionUseCase.&lt;no name provided&gt;$x -= parseTerm()</ID>
+    <ID>MultiLineIfElse:CalculateExpressionUseCase.kt:CalculateExpressionUseCase.&lt;no name provided&gt;$x /= parseFactor()</ID>
+    <ID>MultilineExpressionWrapping:AddCalculatorHistoryUseCaseTest.kt:AddCalculatorHistoryUseCaseTest$CalculatorHistory( expression = "1+1", result = "2", )</ID>
+    <ID>MultilineExpressionWrapping:BuildFavoriteRatesUseCaseTest.kt:BuildFavoriteRatesUseCaseTest$mapOf( "USD" to 0.00072, "JPY" to 0.11, )</ID>
+    <ID>MultilineExpressionWrapping:BuildFavoriteRatesUseCaseTest.kt:BuildFavoriteRatesUseCaseTest$useCase( baseCurrency = krw, baseAmount = "", favoriteCurrencyCodes = listOf("USD"), availableCurrencies = listOf(krw, usd), ratesByCode = mapOf("USD" to 0.00072), )</ID>
+    <ID>MultilineExpressionWrapping:BuildFavoriteRatesUseCaseTest.kt:BuildFavoriteRatesUseCaseTest$useCase( baseCurrency = krw, baseAmount = "1000", favoriteCurrencyCodes = listOf("KRW", "USD"), availableCurrencies = listOf(krw, usd), ratesByCode = mapOf("USD" to 0.00072), )</ID>
+    <ID>MultilineExpressionWrapping:BuildFavoriteRatesUseCaseTest.kt:BuildFavoriteRatesUseCaseTest$useCase( baseCurrency = krw, baseAmount = "1000", favoriteCurrencyCodes = listOf("USD", "JPY"), availableCurrencies = listOf(krw, usd, jpy), ratesByCode = mapOf( "USD" to 0.00072, "JPY" to 0.11, ), )</ID>
+    <ID>MultilineExpressionWrapping:BuildFavoriteRatesUseCaseTest.kt:BuildFavoriteRatesUseCaseTest$useCase( baseCurrency = krw, baseAmount = "1000", favoriteCurrencyCodes = listOf("USD", "JPY", "VND"), availableCurrencies = listOf(krw, usd, jpy), ratesByCode = mapOf("USD" to 0.00072), )</ID>
+    <ID>MultilineExpressionWrapping:BuildFavoriteRatesUseCaseTest.kt:BuildFavoriteRatesUseCaseTest$useCase( baseCurrency = null, baseAmount = "1000", favoriteCurrencyCodes = listOf("USD"), availableCurrencies = listOf(usd), ratesByCode = mapOf("USD" to 0.00072), )</ID>
+    <ID>MultilineExpressionWrapping:CalculateExpressionUseCase.kt:CalculateExpressionUseCase$expression .replace("\n", "") .replace(" ", "") .replace("×", "*") .replace("÷", "/") .replace("−", "-")</ID>
+    <ID>MultilineExpressionWrapping:CalculateExpressionUseCase.kt:CalculateExpressionUseCase$if (normalized.last().toString().matches(Regex("[+\\-*/]"))) { normalized.dropLast(1) } else { normalized }</ID>
+    <ID>MultilineExpressionWrapping:ConvertExchangeAmountUseCase.kt:ConvertExchangeAmountUseCase$number.toString().toDoubleOrNull()?.let { (it * rate).roundToLong() }</ID>
+    <ID>MultilineExpressionWrapping:ConvertExchangeAmountUseCase.kt:ConvertExchangeAmountUseCase$text.toDoubleOrNull() ?: calculateExpressionUseCase.calculate(text) .takeIf { it != "Error" } ?.toDoubleOrNull() ?: return ""</ID>
+    <ID>NoEmptyFirstLineInClassBody:CalculateExpressionUseCase.kt:CalculateExpressionUseCase${ /** * 사용자 산술 표현식을 정규화하고 계산한 뒤, 결과를 포맷된 문자열로 반환합니다. * * 입력값은 정규화됩니다. * 공백과 줄바꿈은 제거되고, `×`는 `*`, `÷`는 `/`, `−`는 `-`로 변환됩니다. * 또한 표현식 끝에 연산자가 남아 있다면 해당 연산자는 제거한 뒤, 남은 표현식을 계산합니다. * * @param expression 계산할 산술 표현식입니다. * 숫자, `.`, `+`, `-`, `*`, `/`, 괄호를 포함할 수 있으며, * 지역화된 연산자 기호(`×`, `÷`, `−`)와 공백 또는 줄바꿈도 포함될 수 있습니다. * * @return 계산 결과를 다음과 같은 문자열로 반환합니다. * - 정규화 후 표현식이 비어 있으면 `"0"` * - 계산에 실패하면 `"Error"` * - 그 외에는 숫자 문자열 * 결과가 정수이면 정수 형태로 포맷하고, * 일반적인 크기의 소수이면 소수점 이하 최대 10자리까지 표시하되 뒤의 0은 제거합니다. * 값의 크기가 1e15 이상이거나 0이 아니면서 1e-10보다 작으면, * 소수점 이하 10자리의 과학적 표기법으로 표시합니다. */ fun calculate(expression: String): String { return try { val normalized = expression .replace("\n", "") .replace(" ", "") .replace("×", "*") .replace("÷", "/") .replace("−", "-") if (normalized.isEmpty()) return "0" // 마지막이 연산자면 제거 val finalExpression = if (normalized.last().toString().matches(Regex("[+\\-*/]"))) { normalized.dropLast(1) } else { normalized } val result = eval(finalExpression) // 15자리를 넘어가거나(10^15), 너무 작으면(10^-10) E 표기법 사용 val absResult = abs(result) if (absResult != 0.0 &amp;&amp; (absResult &gt;= 1e15 || absResult &lt; 1e-10)) { // 예: 1.2345678900E15 (소수점 10자리) String.Companion.format(Locale.US, "%.10E", result).replace(",", ".") } else if (result % 1.0 == 0.0) { String.Companion.format(Locale.US, "%.0f", result) } else { String.Companion.format(Locale.US, "%.10f", result).trimEnd('0').trimEnd('.') } } catch (_: Exception) { "Error" } } private fun eval(expr: String): Double { return object : Any() { var pos = -1 var ch = 0 fun nextChar() { ch = if (++pos &lt; expr.length) expr[pos].code else -1 } fun eat(charToEat: Int): Boolean { while (ch == ' '.code) nextChar() if (ch == charToEat) { nextChar() return true } return false } fun parse(): Double { nextChar() val x = parseExpression() if (pos &lt; expr.length) throw RuntimeException("Unexpected: " + ch.toChar()) return x } fun parseExpression(): Double { var x = parseTerm() while (true) { if (eat('+'.code)) x += parseTerm() else if (eat('-'.code)) x -= parseTerm() else return x } } fun parseTerm(): Double { var x = parseFactor() while (true) { if (eat('*'.code)) x *= parseFactor() else if (eat('/'.code)) x /= parseFactor() else return x } } fun parseFactor(): Double { if (eat('+'.code)) return parseFactor() if (eat('-'.code)) return -parseFactor() var x: Double val startPos = pos if (eat('('.code)) { x = parseExpression() eat(')'.code) } else if ((ch &gt;= '0'.code &amp;&amp; ch &lt;= '9'.code) || ch == '.'.code) { while ((ch &gt;= '0'.code &amp;&amp; ch &lt;= '9'.code) || ch == '.'.code) nextChar() x = expr.substring(startPos, pos).toDouble() } else { throw RuntimeException("Unexpected: " + ch.toChar()) } return x } }.parse() } }</ID>
+    <ID>TrailingCommaOnDeclarationSite:GetExchangeRateUseCase.kt:GetExchangeRateUseCase$( private val repository: ExchangeRateRepository )</ID>
+    <ID>TrailingCommaOnDeclarationSite:GetFavoriteCurrenciesUseCase.kt:GetFavoriteCurrenciesUseCase$( private val repository: FavoriteCurrencyRepository )</ID>
+    <ID>TrailingCommaOnDeclarationSite:GetSupportedCurrenciesUseCase.kt:GetSupportedCurrenciesUseCase$( private val repository: ExchangeRateRepository )</ID>
+    <ID>TrailingCommaOnDeclarationSite:ToggleFavoriteCurrencyUseCase.kt:ToggleFavoriteCurrencyUseCase$( private val repository: FavoriteCurrencyRepository )</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -7,6 +7,21 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
+    inputs:
+      distribute_debug:
+        description: Upload the debug APK to Firebase App Distribution
+        required: true
+        type: boolean
+        default: false
+      tester_groups:
+        description: Firebase tester groups
+        required: false
+        type: string
+        default: testers
+
+env:
+  GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
 
 jobs:
   build:
@@ -29,8 +44,81 @@ jobs:
       - name: Grant execute permission for Gradle
         run: chmod +x gradlew
 
+      - name: Create local properties
+        run: printf "EXCHANGE_API_KEY=%s\n" "${EXCHANGE_API_KEY:-}" > local.properties
+        env:
+          EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
+
+      - name: Run static analysis
+        run: ./gradlew --no-daemon detekt
+
+      - name: Upload detekt reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detekt-reports
+          path: |
+            **/build/reports/detekt/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Run unit tests
-        run: ./gradlew test
+        run: ./gradlew --no-daemon test
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Run Android lint
+        run: ./gradlew --no-daemon :data:lintDebug :presentation:lintDebug :app:lintDebug
+
+      - name: Upload lint reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-reports
+          path: |
+            data/build/reports/
+            presentation/build/reports/
+            app/build/reports/
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug
+        run: ./gradlew --no-daemon :app:assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  firebase_app_distribution:
+    name: Firebase App Distribution
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.distribute_debug }}
+
+    steps:
+      - name: Download debug APK
+        uses: actions/download-artifact@v4
+        with:
+          name: debug-apk
+          path: artifacts
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          groups: ${{ inputs.tester_groups }}
+          file: artifacts/app-debug.apk

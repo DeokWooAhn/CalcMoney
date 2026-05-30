@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.detekt)
     id("com.google.devtools.ksp")
 }
 
@@ -54,6 +55,10 @@ android {
             it.useJUnitPlatform()
         }
     }
+}
+
+detekt {
+    disableDefaultRuleSets = true
 }
 
 dependencies {
@@ -108,4 +113,6 @@ dependencies {
     // 의존성 주입
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
+
+    detektPlugins(libs.detekt.rules.ktlint.wrapper)
 }

@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.detekt)
     id("com.google.devtools.ksp")
 }
 
@@ -54,6 +55,10 @@ android {
     }
 }
 
+detekt {
+    disableDefaultRuleSets = true
+}
+
 dependencies {
     implementation(project(":data"))
     implementation(project(":domain"))
@@ -69,6 +74,9 @@ dependencies {
 
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.core.ktx)
+
+    detektPlugins(libs.detekt.rules.ktlint.wrapper)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

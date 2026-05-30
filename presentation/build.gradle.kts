@@ -59,6 +59,7 @@ android {
 
 detekt {
     disableDefaultRuleSets = true
+    config.setFrom(rootProject.file("detekt-config.yaml"))
 }
 
 dependencies {

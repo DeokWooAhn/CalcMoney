@@ -4,5 +4,6 @@ import com.ahn.domain.currency.model.CurrencyInfo
 
 interface ExchangeRateRepository {
     suspend fun getExchangeRate(from: String, to: String): Double
+    suspend fun getLatestRateDate(): String
     suspend fun getSupportedCurrencies(): List<CurrencyInfo>
 }

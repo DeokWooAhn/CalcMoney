@@ -12,6 +12,7 @@ interface ExchangeContract {
         val availableCurrencies: List<CurrencyInfo> = emptyList(),
         val favoriteCurrencyCodes: List<String> = emptyList(),
         val exchangeRate: Double = 0.0,
+        val exchangeRateDate: String = "",
         val isLoading: Boolean = false,
     )
 

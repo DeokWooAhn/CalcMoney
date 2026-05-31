@@ -21,6 +21,7 @@ import com.ahn.domain.calculator.usecase.ExtractRepeatOperationUseCase
 import com.ahn.domain.calculator.usecase.GetCalculatorHistoriesUseCase
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
+import com.ahn.domain.exchange.usecase.GetLatestExchangeRateDateUseCase
 import com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase
 import com.ahn.domain.favorite.usecase.BuildFavoriteRatesUseCase
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
@@ -54,6 +55,7 @@ class CalculatorViewModelTest : BehaviorSpec({
     val calculateExpressionUseCase = mockk<CalculateExpressionUseCase>()
     val getSupportedCurrenciesUseCase = mockk<GetSupportedCurrenciesUseCase>()
     val getExchangeRateUseCase = mockk<GetExchangeRateUseCase>()
+    val getLatestExchangeRateDateUseCase = mockk<GetLatestExchangeRateDateUseCase>()
     val convertExchangeAmountUseCase = mockk<ConvertExchangeAmountUseCase>()
     val extractRepeatOperationUseCase = ExtractRepeatOperationUseCase()
     val getCalculatorHistoriesUseCase = mockk<GetCalculatorHistoriesUseCase>()
@@ -85,6 +87,7 @@ class CalculatorViewModelTest : BehaviorSpec({
             exchangeAmount = calculateExchangeAmountUseCase,
             convertExchangeAmount = convertExchangeAmountUseCase,
             getExchangeRate = getExchangeRateUseCase,
+            getLatestRateDate = getLatestExchangeRateDateUseCase,
             getSupportedCurrencies = getSupportedCurrenciesUseCase,
         ),
         favoriteUseCases = FavoriteUseCases(

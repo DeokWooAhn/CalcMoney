@@ -76,7 +76,9 @@ class ExchangeRateRepositoryImplTest : DescribeSpec({
                     coVerify {
                         localDataSource.replaceRates(
                             match { rates ->
-                                rates.single().code == "USD" && rates.single().baseRate == 1400.0
+                                rates.single().code == "USD" &&
+                                    rates.single().baseRate == 1400.0 &&
+                                    rates.single().rateDate == "20260601"
                             },
                         )
                     }
@@ -101,7 +103,9 @@ class ExchangeRateRepositoryImplTest : DescribeSpec({
                     coVerify {
                         localDataSource.replaceRates(
                             match { rates ->
-                                rates.single().code == "USD" && rates.single().baseRate == 1400.0
+                                rates.single().code == "USD" &&
+                                    rates.single().baseRate == 1400.0 &&
+                                    rates.single().rateDate == "20260529"
                             },
                         )
                     }
@@ -131,6 +135,13 @@ class ExchangeRateRepositoryImplTest : DescribeSpec({
                     rate shouldBeExactly 1400.0
                     coVerify { remoteDataSource.fetchExchangeRates("20260529") }
                     coVerify(exactly = 0) { remoteDataSource.fetchExchangeRates("20260530") }
+                    coVerify {
+                        localDataSource.replaceRates(
+                            match { rates ->
+                                rates.single().rateDate == "20260529"
+                            },
+                        )
+                    }
                 }
             }
 
@@ -157,6 +168,13 @@ class ExchangeRateRepositoryImplTest : DescribeSpec({
                     rate shouldBeExactly 1400.0
                     coVerify { remoteDataSource.fetchExchangeRates("20260529") }
                     coVerify(exactly = 0) { remoteDataSource.fetchExchangeRates("20260528") }
+                    coVerify {
+                        localDataSource.replaceRates(
+                            match { rates ->
+                                rates.single().rateDate == "20260529"
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -262,6 +280,7 @@ private fun usdEntity(baseRate: Double): ExchangeRateEntity {
         currencyName = "US Dollar",
         baseRate = baseRate,
         fetchedAt = testClock.millis(),
+        rateDate = "20260601",
     )
 }
 

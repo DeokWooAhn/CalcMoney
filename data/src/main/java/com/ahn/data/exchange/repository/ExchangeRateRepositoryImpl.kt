@@ -94,6 +94,10 @@ class ExchangeRateRepositoryImpl internal constructor(
         return fromRate / toRate
     }
 
+    override suspend fun getLatestRateDate(): String {
+        return localDataSource.getLatestRateDate()
+    }
+
     /**
      * 지원 통화 목록을 반환합니다.
      *
@@ -132,7 +136,7 @@ class ExchangeRateRepositoryImpl internal constructor(
                 throw IllegalStateException(apiErrorMessage(lastResultCode))
             }
 
-            val valid = responses.mapNotNull { it.toEntity(fetchedAt) }
+            val valid = responses.mapNotNull { it.toEntity(fetchedAt, searchDate.toRateDate()) }
             if (valid.isNotEmpty()) return valid
         }
 
@@ -148,5 +152,13 @@ class ExchangeRateRepositoryImpl internal constructor(
             .toList()
 
         return listOf("") + previousBusinessDates
+    }
+
+    private fun String.toRateDate(): String {
+        return if (isBlank()) {
+            LocalDate.now(clock).format(searchDateFormatter)
+        } else {
+            this
+        }
     }
 }

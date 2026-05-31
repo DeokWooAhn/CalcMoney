@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -50,9 +51,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -557,6 +560,7 @@ fun CalculatorScreen(
                             visible = showHistory,
                             histories = state.histories,
                             onClearHistory = { onIntent(CalculatorContract.Intent.ClearHistory) },
+                            onDismiss = { showHistory = false },
                             modifier = Modifier
                                 .align(Alignment.TopStart)
                                 .width(historyWidth)
@@ -656,6 +660,7 @@ private fun CalculatorHistoryOverlay(
     visible: Boolean,
     histories: List<CalculatorContract.HistoryItem>,
     onClearHistory: () -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibilityTopLevel(
@@ -666,6 +671,7 @@ private fun CalculatorHistoryOverlay(
         CalculatorHistoryPanel(
             histories = histories,
             onClearHistory = onClearHistory,
+            onDismiss = onDismiss,
             modifier = modifier
         )
     }
@@ -684,9 +690,12 @@ private fun CalculatorHistoryOverlay(
 private fun CalculatorHistoryPanel(
     histories: List<CalculatorContract.HistoryItem>,
     onClearHistory: () -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier,
 ) {
     val listState = rememberLazyListState()
+    val swipeThreshold = with(LocalDensity.current) { 48.dp.toPx() }
+    var horizontalDragAmount by remember { mutableStateOf(0f) }
 
     LaunchedEffect(histories.size) {
         if (histories.isNotEmpty()) {
@@ -695,7 +704,28 @@ private fun CalculatorHistoryPanel(
     }
 
     Surface(
-        modifier = modifier,
+        modifier = modifier.pointerInput(swipeThreshold) {
+            detectHorizontalDragGestures(
+                onDragStart = {
+                    horizontalDragAmount = 0f
+                },
+                onHorizontalDrag = { change, dragAmount ->
+                    horizontalDragAmount += dragAmount
+                    if (dragAmount < 0) {
+                        change.consume()
+                    }
+                },
+                onDragEnd = {
+                    if (horizontalDragAmount < -swipeThreshold) {
+                        onDismiss()
+                    }
+                    horizontalDragAmount = 0f
+                },
+                onDragCancel = {
+                    horizontalDragAmount = 0f
+                },
+            )
+        },
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
     ) {

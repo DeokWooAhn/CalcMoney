@@ -23,7 +23,9 @@ object DatabaseModule {
             context,
             CalcMoneyDatabase::class.java,
             "calc_money.db",
-        ).build()
+        )
+            .addMigrations(CalcMoneyDatabase.MIGRATION_1_2)
+            .build()
     }
 
     @Provides

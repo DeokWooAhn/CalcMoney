@@ -15,6 +15,9 @@ interface ExchangeRateDao {
     @Query("SELECT MAX(fetchedAt) FROM exchange_rates")
     suspend fun getLatestFetchedAt(): Long?
 
+    @Query("SELECT MAX(rateDate) FROM exchange_rates")
+    suspend fun getLatestRateDate(): String?
+
     @Query("DELETE FROM exchange_rates")
     suspend fun deleteAll()
 

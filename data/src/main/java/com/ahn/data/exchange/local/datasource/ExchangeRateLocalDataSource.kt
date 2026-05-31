@@ -15,6 +15,10 @@ class ExchangeRateLocalDataSource @Inject constructor(
         return dao.getLatestFetchedAt() ?: 0L
     }
 
+    suspend fun getLatestRateDate(): String {
+        return dao.getLatestRateDate().orEmpty()
+    }
+
     suspend fun replaceRates(rates: List<ExchangeRateEntity>) {
         dao.replaceAll(rates)
     }

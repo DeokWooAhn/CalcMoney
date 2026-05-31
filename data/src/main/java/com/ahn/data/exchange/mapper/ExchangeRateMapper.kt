@@ -11,10 +11,14 @@ import com.ahn.domain.currency.model.CurrencyInfo
  * `baseRate`를 숫자로 파싱할 수 없으면 `null`을 반환합니다.
  *
  * @param fetchedAt 환율을 가져온 시각입니다. Unix epoch 기준 밀리초입니다.
+ * @param rateDate 환율 데이터의 기준 날짜입니다. `yyyyMMdd` 형식입니다.
  * @return 정규화된 통화 코드, 통화 단위, 통화명, 기준 환율, 조회 시각을 가진 엔티티입니다.
  *         응답이 유효하지 않거나 파싱에 실패하면 `null`을 반환합니다.
  */
-internal fun ExchangeRateResponse.toEntity(fetchedAt: Long): ExchangeRateEntity? {
+internal fun ExchangeRateResponse.toEntity(
+    fetchedAt: Long,
+    rateDate: String,
+): ExchangeRateEntity? {
     if (result != 1 || currencyUnit.isNullOrBlank() || baseRate.isNullOrBlank()) return null
 
     val unit = currencyUnit.trim()
@@ -27,6 +31,7 @@ internal fun ExchangeRateResponse.toEntity(fetchedAt: Long): ExchangeRateEntity?
         currencyName = currencyName ?: "Unknown",
         baseRate = rate,
         fetchedAt = fetchedAt,
+        rateDate = rateDate,
     )
 }
 

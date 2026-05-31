@@ -3,6 +3,7 @@ package com.ahn.presentation.ui.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
@@ -20,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -42,10 +44,17 @@ fun CalculatorButton(
     textColor: Color = MaterialTheme.colorScheme.buttonTextPrimary,
     onClick: () -> Unit
 ) {
+    val elevation = calculatorButtonElevation()
+
     Box(
         modifier = modifier
             .aspectRatio(1f)
             .padding(6.dp)
+            .shadow(
+                elevation = elevation,
+                shape = CircleShape,
+                clip = false,
+            )
             .clip(CircleShape)
             .background(color = backgroundColor)
             .clickable(onClick = onClick),
@@ -69,10 +78,17 @@ fun CalculatorIconButton(
     contentDescription: String,
     onClick: () -> Unit
 ) {
+    val elevation = calculatorButtonElevation()
+
     Box(
         modifier = modifier
             .aspectRatio(1f)
             .padding(6.dp)
+            .shadow(
+                elevation = elevation,
+                shape = CircleShape,
+                clip = false,
+            )
             .clip(CircleShape)
             .background(color = backgroundColor)
             .clickable(onClick = onClick),
@@ -97,11 +113,17 @@ fun DeleteCalculatorButton(
 ) {
     val scope = rememberCoroutineScope()
     var isPressed by remember { mutableStateOf(false) }
+    val elevation = calculatorButtonElevation()
 
     Box(
         modifier = modifier
             .aspectRatio(1f)
             .padding(6.dp)
+            .shadow(
+                elevation = elevation,
+                shape = CircleShape,
+                clip = false,
+            )
             .clip(CircleShape)
             .background(color = if (isPressed) backgroundColor.copy(alpha = 0.7f) else backgroundColor)
             .pointerInput(Unit) {
@@ -133,3 +155,6 @@ fun DeleteCalculatorButton(
         )
     }
 }
+
+@Composable
+private fun calculatorButtonElevation() = if (isSystemInDarkTheme()) 0.dp else 2.dp

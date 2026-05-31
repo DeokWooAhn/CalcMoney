@@ -1,10 +1,9 @@
 package com.ahn.presentation.ui.screen.calculator
 
 import androidx.compose.animation.AnimatedVisibility as AnimatedVisibilityTopLevel
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -78,6 +78,8 @@ import com.ahn.presentation.ui.theme.buttonFunction
 import com.ahn.presentation.ui.theme.buttonOperator
 import com.ahn.presentation.ui.theme.buttonTextSecondary
 import com.ahn.presentation.ui.theme.calculatorAccent
+import com.ahn.presentation.ui.theme.currencySelectorBorder
+import com.ahn.presentation.ui.theme.currencySelectorSurface
 import com.ahn.presentation.util.ThousandSeparatorTransformation
 import com.ahn.presentation.util.formatNumberWithCommas
 import com.ahn.presentation.util.showSnackbarImmediately
@@ -156,7 +158,9 @@ fun CalculatorScreen(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 3.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -293,60 +297,62 @@ fun CalculatorScreen(
                 val rowGap = 0.dp
                 val buttonSize = ((maxWidth - buttonGap * 3) / 4).coerceAtMost(84.dp)
                 val keypadWidth = buttonSize * 4 + buttonGap * 3
-                val historyWidth = buttonSize * 3 + buttonGap * 2
+                val keypadStartPadding = (maxWidth - keypadWidth) / 2
+                val historyWidth = 16.dp + keypadStartPadding + buttonSize * 3 + buttonGap * 3
                 val historyHeight = buttonSize * 4 + rowGap * 3
 
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(rowGap)
-                ) {
-                // 1행: AC, (), 나누기
-                Row(
-                    modifier = Modifier.width(keypadWidth),
-                    horizontalArrangement = Arrangement.spacedBy(buttonGap)
-                ) {
-                    CalculatorIconButton(
-                        imageVector = Icons.Default.AccessTime,
-                        modifier = Modifier.size(buttonSize),
-                        backgroundColor = MaterialTheme.colorScheme.buttonFunction,
-                        contentColor = MaterialTheme.colorScheme.buttonTextSecondary,
-                        contentDescription = "calculator history",
-                        onClick = { showHistory = !showHistory }
-                    )
-                    CalculatorButton(
-                        text = "AC",
-                        modifier = Modifier.size(buttonSize),
-                        backgroundColor = MaterialTheme.colorScheme.buttonFunction,
-                        textColor = MaterialTheme.colorScheme.buttonTextSecondary,
-                        onClick = { onIntent(CalculatorContract.Intent.Clear) }
-                    )
-                    CalculatorButton(
-                        text = "( )",
-                        modifier = Modifier.size(buttonSize),
-                        backgroundColor = MaterialTheme.colorScheme.buttonFunction,
-                        textColor = MaterialTheme.colorScheme.buttonTextSecondary,
-                        onClick = {
-                            onIntent(
-                                CalculatorContract.Intent.Input(
-                                    CalculatorToken.Parenthesis
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(rowGap)
+                    ) {
+                    // 1행: AC, (), 나누기
+                    Row(
+                        modifier = Modifier.width(keypadWidth),
+                        horizontalArrangement = Arrangement.spacedBy(buttonGap)
+                    ) {
+                        CalculatorIconButton(
+                            imageVector = Icons.Default.AccessTime,
+                            modifier = Modifier.size(buttonSize),
+                            backgroundColor = MaterialTheme.colorScheme.buttonFunction,
+                            contentColor = MaterialTheme.colorScheme.buttonTextSecondary,
+                            contentDescription = "calculator history",
+                            onClick = { showHistory = !showHistory }
+                        )
+                        CalculatorButton(
+                            text = "AC",
+                            modifier = Modifier.size(buttonSize),
+                            backgroundColor = MaterialTheme.colorScheme.buttonFunction,
+                            textColor = MaterialTheme.colorScheme.buttonTextSecondary,
+                            onClick = { onIntent(CalculatorContract.Intent.Clear) }
+                        )
+                        CalculatorButton(
+                            text = "( )",
+                            modifier = Modifier.size(buttonSize),
+                            backgroundColor = MaterialTheme.colorScheme.buttonFunction,
+                            textColor = MaterialTheme.colorScheme.buttonTextSecondary,
+                            onClick = {
+                                onIntent(
+                                    CalculatorContract.Intent.Input(
+                                        CalculatorToken.Parenthesis
+                                    )
                                 )
-                            )
-                        }
-                    )
-                    CalculatorButton(
-                        text = stringResource(R.string.divide),
-                        modifier = Modifier.size(buttonSize),
-                        backgroundColor = MaterialTheme.colorScheme.buttonOperator,
-                        onClick = {
-                            onIntent(
-                                CalculatorContract.Intent.Input(
-                                    CalculatorToken.Operator("÷")
+                            }
+                        )
+                        CalculatorButton(
+                            text = stringResource(R.string.divide),
+                            modifier = Modifier.size(buttonSize),
+                            backgroundColor = MaterialTheme.colorScheme.buttonOperator,
+                            onClick = {
+                                onIntent(
+                                    CalculatorContract.Intent.Input(
+                                        CalculatorToken.Operator("÷")
+                                    )
                                 )
-                            )
-                        }
-                    )
-                }
+                            }
+                        )
+                    }
 
                     Box(
                         modifier = Modifier
@@ -556,17 +562,20 @@ fun CalculatorScreen(
                             }
                         }
 
-                        CalculatorHistoryOverlay(
-                            visible = showHistory,
-                            histories = state.histories,
-                            onClearHistory = { onIntent(CalculatorContract.Intent.ClearHistory) },
-                            onDismiss = { showHistory = false },
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .width(historyWidth)
-                                .fillMaxHeight()
-                        )
                     }
+                }
+
+                    CalculatorHistoryOverlay(
+                        visible = showHistory,
+                        histories = state.histories,
+                        onClearHistory = { onIntent(CalculatorContract.Intent.ClearHistory) },
+                        onDismiss = { showHistory = false },
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .offset(x = (-16).dp, y = buttonSize + rowGap)
+                            .width(historyWidth)
+                            .height(historyHeight)
+                    )
                 }
             }
         }
@@ -593,8 +602,12 @@ private fun CalculatorExchangeCurrencySelector(
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.currencySelectorSurface,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.currencySelectorBorder,
+        ),
     ) {
         Row(
             modifier = Modifier
@@ -602,14 +615,14 @@ private fun CalculatorExchangeCurrencySelector(
                     favoriteCodesSnapshot = favoriteCurrencyCodes
                     showDialog = true
                 }
-                .padding(horizontal = 15.dp, vertical = 8.dp),
+                .padding(vertical = 3.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = selectedCurrency?.let { "${it.flagEmoji} ${it.code}" }
                     ?: stringResource(R.string.select_currency),
-                fontSize = 16.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
@@ -665,8 +678,8 @@ private fun CalculatorHistoryOverlay(
 ) {
     AnimatedVisibilityTopLevel(
         visible = visible,
-        enter = slideInHorizontally(initialOffsetX = { -it }) + fadeIn(),
-        exit = slideOutHorizontally(targetOffsetX = { -it }) + fadeOut(),
+        enter = slideInHorizontally(initialOffsetX = { -it }),
+        exit = slideOutHorizontally(targetOffsetX = { -it }),
     ) {
         CalculatorHistoryPanel(
             histories = histories,
@@ -726,7 +739,12 @@ private fun CalculatorHistoryPanel(
                 },
             )
         },
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(
+            topStart = 0.dp,
+            bottomStart = 0.dp,
+            topEnd = 20.dp,
+            bottomEnd = 20.dp,
+        ),
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column(

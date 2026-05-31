@@ -12,6 +12,9 @@ import com.ahn.domain.exchange.repository.ExchangeRateRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 class ExchangeRateRepositoryImpl @Inject constructor(
@@ -21,7 +24,11 @@ class ExchangeRateRepositoryImpl @Inject constructor(
 
     companion object {
         private const val CACHE_TTL_MS = 60 * 60 * 1000L
+        private const val MAX_FALLBACK_DAYS = 7
         private const val ERROR_EXCHANGE_RATE_NOT_FOUND = "Exchange rate data not found"
+        private const val ERROR_EXCHANGE_RATE_NOT_ANNOUNCED =
+            "오늘 환율이 아직 고시되지 않았습니다. 잠시 후 다시 시도해 주세요."
+        private val searchDateFormatter = DateTimeFormatter.BASIC_ISO_DATE
     }
 
     private val refreshMutex = Mutex()
@@ -47,13 +54,7 @@ class ExchangeRateRepositoryImpl @Inject constructor(
             }
 
             runCatching {
-                val responses = remoteDataSource.fetchExchangeRates()
-                val valid = responses.mapNotNull { it.toEntity(now) }
-
-                if (valid.isEmpty()) {
-                    throw IllegalStateException(apiErrorMessage(responses.firstOrNull()?.result))
-                }
-
+                val valid = fetchValidRates(now)
                 localDataSource.replaceRates(valid)
                 valid
             }.getOrElse { error ->
@@ -104,7 +105,36 @@ class ExchangeRateRepositoryImpl @Inject constructor(
             2 -> "Invalid exchange rate API request (result=2)"
             3 -> "Invalid exchange rate API authKey (result=3)"
             4 -> "Exchange rate API daily request limit exceeded (result=4)"
-            else -> ERROR_EXCHANGE_RATE_NOT_FOUND
+            else -> ERROR_EXCHANGE_RATE_NOT_ANNOUNCED
         }
+    }
+
+    private suspend fun fetchValidRates(fetchedAt: Long): List<ExchangeRateEntity> {
+        var lastResultCode: Int? = null
+
+        for (searchDate in exchangeRateSearchDates()) {
+            val responses = remoteDataSource.fetchExchangeRates(searchDate)
+            lastResultCode = responses.firstOrNull()?.result
+
+            if (lastResultCode in 2..4) {
+                throw IllegalStateException(apiErrorMessage(lastResultCode))
+            }
+
+            val valid = responses.mapNotNull { it.toEntity(fetchedAt) }
+            if (valid.isNotEmpty()) return valid
+        }
+
+        throw IllegalStateException(apiErrorMessage(lastResultCode))
+    }
+
+    private fun exchangeRateSearchDates(): List<String> {
+        val today = LocalDate.now()
+        val previousBusinessDates = generateSequence(today.minusDays(1)) { it.minusDays(1) }
+            .filterNot { it.dayOfWeek == DayOfWeek.SATURDAY || it.dayOfWeek == DayOfWeek.SUNDAY }
+            .take(MAX_FALLBACK_DAYS)
+            .map { it.format(searchDateFormatter) }
+            .toList()
+
+        return listOf("") + previousBusinessDates
     }
 }

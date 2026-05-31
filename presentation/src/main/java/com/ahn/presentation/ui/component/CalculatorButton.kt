@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
@@ -44,6 +45,7 @@ fun CalculatorButton(
     Box(
         modifier = modifier
             .aspectRatio(1f)
+            .padding(6.dp)
             .clip(CircleShape)
             .background(color = backgroundColor)
             .clickable(onClick = onClick),
@@ -51,7 +53,7 @@ fun CalculatorButton(
     ) {
         Text(
             text = text,
-            fontSize = 28.sp,
+            fontSize = 30.sp,
             fontWeight = FontWeight.Medium,
             color = textColor
         )
@@ -70,6 +72,7 @@ fun CalculatorIconButton(
     Box(
         modifier = modifier
             .aspectRatio(1f)
+            .padding(6.dp)
             .clip(CircleShape)
             .background(color = backgroundColor)
             .clickable(onClick = onClick),
@@ -98,6 +101,7 @@ fun DeleteCalculatorButton(
     Box(
         modifier = modifier
             .aspectRatio(1f)
+            .padding(6.dp)
             .clip(CircleShape)
             .background(color = if (isPressed) backgroundColor.copy(alpha = 0.7f) else backgroundColor)
             .pointerInput(Unit) {
@@ -123,7 +127,7 @@ fun DeleteCalculatorButton(
     ) {
         Text(
             text = text,
-            fontSize = 30.sp,
+            fontSize = 31.sp,
             fontWeight = FontWeight.Medium,
             color = textColor
         )

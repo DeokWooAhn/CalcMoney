@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -73,6 +74,7 @@ import com.ahn.presentation.ui.component.DeleteCalculatorButton
 import com.ahn.presentation.ui.theme.buttonFunction
 import com.ahn.presentation.ui.theme.buttonOperator
 import com.ahn.presentation.ui.theme.buttonTextSecondary
+import com.ahn.presentation.ui.theme.calculatorAccent
 import com.ahn.presentation.util.ThousandSeparatorTransformation
 import com.ahn.presentation.util.formatNumberWithCommas
 import com.ahn.presentation.util.showSnackbarImmediately
@@ -84,7 +86,7 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 
 @Composable
 fun CalculatorRoute(
-    viewModel: CalculatorViewModel = hiltViewModel()
+    viewModel: CalculatorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.collectAsState()
     val snackBarHostState = remember { SnackbarHostState() }
@@ -115,7 +117,7 @@ fun CalculatorScreen(
     state: CalculatorContract.State,
     onIntent: (CalculatorContract.Intent) -> Unit,
     onCursorMove: (Int) -> Unit,
-    snackBarHostState: SnackbarHostState = remember { SnackbarHostState() }
+    snackBarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
 
     val focusRequester = remember { FocusRequester() }
@@ -134,18 +136,20 @@ fun CalculatorScreen(
     }
 
     var showHistory by remember { mutableStateOf(false) }
+    val calculatorAccent = MaterialTheme.colorScheme.calculatorAccent
 
     Scaffold(
         snackbarHost = {
             CustomSnackbarHost(snackbarHostState = snackBarHostState)
         },
         containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(bottom = 0.dp),
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp, 5.dp, 16.dp, 16.dp),
+                .padding(16.dp, 5.dp, 16.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
@@ -235,7 +239,7 @@ fun CalculatorScreen(
                                 },
                                 textStyle = TextStyle(
                                     color = if (state.isCalculatedResult) {
-                                        MaterialTheme.colorScheme.primary
+                                        calculatorAccent
                                     } else {
                                         MaterialTheme.colorScheme.onBackground
                                     },
@@ -243,7 +247,9 @@ fun CalculatorScreen(
                                     fontWeight = FontWeight.Light,
                                     textAlign = TextAlign.End,
                                 ),
-                                visualTransformation = remember { ThousandSeparatorTransformation() },
+                                visualTransformation = remember(calculatorAccent) {
+                                    ThousandSeparatorTransformation(calculatorAccent)
+                                },
                                 cursorBrush = SolidColor(Color.White),
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -279,33 +285,42 @@ fun CalculatorScreen(
             }
 
             // 버튼 그리드
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val buttonGap = 0.dp
+                val rowGap = 0.dp
+                val buttonSize = ((maxWidth - buttonGap * 3) / 4).coerceAtMost(84.dp)
+                val keypadWidth = buttonSize * 4 + buttonGap * 3
+                val historyWidth = buttonSize * 3 + buttonGap * 2
+                val historyHeight = buttonSize * 4 + rowGap * 3
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(rowGap)
+                ) {
                 // 1행: AC, (), 나누기
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.width(keypadWidth),
+                    horizontalArrangement = Arrangement.spacedBy(buttonGap)
                 ) {
                     CalculatorIconButton(
                         imageVector = Icons.Default.AccessTime,
-                        modifier = Modifier.weight(1f),
-                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = Color.Black,
+                        modifier = Modifier.size(buttonSize),
+                        backgroundColor = MaterialTheme.colorScheme.buttonFunction,
+                        contentColor = MaterialTheme.colorScheme.buttonTextSecondary,
                         contentDescription = "calculator history",
                         onClick = { showHistory = !showHistory }
                     )
                     CalculatorButton(
                         text = "AC",
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.size(buttonSize),
                         backgroundColor = MaterialTheme.colorScheme.buttonFunction,
                         textColor = MaterialTheme.colorScheme.buttonTextSecondary,
                         onClick = { onIntent(CalculatorContract.Intent.Clear) }
                     )
                     CalculatorButton(
                         text = "( )",
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.size(buttonSize),
                         backgroundColor = MaterialTheme.colorScheme.buttonFunction,
                         textColor = MaterialTheme.colorScheme.buttonTextSecondary,
                         onClick = {
@@ -318,7 +333,7 @@ fun CalculatorScreen(
                     )
                     CalculatorButton(
                         text = stringResource(R.string.divide),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.size(buttonSize),
                         backgroundColor = MaterialTheme.colorScheme.buttonOperator,
                         onClick = {
                             onIntent(
@@ -330,32 +345,23 @@ fun CalculatorScreen(
                     )
                 }
 
-                BoxWithConstraints(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    val buttonGap = 12.dp
-                    val rowGap = 6.dp
-                    val buttonSize = (maxWidth - buttonGap * 3) / 4
-                    val historyWidth = buttonSize * 3 + buttonGap * 2
-                    val historyHeight = buttonSize * 4 + rowGap * 3
-
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .width(keypadWidth)
                             .height(historyHeight)
                     ) {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                            verticalArrangement = Arrangement.spacedBy(rowGap)
                         ) {
                             // 2행: 7, 8, 9, 곱하기
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.spacedBy(buttonGap)
                             ) {
                                 CalculatorButton(
                                     text = "7",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     onClick = {
                                         onIntent(
                                             CalculatorContract.Intent.Input(
@@ -366,7 +372,7 @@ fun CalculatorScreen(
                                 )
                                 CalculatorButton(
                                     text = "8",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     onClick = {
                                         onIntent(
                                             CalculatorContract.Intent.Input(
@@ -377,7 +383,7 @@ fun CalculatorScreen(
                                 )
                                 CalculatorButton(
                                     text = "9",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     onClick = {
                                         onIntent(
                                             CalculatorContract.Intent.Input(
@@ -388,7 +394,7 @@ fun CalculatorScreen(
                                 )
                                 CalculatorButton(
                                     text = "×",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     backgroundColor = MaterialTheme.colorScheme.buttonOperator,
                                     onClick = {
                                         onIntent(
@@ -403,11 +409,11 @@ fun CalculatorScreen(
                             // 3행: 4, 5, 6, 빼기
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.spacedBy(buttonGap)
                             ) {
                                 CalculatorButton(
                                     text = "4",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     onClick = {
                                         onIntent(
                                             CalculatorContract.Intent.Input(
@@ -418,7 +424,7 @@ fun CalculatorScreen(
                                 )
                                 CalculatorButton(
                                     text = "5",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     onClick = {
                                         onIntent(
                                             CalculatorContract.Intent.Input(
@@ -429,7 +435,7 @@ fun CalculatorScreen(
                                 )
                                 CalculatorButton(
                                     text = "6",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     onClick = {
                                         onIntent(
                                             CalculatorContract.Intent.Input(
@@ -440,7 +446,7 @@ fun CalculatorScreen(
                                 )
                                 CalculatorButton(
                                     text = "−",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     backgroundColor = MaterialTheme.colorScheme.buttonOperator,
                                     onClick = {
                                         onIntent(
@@ -455,11 +461,11 @@ fun CalculatorScreen(
                             // 4행: 1, 2, 3, 더하기
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.spacedBy(buttonGap)
                             ) {
                                 CalculatorButton(
                                     text = "1",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     onClick = {
                                         onIntent(
                                             CalculatorContract.Intent.Input(
@@ -470,7 +476,7 @@ fun CalculatorScreen(
                                 )
                                 CalculatorButton(
                                     text = "2",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     onClick = {
                                         onIntent(
                                             CalculatorContract.Intent.Input(
@@ -481,7 +487,7 @@ fun CalculatorScreen(
                                 )
                                 CalculatorButton(
                                     text = "3",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     onClick = {
                                         onIntent(
                                             CalculatorContract.Intent.Input(
@@ -492,7 +498,7 @@ fun CalculatorScreen(
                                 )
                                 CalculatorButton(
                                     text = "+",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     backgroundColor = MaterialTheme.colorScheme.buttonOperator,
                                     onClick = {
                                         onIntent(
@@ -507,11 +513,11 @@ fun CalculatorScreen(
                             // 5행: 0(두 칸), ., =
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.spacedBy(buttonGap)
                             ) {
                                 CalculatorButton(
                                     text = ".",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     onClick = {
                                         onIntent(
                                             CalculatorContract.Intent.Input(
@@ -522,7 +528,7 @@ fun CalculatorScreen(
                                 )
                                 CalculatorButton(
                                     text = "0",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     onClick = {
                                         onIntent(
                                             CalculatorContract.Intent.Input(
@@ -533,14 +539,14 @@ fun CalculatorScreen(
                                 )
                                 DeleteCalculatorButton(
                                     text = "⌫",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     backgroundColor = MaterialTheme.colorScheme.buttonFunction,      // ✅ 변경
                                     textColor = MaterialTheme.colorScheme.buttonTextSecondary,
                                     onDeleteAction = { onIntent(CalculatorContract.Intent.Delete) }
                                 )
                                 CalculatorButton(
                                     text = "=",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.size(buttonSize),
                                     backgroundColor = MaterialTheme.colorScheme.buttonOperator,
                                     onClick = { onIntent(CalculatorContract.Intent.Calculate) }
                                 )

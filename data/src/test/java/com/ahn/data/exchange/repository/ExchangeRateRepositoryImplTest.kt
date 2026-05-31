@@ -7,6 +7,7 @@ import com.ahn.data.exchange.remote.dto.ExchangeRateResponse
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.doubles.shouldBeExactly
+import io.kotest.matchers.shouldBe
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -72,9 +73,82 @@ class ExchangeRateRepositoryImplTest : DescribeSpec({
                     }
                 }
             }
+
+            it("오늘 환율이 비어 있고 직전 영업일 환율이 유효하면 캐시에 저장한다") {
+                runTest {
+                    coEvery { localDataSource.getCachedRates() } returns emptyList()
+                    coEvery { localDataSource.getLatestFetchedAt() } returns 0L
+                    coEvery { remoteDataSource.fetchExchangeRates("") } returns emptyList()
+                    coEvery { remoteDataSource.fetchExchangeRates(match { it.isNotBlank() }) } returns listOf(
+                        usdResponse(baseRate = "1,400.0"),
+                    )
+                    coEvery { localDataSource.replaceRates(any()) } just Runs
+
+                    val rate = repository.getExchangeRate(from = "USD", to = "KRW")
+
+                    rate shouldBeExactly 1400.0
+                    coVerify { remoteDataSource.fetchExchangeRates("") }
+                    coVerify { remoteDataSource.fetchExchangeRates(match { it.isNotBlank() }) }
+                    coVerify {
+                        localDataSource.replaceRates(
+                            match { rates ->
+                                rates.single().code == "USD" && rates.single().baseRate == 1400.0
+                            },
+                        )
+                    }
+                }
+            }
         }
 
         context("캐시 만료 후 원격 요청이 실패하면") {
+            it("오늘과 이전 날짜 환율이 모두 비어 있고 기존 캐시가 있으면 캐시를 사용한다") {
+                runTest {
+                    coEvery { localDataSource.getCachedRates() } returns listOf(
+                        usdEntity(baseRate = 1300.0),
+                    )
+                    coEvery { localDataSource.getLatestFetchedAt() } returns oldFetchedAt()
+                    coEvery { remoteDataSource.fetchExchangeRates(any()) } returns emptyList()
+
+                    val rate = repository.getExchangeRate(from = "USD", to = "KRW")
+
+                    rate shouldBeExactly 1300.0
+                    coVerify(exactly = 0) { localDataSource.replaceRates(any()) }
+                }
+            }
+
+            it("오늘과 이전 날짜 환율이 모두 비어 있고 캐시도 없으면 사용자 친화적인 오류를 던진다") {
+                runTest {
+                    coEvery { localDataSource.getCachedRates() } returns emptyList()
+                    coEvery { localDataSource.getLatestFetchedAt() } returns 0L
+                    coEvery { remoteDataSource.fetchExchangeRates(any()) } returns emptyList()
+
+                    val error = shouldThrow<IllegalStateException> {
+                        repository.getExchangeRate(from = "USD", to = "KRW")
+                    }
+
+                    error.message shouldBe "오늘 환율이 아직 고시되지 않았습니다. 잠시 후 다시 시도해 주세요."
+                    coVerify(exactly = 0) { localDataSource.replaceRates(any()) }
+                }
+            }
+
+            it("인증 오류 응답은 직전 영업일 fallback 없이 인증 오류를 던진다") {
+                runTest {
+                    coEvery { localDataSource.getCachedRates() } returns emptyList()
+                    coEvery { localDataSource.getLatestFetchedAt() } returns 0L
+                    coEvery { remoteDataSource.fetchExchangeRates("") } returns listOf(
+                        errorResponse(result = 3),
+                    )
+
+                    val error = shouldThrow<IllegalStateException> {
+                        repository.getExchangeRate(from = "USD", to = "KRW")
+                    }
+
+                    error.message shouldBe "Invalid exchange rate API authKey (result=3)"
+                    coVerify(exactly = 0) { remoteDataSource.fetchExchangeRates(match { it.isNotBlank() }) }
+                    coVerify(exactly = 0) { localDataSource.replaceRates(any()) }
+                }
+            }
+
             it("취소 예외는 기존 캐시로 대체하지 않고 그대로 던진다") {
                 runTest {
                     coEvery { localDataSource.getCachedRates() } returns listOf(
@@ -137,6 +211,10 @@ private fun usdResponse(baseRate: String): ExchangeRateResponse {
         currencyName = "US Dollar",
         baseRate = baseRate,
     )
+}
+
+private fun errorResponse(result: Int): ExchangeRateResponse {
+    return ExchangeRateResponse(result = result)
 }
 
 private fun oldFetchedAt(): Long {

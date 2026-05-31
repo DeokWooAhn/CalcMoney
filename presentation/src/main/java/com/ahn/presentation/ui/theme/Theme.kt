@@ -24,6 +24,10 @@ val ColorScheme.buttonOperator: Color
     @Composable
     get() = if (isSystemInDarkTheme()) DarkButtonOperator else LightButtonOperator
 
+val ColorScheme.calculatorAccent: Color
+    @Composable
+    get() = if (isSystemInDarkTheme()) DarkButtonOperator else LightCalculatorAccent
+
 val ColorScheme.buttonTextPrimary: Color
     @Composable
     get() = if (isSystemInDarkTheme()) DarkButtonTextPrimary else LightButtonTextPrimary

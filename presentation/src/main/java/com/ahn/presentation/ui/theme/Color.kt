@@ -26,7 +26,8 @@ val LightGray = Color(0xFF616161)
 
 val LightButtonNumber = Color(0xFFE0E0E0)       // 숫자 버튼 배경
 val LightButtonFunction = Color(0xFF757575)     // AC, ( ) 버튼 배경
-val LightButtonOperator = Color(0xFFFF9500)     // 연산자 버튼 (동일)
+val LightButtonOperator = Color(0xFFFF9500)     // 연산자 버튼 배경
+val LightCalculatorAccent = Color(0xFFE36F00)   // 계산식 강조 텍스트
 val LightButtonTextPrimary = Color.Black        // 기본 텍스트
 val LightButtonTextSecondary = Color.White      // AC, ( ) 버튼 텍스트
 

@@ -16,6 +16,14 @@ import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import java.io.IOException
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
+
+private val testClock: Clock = Clock.fixed(
+    Instant.parse("2026-06-01T00:30:00Z"),
+    ZoneId.of("Asia/Seoul"),
+)
 
 class ExchangeRateRepositoryImplTest : DescribeSpec({
     lateinit var remoteDataSource: ExchangeRateRemoteDataSource
@@ -28,6 +36,7 @@ class ExchangeRateRepositoryImplTest : DescribeSpec({
         repository = ExchangeRateRepositoryImpl(
             remoteDataSource = remoteDataSource,
             localDataSource = localDataSource,
+            clock = testClock,
         )
     }
 
@@ -38,7 +47,7 @@ class ExchangeRateRepositoryImplTest : DescribeSpec({
                     coEvery { localDataSource.getCachedRates() } returns listOf(
                         usdEntity(baseRate = 1300.0),
                     )
-                    coEvery { localDataSource.getLatestFetchedAt() } returns System.currentTimeMillis()
+                    coEvery { localDataSource.getLatestFetchedAt() } returns testClock.millis()
 
                     val rate = repository.getExchangeRate(from = "USD", to = "KRW")
 
@@ -96,6 +105,58 @@ class ExchangeRateRepositoryImplTest : DescribeSpec({
                             },
                         )
                     }
+                }
+            }
+
+            it("주말에는 직전 영업일 날짜로 fallback한다") {
+                runTest {
+                    repository = ExchangeRateRepositoryImpl(
+                        remoteDataSource = remoteDataSource,
+                        localDataSource = localDataSource,
+                        clock = Clock.fixed(
+                            Instant.parse("2026-05-31T01:00:00Z"),
+                            ZoneId.of("Asia/Seoul"),
+                        ),
+                    )
+                    coEvery { localDataSource.getCachedRates() } returns emptyList()
+                    coEvery { localDataSource.getLatestFetchedAt() } returns 0L
+                    coEvery { remoteDataSource.fetchExchangeRates("") } returns emptyList()
+                    coEvery { remoteDataSource.fetchExchangeRates("20260529") } returns listOf(
+                        usdResponse(baseRate = "1,400.0"),
+                    )
+                    coEvery { localDataSource.replaceRates(any()) } just Runs
+
+                    val rate = repository.getExchangeRate(from = "USD", to = "KRW")
+
+                    rate shouldBeExactly 1400.0
+                    coVerify { remoteDataSource.fetchExchangeRates("20260529") }
+                    coVerify(exactly = 0) { remoteDataSource.fetchExchangeRates("20260530") }
+                }
+            }
+
+            it("자정 경계에서는 주입된 Clock의 시간대 기준 날짜를 사용한다") {
+                runTest {
+                    repository = ExchangeRateRepositoryImpl(
+                        remoteDataSource = remoteDataSource,
+                        localDataSource = localDataSource,
+                        clock = Clock.fixed(
+                            Instant.parse("2026-05-29T15:30:00Z"),
+                            ZoneId.of("Asia/Seoul"),
+                        ),
+                    )
+                    coEvery { localDataSource.getCachedRates() } returns emptyList()
+                    coEvery { localDataSource.getLatestFetchedAt() } returns 0L
+                    coEvery { remoteDataSource.fetchExchangeRates("") } returns emptyList()
+                    coEvery { remoteDataSource.fetchExchangeRates("20260529") } returns listOf(
+                        usdResponse(baseRate = "1,400.0"),
+                    )
+                    coEvery { localDataSource.replaceRates(any()) } just Runs
+
+                    val rate = repository.getExchangeRate(from = "USD", to = "KRW")
+
+                    rate shouldBeExactly 1400.0
+                    coVerify { remoteDataSource.fetchExchangeRates("20260529") }
+                    coVerify(exactly = 0) { remoteDataSource.fetchExchangeRates("20260528") }
                 }
             }
         }
@@ -200,7 +261,7 @@ private fun usdEntity(baseRate: Double): ExchangeRateEntity {
         currencyUnit = "USD",
         currencyName = "US Dollar",
         baseRate = baseRate,
-        fetchedAt = System.currentTimeMillis(),
+        fetchedAt = testClock.millis(),
     )
 }
 
@@ -218,5 +279,5 @@ private fun errorResponse(result: Int): ExchangeRateResponse {
 }
 
 private fun oldFetchedAt(): Long {
-    return System.currentTimeMillis() - (2 * 60 * 60 * 1000L)
+    return testClock.millis() - (2 * 60 * 60 * 1000L)
 }

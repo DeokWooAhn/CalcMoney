@@ -12,15 +12,27 @@ import com.ahn.domain.exchange.repository.ExchangeRateRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.Clock
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
-class ExchangeRateRepositoryImpl @Inject constructor(
+class ExchangeRateRepositoryImpl internal constructor(
     private val remoteDataSource: ExchangeRateRemoteDataSource,
     private val localDataSource: ExchangeRateLocalDataSource,
+    private val clock: Clock,
 ) : ExchangeRateRepository {
+
+    @Inject
+    constructor(
+        remoteDataSource: ExchangeRateRemoteDataSource,
+        localDataSource: ExchangeRateLocalDataSource,
+    ) : this(
+        remoteDataSource = remoteDataSource,
+        localDataSource = localDataSource,
+        clock = Clock.systemDefaultZone(),
+    )
 
     companion object {
         private const val CACHE_TTL_MS = 60 * 60 * 1000L
@@ -45,7 +57,7 @@ class ExchangeRateRepositoryImpl @Inject constructor(
      */
     private suspend fun fetchRatesIfNeeded(): List<ExchangeRateEntity> {
         return refreshMutex.withLock {
-            val now = System.currentTimeMillis()
+            val now = clock.millis()
             val cached = localDataSource.getCachedRates()
             val fetchedAt = localDataSource.getLatestFetchedAt()
 
@@ -128,7 +140,7 @@ class ExchangeRateRepositoryImpl @Inject constructor(
     }
 
     private fun exchangeRateSearchDates(): List<String> {
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
         val previousBusinessDates = generateSequence(today.minusDays(1)) { it.minusDays(1) }
             .filterNot { it.dayOfWeek == DayOfWeek.SATURDAY || it.dayOfWeek == DayOfWeek.SUNDAY }
             .take(MAX_FALLBACK_DAYS)

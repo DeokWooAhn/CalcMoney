@@ -15,6 +15,7 @@ import com.ahn.domain.exchange.usecase.CalculateExchangeAmountUseCase
 import com.ahn.domain.exchange.usecase.ConvertExchangeAmountUseCase
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
+import com.ahn.domain.exchange.usecase.GetLatestExchangeRateDateUseCase
 import com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase
 import com.ahn.domain.favorite.usecase.BuildFavoriteRatesUseCase
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
@@ -51,6 +52,7 @@ class ExchangeViewModelTest : BehaviorSpec({
     val krw = mockCurrencies[1]
 
     val getExchangeRateUseCase = mockk<GetExchangeRateUseCase>()
+    val getLatestExchangeRateDateUseCase = mockk<GetLatestExchangeRateDateUseCase>()
     val getSupportedCurrenciesUseCase = mockk<GetSupportedCurrenciesUseCase>()
     val getFavoriteCurrenciesUseCase = mockk<GetFavoriteCurrenciesUseCase>()
     val toggleFavoriteCurrencyUseCase = mockk<ToggleFavoriteCurrencyUseCase>()
@@ -71,6 +73,7 @@ class ExchangeViewModelTest : BehaviorSpec({
             exchangeAmount = calculateExchangeAmountUseCase,
             convertExchangeAmount = convertExchangeAmountUseCase,
             getExchangeRate = getExchangeRateUseCase,
+            getLatestRateDate = getLatestExchangeRateDateUseCase,
             getSupportedCurrencies = getSupportedCurrenciesUseCase,
         ),
         favoriteUseCases = FavoriteUseCases(
@@ -94,6 +97,7 @@ class ExchangeViewModelTest : BehaviorSpec({
         Dispatchers.setMain(testDispatcher)
         coEvery { getSupportedCurrenciesUseCase() } returns mockCurrencies
         coEvery { getExchangeRateUseCase(any(), any()) } returns 1500.00
+        coEvery { getLatestExchangeRateDateUseCase() } returns ""
         every { getFavoriteCurrenciesUseCase() } returns MutableStateFlow(emptyList())
         coEvery { toggleFavoriteCurrencyUseCase(any()) } returns Unit
         every { calculateExchangeAmountUseCase(any(), any()) } returns "1500.00"
@@ -177,6 +181,42 @@ class ExchangeViewModelTest : BehaviorSpec({
                             copy(
                                 isLoading = false,
                                 exchangeRate = 1500.00,
+                                toAmount = "1500.00",
+                            )
+                        }
+
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+
+        When("환율 정보를 가져오면") {
+            Then("환율 데이터 기준 날짜가 상태에 반영되어야 한다") {
+                runTest {
+                    coEvery { getLatestExchangeRateDateUseCase() } returns "20260529"
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                availableCurrencies = mockCurrencies,
+                                fromCurrency = usd,
+                                toCurrency = krw,
+                            )
+                        }
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                exchangeRate = 1500.00,
+                                exchangeRateDate = "20260529",
                                 toAmount = "1500.00",
                             )
                         }

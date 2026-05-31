@@ -4,19 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SwapVert
@@ -35,19 +30,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.R
-import com.ahn.presentation.ui.component.CurrencySelector
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.ExchangeInputContainer
 import com.ahn.presentation.util.showSnackbarImmediately
@@ -58,7 +49,7 @@ import java.util.Locale
 
 @Composable
 fun ExchangeRoute(
-    viewModel: ExchangeViewModel = hiltViewModel()
+    viewModel: ExchangeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -87,8 +78,12 @@ fun ExchangeRoute(
 fun ExchangeScreen(
     state: ExchangeContract.State,
     onIntent: (ExchangeContract.Intent) -> Unit,
-    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
+    val exchangeRateDateText = remember(state.exchangeRateDate) {
+        state.exchangeRateDate.takeIf { it.isNotBlank() }?.let(::formatExchangeRateDate)
+    }
+
     Scaffold(
         snackbarHost = {
             CustomSnackbarHost(snackbarHostState = snackbarHostState)
@@ -168,8 +163,8 @@ fun ExchangeScreen(
                 label = stringResource(R.string.target_amount),
             )
 
-            state.fromCurrency?.let { from ->
-                state.toCurrency?.let { to ->
+            state.fromCurrency?.let { _ ->
+                state.toCurrency?.let { _ ->
                     if (state.exchangeRate > 0) {
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
@@ -180,13 +175,29 @@ fun ExchangeScreen(
                                     state.exchangeRate
                                 )
                             } ${state.toCurrency.code}",
-                            fontSize = 14.sp,
+                            fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+
+                        exchangeRateDateText?.let { rateDate ->
+                            Text(
+                                text = stringResource(R.string.exchange_rate_date, rateDate),
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+private fun formatExchangeRateDate(rateDate: String): String {
+    return if (rateDate.length == 8) {
+        "${rateDate.substring(0, 4)}.${rateDate.substring(4, 6)}.${rateDate.substring(6, 8)}"
+    } else {
+        rateDate
     }
 }
 
@@ -195,7 +206,36 @@ fun ExchangeScreen(
 fun ExchangeScreenPreview() {
     ExchangeScreen(
         state = ExchangeContract.State(
-
+            fromAmount = "1",
+            toAmount = "1350.0000",
+            fromCurrency = CurrencyInfo(
+                code = "USD",
+                displayCode = "USD",
+                name = stringResource(R.string.preview_currency_usd),
+                flagEmoji = "🇺🇸",
+            ),
+            toCurrency = CurrencyInfo(
+                code = "KRW",
+                displayCode = "KRW",
+                name = stringResource(R.string.preview_currency_krw),
+                flagEmoji = "🇰🇷",
+            ),
+            availableCurrencies = listOf(
+                CurrencyInfo(
+                    code = "USD",
+                    displayCode = "USD",
+                    name = stringResource(R.string.preview_currency_usd),
+                    flagEmoji = "🇺🇸",
+                ),
+                CurrencyInfo(
+                    code = "KRW",
+                    displayCode = "KRW",
+                    name = stringResource(R.string.preview_currency_krw),
+                    flagEmoji = "🇰🇷",
+                ),
+            ),
+            exchangeRate = 1350.0,
+            exchangeRateDate = "20260529",
         ),
         onIntent = {}
     )

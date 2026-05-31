@@ -74,6 +74,19 @@ class ExchangeRateDaoTest {
     }
 
     @Test
+    fun returnLatestRateDate() = runBlocking {
+        dao.insertAll(
+            listOf(
+                exchangeRate(code = "USD", rateDate = "20260527"),
+                exchangeRate(code = "JPY", rateDate = "20260529"),
+                exchangeRate(code = "EUR", rateDate = "20260528"),
+            ),
+        )
+
+        assertEquals("20260529", dao.getLatestRateDate())
+    }
+
+    @Test
     fun replaceAllDeletesOldRatesAndInsertsNewRates() = runBlocking {
         dao.insertAll(
             listOf(
@@ -94,6 +107,7 @@ class ExchangeRateDaoTest {
         code: String,
         baseRate: Double = 1000.0,
         fetchedAt: Long = 1000L,
+        rateDate: String = "20260529",
     ): ExchangeRateEntity {
         return ExchangeRateEntity(
             code = code,
@@ -101,6 +115,7 @@ class ExchangeRateDaoTest {
             currencyName = "$code currency",
             baseRate = baseRate,
             fetchedAt = fetchedAt,
+            rateDate = rateDate,
         )
     }
 }

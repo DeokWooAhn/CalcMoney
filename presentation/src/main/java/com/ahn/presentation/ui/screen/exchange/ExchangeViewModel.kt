@@ -221,6 +221,7 @@ class ExchangeViewModel @Inject constructor(
                 from = requestedFrom,
                 to = requestedTo,
             )
+            val rateDate = exchangeUseCases.getLatestRateDate()
 
             // 응답이 돌아왔을 때 상태가 이미 바뀌었으면 적용하지 않음
             if (state.fromCurrency?.code != requestedFrom ||
@@ -229,6 +230,7 @@ class ExchangeViewModel @Inject constructor(
             reduce {
                 state.copy(
                     exchangeRate = rate,
+                    exchangeRateDate = rateDate,
                     isLoading = false,
                     toAmount = exchangeUseCases.exchangeAmount(state.fromAmount, rate)
                 )

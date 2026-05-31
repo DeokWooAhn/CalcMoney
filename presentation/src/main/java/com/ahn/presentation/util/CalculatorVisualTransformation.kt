@@ -1,15 +1,20 @@
 package com.ahn.presentation.util
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import java.text.DecimalFormat
 
-class ThousandSeparatorTransformation : VisualTransformation {
+class ThousandSeparatorTransformation(
+    private val operatorColor: Color = Color.Unspecified,
+) : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
         val originalText = text.text
         val formattedText = formatWithThousandSeparatorAndBreaks(originalText)
+        val annotatedText = formattedText.withOperatorColor(operatorColor)
 
         val offsetMapping = object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int {
@@ -53,8 +58,24 @@ class ThousandSeparatorTransformation : VisualTransformation {
             }
         }
 
-        return TransformedText(AnnotatedString(formattedText), offsetMapping)
+        return TransformedText(annotatedText, offsetMapping)
     }
+}
+
+private fun String.withOperatorColor(operatorColor: Color): AnnotatedString {
+    if (operatorColor == Color.Unspecified) return AnnotatedString(this)
+
+    return AnnotatedString.Builder(this).apply {
+        forEachIndexed { index, char ->
+            if (char.isCalculatorOperator()) {
+                addStyle(
+                    style = SpanStyle(color = operatorColor),
+                    start = index,
+                    end = index + 1,
+                )
+            }
+        }
+    }.toAnnotatedString()
 }
 
 // 천 단위 쉼표 + 연산자 앞 줄바꿈 힌트 추가
@@ -76,7 +97,7 @@ private fun formatWithThousandSeparatorAndBreaks(text: String): String {
 
             // 연산자 앞에 Zero-Width Space 추가 (줄바꿈 힌트)
             // +, -, ×, ÷ 앞에서 줄바꿈 가능하도록
-            if (char in listOf('+', '-', '×', '÷')) {
+            if (char.isCalculatorOperator()) {
                 result.append("\u200B")  // 줄바꿈 가능 위치 힌트
             }
 
@@ -90,6 +111,10 @@ private fun formatWithThousandSeparatorAndBreaks(text: String): String {
     }
 
     return result.toString()
+}
+
+private fun Char.isCalculatorOperator(): Boolean {
+    return this == '+' || this == '-' || this == '×' || this == '÷'
 }
 
 private fun formatNumber(numberString: String): String {

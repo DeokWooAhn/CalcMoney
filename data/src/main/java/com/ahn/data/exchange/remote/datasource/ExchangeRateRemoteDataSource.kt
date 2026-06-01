@@ -5,9 +5,7 @@ import com.ahn.data.exchange.remote.api.ExchangeRateApi
 import com.ahn.data.exchange.remote.dto.ExchangeRateResponse
 import javax.inject.Inject
 
-class ExchangeRateRemoteDataSource @Inject constructor(
-    private val api: ExchangeRateApi,
-) {
+class ExchangeRateRemoteDataSource @Inject constructor(private val api: ExchangeRateApi) {
     /**
      * 원격 API에서 환율 목록을 가져옵니다.
      *

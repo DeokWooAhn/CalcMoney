@@ -4,6 +4,7 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -58,7 +59,7 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 @Composable
 fun FavoriteRoute(
     exchangeViewModel: ExchangeViewModel,
-    favoriteViewModel: FavoriteViewModel = hiltViewModel()
+    favoriteViewModel: FavoriteViewModel = hiltViewModel(),
 ) {
     val exchangeState by exchangeViewModel.collectAsState()
     val favoriteState by favoriteViewModel.state.collectAsState()
@@ -100,7 +101,6 @@ fun FavoriteRoute(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoriteScreen(
     exchangeState: ExchangeContract.State,
@@ -110,109 +110,141 @@ fun FavoriteScreen(
 ) {
     Scaffold(
         snackbarHost = { CustomSnackbarHost(snackbarHostState = snackbarHostState) },
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.favorite_title),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                ),
-            )
-        },
+        topBar = { FavoriteTopBar() },
         containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 10.dp),
-        ) {
-            ExchangeInputContainer(
-                amount = exchangeState.fromAmount,
-                currency = exchangeState.fromCurrency,
-                onAmountChange = { onExchangeIntent(ExchangeContract.Intent.UpdateFromAmount(it)) },
-                onCurrencyClick = { onExchangeIntent(ExchangeContract.Intent.SelectFromCurrency(it)) },
-                availableCurrencies = exchangeState.availableCurrencies,
-                favoriteCurrencyCodes = exchangeState.favoriteCurrencyCodes,
-                onToggleFavorite = { onExchangeIntent(ExchangeContract.Intent.ToggleFavorite(it)) },
-                isEditable = true,
-                label = stringResource(R.string.base_amount),
+        FavoriteContent(
+            exchangeState = exchangeState,
+            favoriteState = favoriteState,
+            onExchangeIntent = onExchangeIntent,
+            modifier = Modifier.padding(paddingValues),
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FavoriteTopBar() {
+    CenterAlignedTopAppBar(
+        title = {
+            Text(
+                text = stringResource(R.string.favorite_title),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
             )
+        },
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+        ),
+    )
+}
 
-            Spacer(modifier = Modifier.height(16.dp))
+@Composable
+private fun FavoriteContent(
+    exchangeState: ExchangeContract.State,
+    favoriteState: FavoriteContract.State,
+    onExchangeIntent: (ExchangeContract.Intent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 10.dp),
+    ) {
+        ExchangeInputContainer(
+            amount = exchangeState.fromAmount,
+            currency = exchangeState.fromCurrency,
+            onAmountChange = { onExchangeIntent(ExchangeContract.Intent.UpdateFromAmount(it)) },
+            onCurrencyClick = { onExchangeIntent(ExchangeContract.Intent.SelectFromCurrency(it)) },
+            availableCurrencies = exchangeState.availableCurrencies,
+            favoriteCurrencyCodes = exchangeState.favoriteCurrencyCodes,
+            onToggleFavorite = { onExchangeIntent(ExchangeContract.Intent.ToggleFavorite(it)) },
+            isEditable = true,
+            label = stringResource(R.string.base_amount),
+        )
 
-            when {
-                favoriteState.isLoading -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
+        Spacer(modifier = Modifier.height(16.dp))
 
-                exchangeState.favoriteCurrencyCodes.isEmpty() -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(vertical = 32.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.empty_favorite_currency),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+        FavoriteRateContent(
+            exchangeState = exchangeState,
+            favoriteState = favoriteState,
+            onExchangeIntent = onExchangeIntent,
+        )
+    }
+}
 
-                favoriteState.items.isEmpty() -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(8.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.favorite_rate_load_failed),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+@Composable
+private fun ColumnScope.FavoriteRateContent(
+    exchangeState: ExchangeContract.State,
+    favoriteState: FavoriteContract.State,
+    onExchangeIntent: (ExchangeContract.Intent) -> Unit,
+) {
+    when {
+        favoriteState.isLoading -> FavoriteLoading()
+        exchangeState.favoriteCurrencyCodes.isEmpty() -> FavoriteEmptyMessage(R.string.empty_favorite_currency)
+        favoriteState.items.isEmpty() -> FavoriteEmptyMessage(R.string.favorite_rate_load_failed)
+        else -> FavoriteRateGrid(
+            items = favoriteState.items,
+            onRemoveFavorite = { currencyCode ->
+                onExchangeIntent(ExchangeContract.Intent.ToggleFavorite(currencyCode))
+            },
+        )
+    }
+}
 
-                else -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        contentPadding = PaddingValues(bottom = 24.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        items(
-                            items = favoriteState.items,
-                            key = { it.currency.code },
-                        ) { item ->
-                            FavoriteRateCard(
-                                item = item,
-                                onRemoveFavorite = {
-                                    onExchangeIntent(ExchangeContract.Intent.ToggleFavorite(item.currency.code))
-                                },
-                            )
-                        }
-                    }
-                }
-            }
+@Composable
+private fun ColumnScope.FavoriteLoading() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun ColumnScope.FavoriteEmptyMessage(
+    messageResId: Int,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f)
+            .padding(8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = stringResource(messageResId),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun ColumnScope.FavoriteRateGrid(
+    items: List<FavoriteContract.Item>,
+    onRemoveFavorite: (String) -> Unit,
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(
+            items = items,
+            key = { it.currency.code },
+        ) { item ->
+            FavoriteRateCard(
+                item = item,
+                onRemoveFavorite = { onRemoveFavorite(item.currency.code) },
+            )
         }
     }
 }
@@ -240,10 +272,10 @@ private fun FavoriteRateCard(
                 ) {
                     Text(
                         item.currency.flagEmoji,
-                        fontSize = 22.sp
+                        fontSize = 22.sp,
                     )
                     Column(
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     ) {
                         Text(
                             item.currency.code,
@@ -264,7 +296,7 @@ private fun FavoriteRateCard(
                 }
                 IconButton(
                     onClick = onRemoveFavorite,
-                    modifier = Modifier.requiredSize(48.dp)
+                    modifier = Modifier.requiredSize(48.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Favorite,
@@ -300,7 +332,7 @@ private fun FavoriteScreenPreview() {
         exchangeState = ExchangeContract.State(),
         favoriteState = FavoriteContract.State(),
         onExchangeIntent = {},
-        snackbarHostState = remember { SnackbarHostState() }
+        snackbarHostState = remember { SnackbarHostState() },
     )
 }
 
@@ -314,12 +346,12 @@ private fun FavoriteRateCardPreview() {
                     code = "USD",
                     displayCode = "USD",
                     name = stringResource(R.string.preview_currency_usd),
-                    flagEmoji = "🇺🇸"
+                    flagEmoji = "🇺🇸",
                 ),
                 convertedAmount = "1,433.20",
-                rateLabel = "1 KRW = 0.0007 USD"
+                rateLabel = "1 KRW = 0.0007 USD",
             ),
-            onRemoveFavorite = {}
+            onRemoveFavorite = {},
         )
     }
 }

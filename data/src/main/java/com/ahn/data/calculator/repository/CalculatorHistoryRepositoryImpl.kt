@@ -6,9 +6,8 @@ import com.ahn.domain.calculator.repository.CalculatorHistoryRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class CalculatorHistoryRepositoryImpl @Inject constructor(
-    private val dataSource: CalculatorHistoryDataSource,
-) : CalculatorHistoryRepository {
+class CalculatorHistoryRepositoryImpl @Inject constructor(private val dataSource: CalculatorHistoryDataSource) :
+    CalculatorHistoryRepository {
     override fun getHistories(): Flow<List<CalculatorHistory>> {
         return dataSource.getHistories()
     }

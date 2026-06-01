@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.google.services)
-    alias(libs.plugins.detekt)
     id("com.google.devtools.ksp")
 }
 
@@ -29,7 +28,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -55,11 +55,6 @@ android {
     }
 }
 
-detekt {
-    disableDefaultRuleSets = true
-    config.setFrom(rootProject.file("detekt-config.yaml"))
-}
-
 dependencies {
     implementation(project(":data"))
     implementation(project(":domain"))
@@ -75,8 +70,6 @@ dependencies {
 
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.core.ktx)
-
-    detektPlugins(libs.detekt.rules.ktlint.wrapper)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

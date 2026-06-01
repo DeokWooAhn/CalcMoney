@@ -5,7 +5,6 @@ import javax.inject.Inject
 import kotlin.math.abs
 
 class CalculateExpressionUseCase @Inject constructor() {
-
     /**
      * 사용자 산술 표현식을 정규화하고 계산한 뒤, 결과를 포맷된 문자열로 반환합니다.
      *
@@ -55,7 +54,10 @@ class CalculateExpressionUseCase @Inject constructor() {
             } else if (result % 1.0 == 0.0) {
                 String.Companion.format(Locale.US, "%.0f", result)
             } else {
-                String.Companion.format(Locale.US, "%.10f", result).trimEnd('0').trimEnd('.')
+                String.Companion
+                    .format(Locale.US, "%.10f", result)
+                    .trimEnd('0')
+                    .trimEnd('.')
             }
         } catch (_: Exception) {
             "Error"
@@ -83,25 +85,33 @@ class CalculateExpressionUseCase @Inject constructor() {
             fun parse(): Double {
                 nextChar()
                 val x = parseExpression()
-                if (pos < expr.length) throw RuntimeException("Unexpected: " + ch.toChar())
+                if (pos < expr.length) throw IllegalArgumentException("Unexpected: " + ch.toChar())
                 return x
             }
 
             fun parseExpression(): Double {
                 var x = parseTerm()
                 while (true) {
-                    if (eat('+'.code)) x += parseTerm()
-                    else if (eat('-'.code)) x -= parseTerm()
-                    else return x
+                    if (eat('+'.code)) {
+                        x += parseTerm()
+                    } else if (eat('-'.code)) {
+                        x -= parseTerm()
+                    } else {
+                        return x
+                    }
                 }
             }
 
             fun parseTerm(): Double {
                 var x = parseFactor()
                 while (true) {
-                    if (eat('*'.code)) x *= parseFactor()
-                    else if (eat('/'.code)) x /= parseFactor()
-                    else return x
+                    if (eat('*'.code)) {
+                        x *= parseFactor()
+                    } else if (eat('/'.code)) {
+                        x /= parseFactor()
+                    } else {
+                        return x
+                    }
                 }
             }
 
@@ -118,7 +128,7 @@ class CalculateExpressionUseCase @Inject constructor() {
                     while ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) nextChar()
                     x = expr.substring(startPos, pos).toDouble()
                 } else {
-                    throw RuntimeException("Unexpected: " + ch.toChar())
+                    throw IllegalArgumentException("Unexpected: " + ch.toChar())
                 }
 
                 return x

@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.hilt)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.detekt)
     id("com.google.devtools.ksp")
 }
 
@@ -65,11 +64,6 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
-detekt {
-    disableDefaultRuleSets = true
-    config.setFrom(rootProject.file("detekt-config.yaml"))
-}
-
 dependencies {
     implementation(project(":domain"))
 
@@ -101,8 +95,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
-
-    detektPlugins(libs.detekt.rules.ktlint.wrapper)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotest.runner.junit5)

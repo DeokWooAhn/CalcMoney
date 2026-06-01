@@ -17,13 +17,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private val Context.calculatorHistoryDataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "calculator_history"
+    name = "calculator_history",
 )
 
 @Singleton
-class CalculatorHistoryDataSource @Inject constructor(
-    @param:ApplicationContext private val context: Context,
-) {
+class CalculatorHistoryDataSource @Inject constructor(@param:ApplicationContext private val context: Context) {
     private val key = stringPreferencesKey("histories")
     private val itemSeparator = "\u001E"
     private val fieldSeparator = "\u001F"

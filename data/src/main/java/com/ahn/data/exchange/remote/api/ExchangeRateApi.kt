@@ -7,17 +7,16 @@ import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import javax.inject.Inject
 
-class ExchangeRateApi @Inject constructor(
-    private val client: HttpClient
-) {
+class ExchangeRateApi @Inject constructor(private val client: HttpClient) {
     suspend fun getExchangeRate(
         authKey: String,
-        searchData: String = ""
+        searchData: String = "",
     ): List<ExchangeRateResponse> {
-        return client.get("/site/program/financial/exchangeJSON") {
-            parameter("authkey", authKey)
-            parameter("searchdate", searchData)
-            parameter("data", "AP01")
-        }.body()
+        return client
+            .get("/site/program/financial/exchangeJSON") {
+                parameter("authkey", authKey)
+                parameter("searchdate", searchData)
+                parameter("data", "AP01")
+            }.body()
     }
 }

@@ -16,25 +16,23 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
-
     @Binds
     abstract fun bindExchangeRateRepository(
-        impl: ExchangeRateRepositoryImpl
+        impl: ExchangeRateRepositoryImpl,
     ): ExchangeRateRepository
 
     @Binds
     abstract fun bindFavoriteCurrencyRepository(
-        impl: FavoriteCurrencyRepositoryImpl
+        impl: FavoriteCurrencyRepositoryImpl,
     ): FavoriteCurrencyRepository
 
     @Binds
     abstract fun bindCalculatorHistoryRepository(
-        impl: CalculatorHistoryRepositoryImpl
+        impl: CalculatorHistoryRepositoryImpl,
     ): CalculatorHistoryRepository
 
     @Binds
     abstract fun bindCurrencySelectionRepository(
-        impl: CurrencySelectionRepositoryImpl
+        impl: CurrencySelectionRepositoryImpl,
     ): CurrencySelectionRepository
-
 }

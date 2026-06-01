@@ -112,28 +112,28 @@ class CalculatorViewModelTest : BehaviorSpec({
         CalculatorContract.HistoryItem(
             expression = "1+1",
             result = "2",
-        )
+        ),
     )
 
     suspend fun OrbitTestContext<
         CalculatorContract.State,
         CalculatorContract.SideEffect,
-        CalculatorViewModel
+        CalculatorViewModel,
     >.setupCalculatedHistory() {
         expectInitialState()
 
         containerHost.processIntent(
-            CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
+            CalculatorContract.Intent.Input(CalculatorToken.Number("1")),
         )
         expectState { copy(expression = "1", cursorPosition = 1) }
 
         containerHost.processIntent(
-            CalculatorContract.Intent.Input(CalculatorToken.Operator("+"))
+            CalculatorContract.Intent.Input(CalculatorToken.Operator("+")),
         )
         expectState { copy(expression = "1+", cursorPosition = 2) }
 
         containerHost.processIntent(
-            CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
+            CalculatorContract.Intent.Input(CalculatorToken.Number("1")),
         )
         expectState {
             copy(
@@ -188,7 +188,6 @@ class CalculatorViewModelTest : BehaviorSpec({
         favoriteCurrencyCodesFlow.value = emptyList()
         every { getFavoriteCurrenciesUseCase() } returns favoriteCurrencyCodesFlow
         coEvery { toggleFavoriteCurrencyUseCase(any()) } returns Unit
-
     }
 
     Given("계산기 초기 상태에서") {
@@ -238,9 +237,9 @@ class CalculatorViewModelTest : BehaviorSpec({
                         containerHost.processIntent(
                             CalculatorContract.Intent.Input(
                                 CalculatorToken.Number(
-                                    "5"
-                                )
-                            )
+                                    "5",
+                                ),
+                            ),
                         )
                         expectState { copy(expression = "5", cursorPosition = 1) }
                     }
@@ -258,9 +257,9 @@ class CalculatorViewModelTest : BehaviorSpec({
                         containerHost.processIntent(
                             CalculatorContract.Intent.Input(
                                 CalculatorToken.Number(
-                                    "0"
-                                )
-                            )
+                                    "0",
+                                ),
+                            ),
                         )
                         expectState { copy(expression = "0", cursorPosition = 1) }
                     }
@@ -277,7 +276,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                         expectInitialState()
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.Input(CalculatorToken.Operator("+"))
+                            CalculatorContract.Intent.Input(CalculatorToken.Operator("+")),
                         )
                     }
                 }
@@ -313,7 +312,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                         expectInitialState()
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.SelectMainExchangeCurrency(krw)
+                            CalculatorContract.Intent.SelectMainExchangeCurrency(krw),
                         )
                         expectState { copy(mainExchangeCurrency = krw) }
                         coVerify(exactly = 1) {
@@ -321,7 +320,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                         }
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.SelectExchangeCurrency(vnd)
+                            CalculatorContract.Intent.SelectExchangeCurrency(vnd),
                         )
                         expectState { copy(selectedExchangeCurrency = vnd) }
                         expectState { copy(exchangeRate = 18.5) }
@@ -330,7 +329,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                         }
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.Input(CalculatorToken.Number("2"))
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("2")),
                         )
                         expectState {
                             copy(
@@ -373,12 +372,12 @@ class CalculatorViewModelTest : BehaviorSpec({
                         expectInitialState()
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.SelectMainExchangeCurrency(krw)
+                            CalculatorContract.Intent.SelectMainExchangeCurrency(krw),
                         )
                         expectState { copy(mainExchangeCurrency = krw) }
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.SelectExchangeCurrency(usd)
+                            CalculatorContract.Intent.SelectExchangeCurrency(usd),
                         )
                         expectState { copy(selectedExchangeCurrency = usd) }
                         expectState { copy(exchangeRate = 0.001) }
@@ -437,11 +436,11 @@ class CalculatorViewModelTest : BehaviorSpec({
                         expectInitialState()
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.ToggleFavorite("USD")
+                            CalculatorContract.Intent.ToggleFavorite("USD"),
                         )
 
                         expectSideEffect(
-                            CalculatorContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_added))
+                            CalculatorContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_added)),
                         )
 
                         coVerify(exactly = 1) {
@@ -468,11 +467,13 @@ class CalculatorViewModelTest : BehaviorSpec({
                         }
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.ToggleFavorite("USD")
+                            CalculatorContract.Intent.ToggleFavorite("USD"),
                         )
 
                         expectSideEffect(
-                            CalculatorContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_removed))
+                            CalculatorContract.SideEffect.ShowSnackBar(
+                                UiText.StringResource(R.string.favorite_removed),
+                            ),
                         )
 
                         coVerify(exactly = 1) {
@@ -499,27 +500,27 @@ class CalculatorViewModelTest : BehaviorSpec({
                         containerHost.processIntent(
                             CalculatorContract.Intent.Input(
                                 CalculatorToken.Number(
-                                    "1"
-                                )
-                            )
+                                    "1",
+                                ),
+                            ),
                         )
                         expectState { copy(expression = "1", cursorPosition = 1) }
 
                         containerHost.processIntent(
                             CalculatorContract.Intent.Input(
                                 CalculatorToken.Number(
-                                    "2"
-                                )
-                            )
+                                    "2",
+                                ),
+                            ),
                         )
                         expectState { copy(expression = "12", cursorPosition = 2) }
 
                         containerHost.processIntent(
                             CalculatorContract.Intent.Input(
                                 CalculatorToken.Number(
-                                    "3"
-                                )
-                            )
+                                    "3",
+                                ),
+                            ),
                         )
                         expectState { copy(expression = "123", cursorPosition = 3) }
 
@@ -543,22 +544,22 @@ class CalculatorViewModelTest : BehaviorSpec({
                             // 1. "123" 셋업
                             containerHost.processIntent(
                                 CalculatorContract.Intent.Input(
-                                    CalculatorToken.Number("1")
-                                )
+                                    CalculatorToken.Number("1"),
+                                ),
                             )
                             expectState { copy(expression = "1", cursorPosition = 1) }
 
                             containerHost.processIntent(
                                 CalculatorContract.Intent.Input(
-                                    CalculatorToken.Number("2")
-                                )
+                                    CalculatorToken.Number("2"),
+                                ),
                             )
                             expectState { copy(expression = "12", cursorPosition = 2) }
 
                             containerHost.processIntent(
                                 CalculatorContract.Intent.Input(
-                                    CalculatorToken.Number("3")
-                                )
+                                    CalculatorToken.Number("3"),
+                                ),
                             )
                             expectState { copy(expression = "123", cursorPosition = 3) }
 
@@ -591,36 +592,36 @@ class CalculatorViewModelTest : BehaviorSpec({
                         // 1. "10+20" 셋업
                         containerHost.processIntent(
                             CalculatorContract.Intent.Input(
-                                CalculatorToken.Number("1")
-                            )
+                                CalculatorToken.Number("1"),
+                            ),
                         )
                         expectState { copy(expression = "1", cursorPosition = 1, previewResult = "") }
 
                         containerHost.processIntent(
                             CalculatorContract.Intent.Input(
-                                CalculatorToken.Number("0")
-                            )
+                                CalculatorToken.Number("0"),
+                            ),
                         )
                         expectState { copy(expression = "10", cursorPosition = 2, previewResult = "") }
 
                         containerHost.processIntent(
                             CalculatorContract.Intent.Input(
-                                CalculatorToken.Operator("+")
-                            )
+                                CalculatorToken.Operator("+"),
+                            ),
                         )
                         expectState { copy(expression = "10+", cursorPosition = 3, previewResult = "") }
 
                         containerHost.processIntent(
                             CalculatorContract.Intent.Input(
-                                CalculatorToken.Number("2")
-                            )
+                                CalculatorToken.Number("2"),
+                            ),
                         )
                         expectState { copy(expression = "10+2", cursorPosition = 4, previewResult = "12") }
 
                         containerHost.processIntent(
                             CalculatorContract.Intent.Input(
-                                CalculatorToken.Number("0")
-                            )
+                                CalculatorToken.Number("0"),
+                            ),
                         )
                         expectState { copy(expression = "10+20", cursorPosition = 5, previewResult = "30") }
 
@@ -639,7 +640,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                                     CalculatorContract.HistoryItem(
                                         expression = "10+20",
                                         result = "30",
-                                    )
+                                    ),
                                 ),
                             )
                         }
@@ -664,7 +665,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                         expectInitialState()
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.Input(CalculatorToken.Number("2"))
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("2")),
                         )
                         expectState {
                             copy(
@@ -675,7 +676,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                         }
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.Input(CalculatorToken.Operator("+"))
+                            CalculatorContract.Intent.Input(CalculatorToken.Operator("+")),
                         )
                         expectState {
                             copy(
@@ -686,7 +687,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                         }
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("1")),
                         )
                         expectState {
                             copy(
@@ -708,7 +709,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                                     CalculatorContract.HistoryItem(
                                         expression = "2+1",
                                         result = "3",
-                                    )
+                                    ),
                                 ),
                             )
                         }
@@ -729,7 +730,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                                     CalculatorContract.HistoryItem(
                                         expression = "3+1",
                                         result = "4",
-                                    )
+                                    ),
                                 ),
                             )
                         }
@@ -754,7 +755,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                                     CalculatorContract.HistoryItem(
                                         expression = "4+1",
                                         result = "5",
-                                    )
+                                    ),
                                 ),
                             )
                         }
@@ -778,27 +779,27 @@ class CalculatorViewModelTest : BehaviorSpec({
                         expectInitialState()
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("1")),
                         )
                         expectState { copy(expression = "1", cursorPosition = 1, previewResult = "") }
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.Input(CalculatorToken.Number("2"))
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("2")),
                         )
                         expectState { copy(expression = "12", cursorPosition = 2, previewResult = "") }
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.Input(CalculatorToken.Operator("+"))
+                            CalculatorContract.Intent.Input(CalculatorToken.Operator("+")),
                         )
                         expectState { copy(expression = "12+", cursorPosition = 3, previewResult = "") }
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("1")),
                         )
                         expectState { copy(expression = "12+1", cursorPosition = 4, previewResult = "13") }
 
                         containerHost.processIntent(
-                            CalculatorContract.Intent.Input(CalculatorToken.Number("0"))
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("0")),
                         )
                         expectState { copy(expression = "12+10", cursorPosition = 5, previewResult = "22") }
 
@@ -814,7 +815,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                                     CalculatorContract.HistoryItem(
                                         expression = "12+10",
                                         result = "22",
-                                    )
+                                    ),
                                 ),
                             )
                         }
@@ -831,7 +832,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                                     CalculatorContract.HistoryItem(
                                         expression = "12+10",
                                         result = "22",
-                                    )
+                                    ),
                                 ),
                             )
                         }
@@ -913,15 +914,15 @@ class CalculatorViewModelTest : BehaviorSpec({
                         // 1. 수식 입력
                         containerHost.processIntent(
                             CalculatorContract.Intent.Input(
-                                CalculatorToken.Number("1")
-                            )
+                                CalculatorToken.Number("1"),
+                            ),
                         )
                         expectState { copy(expression = "1", cursorPosition = 1) }
 
                         containerHost.processIntent(
                             CalculatorContract.Intent.Input(
-                                CalculatorToken.Operator("+")
-                            )
+                                CalculatorToken.Operator("+"),
+                            ),
                         )
                         expectState { copy(expression = "1+", cursorPosition = 2) }
 
@@ -935,7 +936,9 @@ class CalculatorViewModelTest : BehaviorSpec({
 
                         // 4. Turbine 없이 Orbit 내장 기능으로 SideEffect 검증
                         expectSideEffect(
-                            CalculatorContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.invalid_expression))
+                            CalculatorContract.SideEffect.ShowSnackBar(
+                                UiText.StringResource(R.string.invalid_expression),
+                            ),
                         )
                     }
                 }

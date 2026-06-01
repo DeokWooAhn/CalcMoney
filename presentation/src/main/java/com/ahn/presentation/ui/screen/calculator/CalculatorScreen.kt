@@ -63,6 +63,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -111,7 +112,7 @@ fun CalculatorRoute(
         state = state,
         onIntent = viewModel::processIntent,
         onCursorMove = viewModel::updateCursorPosition,
-        snackBarHostState = snackBarHostState
+        snackBarHostState = snackBarHostState,
     )
 }
 
@@ -123,24 +124,8 @@ fun CalculatorScreen(
     onCursorMove: (Int) -> Unit,
     snackBarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-
     val focusRequester = remember { FocusRequester() }
-
-    val textFieldValue = TextFieldValue(
-        text = state.expression,
-        selection = TextRange(state.cursorPosition)
-    )
-
-    val dynamicFontSize = remember(state.expression.length) {
-        when (state.expression.length) {
-            in 0..11 -> 42.sp
-            in 11..16 -> 35.sp
-            else -> 30.sp
-        }
-    }
-
     var showHistory by remember { mutableStateOf(false) }
-    val calculatorAccent = MaterialTheme.colorScheme.calculatorAccent
 
     Scaffold(
         snackbarHost = {
@@ -154,429 +139,35 @@ fun CalculatorScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp, 5.dp, 16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Row(
+            CalculatorCurrencySelectorRow(
+                state = state,
+                onIntent = onIntent,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 3.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CalculatorExchangeCurrencySelector(
-                    label = stringResource(R.string.main_exchange_currency),
-                    selectedCurrency = state.mainExchangeCurrency,
-                    availableCurrencies = state.availableCurrencies,
-                    favoriteCurrencyCodes = state.favoriteCurrencyCodes,
-                    onToggleFavorite = {
-                        onIntent(CalculatorContract.Intent.ToggleFavorite(it))
-                    },
-                    onCurrencySelected = {
-                        onIntent(CalculatorContract.Intent.SelectMainExchangeCurrency(it))
-                    },
-                    modifier = Modifier.widthIn(min = 84.dp),
-                )
+            )
 
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                ) {
-                    IconButton(
-                        onClick = {
-                            onIntent(CalculatorContract.Intent.SwapExchangeCurrencies)
-                        },
-                        modifier = Modifier.size(36.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.SwapHoriz,
-                            contentDescription = stringResource(R.string.swap_exchange_currency),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                }
-
-                CalculatorExchangeCurrencySelector(
-                    label = stringResource(R.string.sub_exchange_currency),
-                    selectedCurrency = state.selectedExchangeCurrency,
-                    availableCurrencies = state.availableCurrencies,
-                    favoriteCurrencyCodes = state.favoriteCurrencyCodes,
-                    onToggleFavorite = {
-                        onIntent(CalculatorContract.Intent.ToggleFavorite(it))
-                    },
-                    onCurrencySelected = {
-                        onIntent(CalculatorContract.Intent.SelectExchangeCurrency(it))
-                    },
-                    modifier = Modifier.widthIn(min = 84.dp),
-                )
-            }
-
-            // 표시 영역
-            Column(
+            CalculatorDisplay(
+                state = state,
+                focusRequester = focusRequester,
+                onCursorMove = onCursorMove,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f) // 남은 공간을 다 차지함
+                    .weight(1f)
                     .padding(vertical = 16.dp),
-                verticalArrangement = Arrangement.SpaceBetween // 위(입력)와 아래(결과)로 벌림
-            ) {
-                // 1. 입력창
-                // 텍스트가 길어지면 스크롤되거나 줄어들도록 Box로 감쌈.
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.TopEnd
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        InterceptPlatformTextInput(
-                            interceptor = { _, _ ->
-                                awaitCancellation()
-                            }
-                        ) {
-                            BasicTextField(
-                                value = textFieldValue,
-                                onValueChange = { newValue ->
-                                    if (newValue.text == state.expression) {
-                                        onCursorMove(newValue.selection.start)
-                                    }
-                                },
-                                textStyle = TextStyle(
-                                    color = if (state.isCalculatedResult) {
-                                        calculatorAccent
-                                    } else {
-                                        MaterialTheme.colorScheme.onBackground
-                                    },
-                                    fontSize = dynamicFontSize,
-                                    fontWeight = FontWeight.Light,
-                                    textAlign = TextAlign.End,
-                                ),
-                                visualTransformation = remember(calculatorAccent) {
-                                    ThousandSeparatorTransformation(calculatorAccent)
-                                },
-                                cursorBrush = SolidColor(Color.White),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(focusRequester)
-                            )
-                        }
+            )
 
-                        ConvertedAmountText(
-                            amount = state.convertedExpressionAmount,
-                            currency = state.selectedExchangeCurrency,
-                        )
-                    }
-                }
-
-                // 2. 결과 미리보기
-                if (state.expression.isNotEmpty() && state.previewResult.isNotEmpty()) {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = formatNumberWithCommas(state.previewResult),
-                            color = Color.Gray,
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.Medium,
-                            textAlign = TextAlign.End,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        ConvertedAmountText(
-                            amount = state.convertedPreviewAmount,
-                            currency = state.selectedExchangeCurrency,
-                        )
-                    }
-                }
-            }
-
-            // 버튼 그리드
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val buttonGap = 0.dp
-                val rowGap = 0.dp
-                val buttonSize = ((maxWidth - buttonGap * 3) / 4).coerceAtMost(84.dp)
-                val keypadWidth = buttonSize * 4 + buttonGap * 3
-                val keypadStartPadding = (maxWidth - keypadWidth) / 2
-                val historyWidth = 16.dp + keypadStartPadding + buttonSize * 3 + buttonGap * 3
-                val historyHeight = buttonSize * 4 + rowGap * 3
-
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(rowGap)
-                    ) {
-                    // 1행: AC, (), 나누기
-                    Row(
-                        modifier = Modifier.width(keypadWidth),
-                        horizontalArrangement = Arrangement.spacedBy(buttonGap)
-                    ) {
-                        CalculatorIconButton(
-                            imageVector = Icons.Default.AccessTime,
-                            modifier = Modifier.size(buttonSize),
-                            backgroundColor = MaterialTheme.colorScheme.buttonFunction,
-                            contentColor = MaterialTheme.colorScheme.buttonTextSecondary,
-                            contentDescription = "calculator history",
-                            onClick = { showHistory = !showHistory }
-                        )
-                        CalculatorButton(
-                            text = "AC",
-                            modifier = Modifier.size(buttonSize),
-                            backgroundColor = MaterialTheme.colorScheme.buttonFunction,
-                            textColor = MaterialTheme.colorScheme.buttonTextSecondary,
-                            onClick = { onIntent(CalculatorContract.Intent.Clear) }
-                        )
-                        CalculatorButton(
-                            text = "( )",
-                            modifier = Modifier.size(buttonSize),
-                            backgroundColor = MaterialTheme.colorScheme.buttonFunction,
-                            textColor = MaterialTheme.colorScheme.buttonTextSecondary,
-                            onClick = {
-                                onIntent(
-                                    CalculatorContract.Intent.Input(
-                                        CalculatorToken.Parenthesis
-                                    )
-                                )
-                            }
-                        )
-                        CalculatorButton(
-                            text = stringResource(R.string.divide),
-                            modifier = Modifier.size(buttonSize),
-                            backgroundColor = MaterialTheme.colorScheme.buttonOperator,
-                            onClick = {
-                                onIntent(
-                                    CalculatorContract.Intent.Input(
-                                        CalculatorToken.Operator("÷")
-                                    )
-                                )
-                            }
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .width(keypadWidth)
-                            .height(historyHeight)
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(rowGap)
-                        ) {
-                            // 2행: 7, 8, 9, 곱하기
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(buttonGap)
-                            ) {
-                                CalculatorButton(
-                                    text = "7",
-                                    modifier = Modifier.size(buttonSize),
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Number("7")
-                                            )
-                                        )
-                                    }
-                                )
-                                CalculatorButton(
-                                    text = "8",
-                                    modifier = Modifier.size(buttonSize),
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Number("8")
-                                            )
-                                        )
-                                    }
-                                )
-                                CalculatorButton(
-                                    text = "9",
-                                    modifier = Modifier.size(buttonSize),
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Number("9")
-                                            )
-                                        )
-                                    }
-                                )
-                                CalculatorButton(
-                                    text = "×",
-                                    modifier = Modifier.size(buttonSize),
-                                    backgroundColor = MaterialTheme.colorScheme.buttonOperator,
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Operator("×")
-                                            )
-                                        )
-                                    }
-                                )
-                            }
-
-                            // 3행: 4, 5, 6, 빼기
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(buttonGap)
-                            ) {
-                                CalculatorButton(
-                                    text = "4",
-                                    modifier = Modifier.size(buttonSize),
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Number("4")
-                                            )
-                                        )
-                                    }
-                                )
-                                CalculatorButton(
-                                    text = "5",
-                                    modifier = Modifier.size(buttonSize),
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Number("5")
-                                            )
-                                        )
-                                    }
-                                )
-                                CalculatorButton(
-                                    text = "6",
-                                    modifier = Modifier.size(buttonSize),
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Number("6")
-                                            )
-                                        )
-                                    }
-                                )
-                                CalculatorButton(
-                                    text = "−",
-                                    modifier = Modifier.size(buttonSize),
-                                    backgroundColor = MaterialTheme.colorScheme.buttonOperator,
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Operator("-")
-                                            )
-                                        )
-                                    }
-                                )
-                            }
-
-                            // 4행: 1, 2, 3, 더하기
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(buttonGap)
-                            ) {
-                                CalculatorButton(
-                                    text = "1",
-                                    modifier = Modifier.size(buttonSize),
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Number("1")
-                                            )
-                                        )
-                                    }
-                                )
-                                CalculatorButton(
-                                    text = "2",
-                                    modifier = Modifier.size(buttonSize),
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Number("2")
-                                            )
-                                        )
-                                    }
-                                )
-                                CalculatorButton(
-                                    text = "3",
-                                    modifier = Modifier.size(buttonSize),
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Number("3")
-                                            )
-                                        )
-                                    }
-                                )
-                                CalculatorButton(
-                                    text = "+",
-                                    modifier = Modifier.size(buttonSize),
-                                    backgroundColor = MaterialTheme.colorScheme.buttonOperator,
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Operator("+")
-                                            )
-                                        )
-                                    }
-                                )
-                            }
-
-                            // 5행: 0(두 칸), ., =
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(buttonGap)
-                            ) {
-                                CalculatorButton(
-                                    text = ".",
-                                    modifier = Modifier.size(buttonSize),
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Dot
-                                            )
-                                        )
-                                    }
-                                )
-                                CalculatorButton(
-                                    text = "0",
-                                    modifier = Modifier.size(buttonSize),
-                                    onClick = {
-                                        onIntent(
-                                            CalculatorContract.Intent.Input(
-                                                CalculatorToken.Number("0")
-                                            )
-                                        )
-                                    }
-                                )
-                                DeleteCalculatorButton(
-                                    text = "⌫",
-                                    modifier = Modifier.size(buttonSize),
-                                    backgroundColor = MaterialTheme.colorScheme.buttonFunction,
-                                    textColor = MaterialTheme.colorScheme.buttonTextSecondary,
-                                    onDeleteAction = { onIntent(CalculatorContract.Intent.Delete) }
-                                )
-                                CalculatorButton(
-                                    text = "=",
-                                    modifier = Modifier.size(buttonSize),
-                                    backgroundColor = MaterialTheme.colorScheme.buttonOperator,
-                                    onClick = { onIntent(CalculatorContract.Intent.Calculate) }
-                                )
-                            }
-                        }
-
-                    }
-                }
-
-                    CalculatorHistoryOverlay(
-                        visible = showHistory,
-                        histories = state.histories,
-                        onClearHistory = { onIntent(CalculatorContract.Intent.ClearHistory) },
-                        onDismiss = { showHistory = false },
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .offset(x = (-16).dp, y = buttonSize + rowGap)
-                            .width(historyWidth)
-                            .height(historyHeight)
-                    )
-                }
-            }
+            CalculatorKeypadArea(
+                showHistory = showHistory,
+                histories = state.histories,
+                onHistoryClick = { showHistory = !showHistory },
+                onClearHistory = { onIntent(CalculatorContract.Intent.ClearHistory) },
+                onDismissHistory = { showHistory = false },
+                onIntent = onIntent,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 
@@ -584,6 +175,384 @@ fun CalculatorScreen(
         delay(100)
         focusRequester.requestFocus()
     }
+}
+
+@Composable
+private fun CalculatorCurrencySelectorRow(
+    state: CalculatorContract.State,
+    onIntent: (CalculatorContract.Intent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CalculatorExchangeCurrencySelector(
+            label = stringResource(R.string.main_exchange_currency),
+            selectedCurrency = state.mainExchangeCurrency,
+            availableCurrencies = state.availableCurrencies,
+            favoriteCurrencyCodes = state.favoriteCurrencyCodes,
+            onToggleFavorite = {
+                onIntent(CalculatorContract.Intent.ToggleFavorite(it))
+            },
+            onCurrencySelected = {
+                onIntent(CalculatorContract.Intent.SelectMainExchangeCurrency(it))
+            },
+            modifier = Modifier.widthIn(min = 84.dp),
+        )
+
+        Surface(
+            shape = RoundedCornerShape(18.dp),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            IconButton(
+                onClick = {
+                    onIntent(CalculatorContract.Intent.SwapExchangeCurrencies)
+                },
+                modifier = Modifier.size(36.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.SwapHoriz,
+                    contentDescription = stringResource(R.string.swap_exchange_currency),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+
+        CalculatorExchangeCurrencySelector(
+            label = stringResource(R.string.sub_exchange_currency),
+            selectedCurrency = state.selectedExchangeCurrency,
+            availableCurrencies = state.availableCurrencies,
+            favoriteCurrencyCodes = state.favoriteCurrencyCodes,
+            onToggleFavorite = {
+                onIntent(CalculatorContract.Intent.ToggleFavorite(it))
+            },
+            onCurrencySelected = {
+                onIntent(CalculatorContract.Intent.SelectExchangeCurrency(it))
+            },
+            modifier = Modifier.widthIn(min = 84.dp),
+        )
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun CalculatorDisplay(
+    state: CalculatorContract.State,
+    focusRequester: FocusRequester,
+    onCursorMove: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val calculatorAccent = MaterialTheme.colorScheme.calculatorAccent
+    val textFieldValue = TextFieldValue(
+        text = state.expression,
+        selection = TextRange(state.cursorPosition),
+    )
+    val dynamicFontSize = remember(state.expression.length) {
+        when (state.expression.length) {
+            in 0..11 -> 42.sp
+            in 11..16 -> 35.sp
+            else -> 30.sp
+        }
+    }
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            contentAlignment = Alignment.TopEnd,
+        ) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                InterceptPlatformTextInput(
+                    interceptor = { _, _ ->
+                        awaitCancellation()
+                    },
+                ) {
+                    BasicTextField(
+                        value = textFieldValue,
+                        onValueChange = { newValue ->
+                            if (newValue.text == state.expression) {
+                                onCursorMove(newValue.selection.start)
+                            }
+                        },
+                        textStyle = TextStyle(
+                            color = if (state.isCalculatedResult) {
+                                calculatorAccent
+                            } else {
+                                MaterialTheme.colorScheme.onBackground
+                            },
+                            fontSize = dynamicFontSize,
+                            fontWeight = FontWeight.Light,
+                            textAlign = TextAlign.End,
+                        ),
+                        visualTransformation = remember(calculatorAccent) {
+                            ThousandSeparatorTransformation(calculatorAccent)
+                        },
+                        cursorBrush = SolidColor(Color.White),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester),
+                    )
+                }
+
+                ConvertedAmountText(
+                    amount = state.convertedExpressionAmount,
+                    currency = state.selectedExchangeCurrency,
+                )
+            }
+        }
+
+        if (state.expression.isNotEmpty() && state.previewResult.isNotEmpty()) {
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = formatNumberWithCommas(state.previewResult),
+                    color = Color.Gray,
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                ConvertedAmountText(
+                    amount = state.convertedPreviewAmount,
+                    currency = state.selectedExchangeCurrency,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CalculatorKeypadArea(
+    showHistory: Boolean,
+    histories: List<CalculatorContract.HistoryItem>,
+    onHistoryClick: () -> Unit,
+    onClearHistory: () -> Unit,
+    onDismissHistory: () -> Unit,
+    onIntent: (CalculatorContract.Intent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(modifier = modifier) {
+        val buttonGap = 0.dp
+        val rowGap = 0.dp
+        val buttonSize = ((maxWidth - buttonGap * 3) / 4).coerceAtMost(84.dp)
+        val keypadWidth = buttonSize * 4 + buttonGap * 3
+        val keypadStartPadding = (maxWidth - keypadWidth) / 2
+        val historyWidth = 16.dp + keypadStartPadding + buttonSize * 3 + buttonGap * 3
+        val historyHeight = buttonSize * 4 + rowGap * 3
+
+        Box(modifier = Modifier.fillMaxWidth()) {
+            CalculatorKeypad(
+                rows = calculatorKeyRows,
+                buttonSize = buttonSize,
+                buttonGap = buttonGap,
+                rowGap = rowGap,
+                keypadWidth = keypadWidth,
+                modifier = Modifier.fillMaxWidth(),
+                onHistoryClick = onHistoryClick,
+                onIntent = onIntent,
+            )
+
+            CalculatorHistoryOverlay(
+                visible = showHistory,
+                histories = histories,
+                onClearHistory = onClearHistory,
+                onDismiss = onDismissHistory,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = (-16).dp, y = buttonSize + rowGap)
+                    .width(historyWidth)
+                    .height(historyHeight),
+            )
+        }
+    }
+}
+
+private sealed interface CalculatorKey {
+    data object History : CalculatorKey
+
+    data object Clear : CalculatorKey
+
+    data object Parenthesis : CalculatorKey
+
+    data object Dot : CalculatorKey
+
+    data object Delete : CalculatorKey
+
+    data object Calculate : CalculatorKey
+
+    data class Number(val value: String) : CalculatorKey
+
+    data class Operator(
+        val displayText: String,
+        val inputValue: String,
+    ) : CalculatorKey
+}
+
+private val calculatorKeyRows = listOf(
+    listOf(
+        CalculatorKey.History,
+        CalculatorKey.Clear,
+        CalculatorKey.Parenthesis,
+        CalculatorKey.Operator(displayText = "÷", inputValue = "÷"),
+    ),
+    listOf(
+        CalculatorKey.Number("7"),
+        CalculatorKey.Number("8"),
+        CalculatorKey.Number("9"),
+        CalculatorKey.Operator(displayText = "×", inputValue = "×"),
+    ),
+    listOf(
+        CalculatorKey.Number("4"),
+        CalculatorKey.Number("5"),
+        CalculatorKey.Number("6"),
+        CalculatorKey.Operator(displayText = "−", inputValue = "-"),
+    ),
+    listOf(
+        CalculatorKey.Number("1"),
+        CalculatorKey.Number("2"),
+        CalculatorKey.Number("3"),
+        CalculatorKey.Operator(displayText = "+", inputValue = "+"),
+    ),
+    listOf(
+        CalculatorKey.Dot,
+        CalculatorKey.Number("0"),
+        CalculatorKey.Delete,
+        CalculatorKey.Calculate,
+    ),
+)
+
+@Composable
+private fun CalculatorKeypad(
+    rows: List<List<CalculatorKey>>,
+    buttonSize: Dp,
+    buttonGap: Dp,
+    rowGap: Dp,
+    keypadWidth: Dp,
+    onHistoryClick: () -> Unit,
+    onIntent: (CalculatorContract.Intent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(rowGap),
+    ) {
+        rows.forEach { row ->
+            Row(
+                modifier = Modifier.width(keypadWidth),
+                horizontalArrangement = Arrangement.spacedBy(buttonGap),
+            ) {
+                row.forEach { key ->
+                    CalculatorKeyButton(
+                        key = key,
+                        modifier = Modifier.size(buttonSize),
+                        onHistoryClick = onHistoryClick,
+                        onIntent = onIntent,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CalculatorKeyButton(
+    key: CalculatorKey,
+    onHistoryClick: () -> Unit,
+    onIntent: (CalculatorContract.Intent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    when (key) {
+        CalculatorKey.History -> CalculatorIconButton(
+            imageVector = Icons.Default.AccessTime,
+            modifier = modifier,
+            backgroundColor = MaterialTheme.colorScheme.buttonFunction,
+            contentColor = MaterialTheme.colorScheme.buttonTextSecondary,
+            contentDescription = "calculator history",
+            onClick = onHistoryClick,
+        )
+
+        CalculatorKey.Clear -> CalculatorButton(
+            text = "AC",
+            modifier = modifier,
+            backgroundColor = MaterialTheme.colorScheme.buttonFunction,
+            textColor = MaterialTheme.colorScheme.buttonTextSecondary,
+            onClick = { onIntent(CalculatorContract.Intent.Clear) },
+        )
+
+        CalculatorKey.Parenthesis -> CalculatorButton(
+            text = "( )",
+            modifier = modifier,
+            backgroundColor = MaterialTheme.colorScheme.buttonFunction,
+            textColor = MaterialTheme.colorScheme.buttonTextSecondary,
+            onClick = {
+                onIntent(
+                    CalculatorContract.Intent.Input(CalculatorToken.Parenthesis),
+                )
+            },
+        )
+
+        CalculatorKey.Dot -> CalculatorButton(
+            text = ".",
+            modifier = modifier,
+            onClick = {
+                onIntent(
+                    CalculatorContract.Intent.Input(CalculatorToken.Dot),
+                )
+            },
+        )
+
+        CalculatorKey.Delete -> DeleteCalculatorButton(
+            text = "⌫",
+            modifier = modifier,
+            backgroundColor = MaterialTheme.colorScheme.buttonFunction,
+            textColor = MaterialTheme.colorScheme.buttonTextSecondary,
+            onDeleteAction = { onIntent(CalculatorContract.Intent.Delete) },
+        )
+
+        CalculatorKey.Calculate -> CalculatorButton(
+            text = "=",
+            modifier = modifier,
+            backgroundColor = MaterialTheme.colorScheme.buttonOperator,
+            onClick = { onIntent(CalculatorContract.Intent.Calculate) },
+        )
+
+        is CalculatorKey.Number -> CalculatorButton(
+            text = key.value,
+            modifier = modifier,
+            onClick = {
+                onIntent(
+                    CalculatorContract.Intent.Input(CalculatorToken.Number(key.value)),
+                )
+            },
+        )
+
+        is CalculatorKey.Operator -> CalculatorButton(
+            text = key.operatorText(),
+            modifier = modifier,
+            backgroundColor = MaterialTheme.colorScheme.buttonOperator,
+            onClick = {
+                onIntent(
+                    CalculatorContract.Intent.Input(CalculatorToken.Operator(key.inputValue)),
+                )
+            },
+        )
+    }
+}
+
+@Composable
+private fun CalculatorKey.Operator.operatorText(): String {
+    return if (inputValue == "÷") stringResource(R.string.divide) else displayText
 }
 
 @Composable
@@ -684,7 +653,7 @@ private fun CalculatorHistoryOverlay(
             histories = histories,
             onClearHistory = onClearHistory,
             onDismiss = onDismiss,
-            modifier = modifier
+            modifier = modifier,
         )
     }
 }
@@ -747,7 +716,7 @@ private fun CalculatorHistoryPanel(
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column(
-            modifier = Modifier.padding(15.dp, 10.dp)
+            modifier = Modifier.padding(15.dp, 10.dp),
         ) {
             LazyColumn(
                 state = listState,
@@ -758,7 +727,7 @@ private fun CalculatorHistoryPanel(
                 contentPadding = PaddingValues(bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(
                     space = 20.dp,
-                    alignment = Alignment.Bottom
+                    alignment = Alignment.Bottom,
                 ),
             ) {
                 items(
@@ -794,7 +763,7 @@ private fun CalculatorHistoryPanel(
             ) {
                 Text(
                     text = stringResource(R.string.delete_calculator_history),
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
                 )
             }
         }

@@ -26,7 +26,7 @@ fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier
         enterTransition = { EnterTransition.None },
         exitTransition = { ExitTransition.None },
         popEnterTransition = { EnterTransition.None },
-        popExitTransition = { ExitTransition.None }
+        popExitTransition = { ExitTransition.None },
     ) {
         composable(BottomNavItem.Calculator.route) { CalculatorRoute() }
         composable(BottomNavItem.Exchange.route) {

@@ -19,12 +19,12 @@ object DatabaseModule {
     fun provideDatabase(
         @ApplicationContext context: Context,
     ): CalcMoneyDatabase {
-        return Room.databaseBuilder(
-            context,
-            CalcMoneyDatabase::class.java,
-            "calc_money.db",
-        )
-            .addMigrations(CalcMoneyDatabase.MIGRATION_1_2)
+        return Room
+            .databaseBuilder(
+                context,
+                CalcMoneyDatabase::class.java,
+                "calc_money.db",
+            ).addMigrations(CalcMoneyDatabase.MIGRATION_1_2)
             .build()
     }
 

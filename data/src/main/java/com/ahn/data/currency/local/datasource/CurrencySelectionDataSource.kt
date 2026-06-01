@@ -19,13 +19,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private val Context.currencySelectionDataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "currency_selection"
+    name = "currency_selection",
 )
 
 @Singleton
-class CurrencySelectionDataSource @Inject constructor(
-    @param:ApplicationContext private val context: Context,
-) {
+class CurrencySelectionDataSource @Inject constructor(@param:ApplicationContext private val context: Context) {
     private val calculatorMainCurrencyCodeKey = stringPreferencesKey("calculator_main_currency_code")
     private val calculatorSubCurrencyCodeKey = stringPreferencesKey("calculator_sub_currency_code")
     private val exchangeFromCurrencyCodeKey = stringPreferencesKey("exchange_from_currency_code")
@@ -39,8 +37,7 @@ class CurrencySelectionDataSource @Inject constructor(
                     mainCode = prefs[calculatorMainCurrencyCodeKey],
                     subCode = prefs[calculatorSubCurrencyCodeKey],
                 )
-            }
-            .first()
+            }.first()
     }
 
     suspend fun saveCalculatorMainCurrencyCode(code: String) {
@@ -70,8 +67,7 @@ class CurrencySelectionDataSource @Inject constructor(
                     fromCode = prefs[exchangeFromCurrencyCodeKey],
                     toCode = prefs[exchangeToCurrencyCodeKey],
                 )
-            }
-            .first()
+            }.first()
     }
 
     suspend fun saveExchangeFromCurrencyCode(code: String) {

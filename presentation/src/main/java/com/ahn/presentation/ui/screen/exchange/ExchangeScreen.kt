@@ -69,11 +69,10 @@ fun ExchangeRoute(
     ExchangeScreen(
         state = state,
         onIntent = viewModel::processIntent,
-        snackbarHostState = snackbarHostState
+        snackbarHostState = snackbarHostState,
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExchangeScreen(
     state: ExchangeContract.State,
@@ -88,108 +87,145 @@ fun ExchangeScreen(
         snackbarHost = {
             CustomSnackbarHost(snackbarHostState = snackbarHostState)
         },
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.exchange_title),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
-                )
-            )
-        },
+        topBar = { ExchangeTopBar() },
         containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 10.dp)
-                .verticalScroll(rememberScrollState())
-                .imePadding(),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        ExchangeContent(
+            state = state,
+            exchangeRateDateText = exchangeRateDateText,
+            onIntent = onIntent,
+            modifier = Modifier.padding(paddingValues),
+        )
+    }
+}
 
-            ExchangeInputContainer(
-                amount = state.fromAmount,
-                currency = state.fromCurrency,
-                onAmountChange = { onIntent(ExchangeContract.Intent.UpdateFromAmount(it)) },
-                onCurrencyClick = { onIntent(ExchangeContract.Intent.SelectFromCurrency(it)) },
-                availableCurrencies = state.availableCurrencies,
-                favoriteCurrencyCodes = state.favoriteCurrencyCodes,
-                onToggleFavorite = { onIntent(ExchangeContract.Intent.ToggleFavorite(it)) },
-                isEditable = true,
-                label = stringResource(R.string.base_amount),
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExchangeTopBar() {
+    CenterAlignedTopAppBar(
+        title = {
+            Text(
+                text = stringResource(R.string.exchange_title),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
             )
+        },
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+        ),
+    )
+}
 
-            Spacer(modifier = Modifier.height(16.dp))
+@Composable
+private fun ExchangeContent(
+    state: ExchangeContract.State,
+    exchangeRateDateText: String?,
+    onIntent: (ExchangeContract.Intent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 10.dp)
+            .verticalScroll(rememberScrollState())
+            .imePadding(),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        ExchangeInputContainer(
+            amount = state.fromAmount,
+            currency = state.fromCurrency,
+            onAmountChange = { onIntent(ExchangeContract.Intent.UpdateFromAmount(it)) },
+            onCurrencyClick = { onIntent(ExchangeContract.Intent.SelectFromCurrency(it)) },
+            availableCurrencies = state.availableCurrencies,
+            favoriteCurrencyCodes = state.favoriteCurrencyCodes,
+            onToggleFavorite = { onIntent(ExchangeContract.Intent.ToggleFavorite(it)) },
+            isEditable = true,
+            label = stringResource(R.string.base_amount),
+        )
 
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .background(
-                        MaterialTheme.colorScheme.surface,
-                        shape = RoundedCornerShape(28.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                IconButton(onClick = { onIntent(ExchangeContract.Intent.SwapCurrencies) }) {
-                    Icon(
-                        imageVector = Icons.Default.SwapVert,
-                        contentDescription = stringResource(R.string.swap_currency),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
+        Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
+        SwapCurrencyButton(
+            onClick = { onIntent(ExchangeContract.Intent.SwapCurrencies) },
+        )
 
-            ExchangeInputContainer(
-                amount = state.toAmount,
-                currency = state.toCurrency,
-                onAmountChange = { },
-                onCurrencyClick = { onIntent(ExchangeContract.Intent.SelectToCurrency(it)) },
-                availableCurrencies = state.availableCurrencies,
-                favoriteCurrencyCodes = state.favoriteCurrencyCodes,
-                onToggleFavorite = { onIntent(ExchangeContract.Intent.ToggleFavorite(it)) },
-                isEditable = false,
-                label = stringResource(R.string.target_amount),
+        Spacer(modifier = Modifier.height(16.dp))
+
+        ExchangeInputContainer(
+            amount = state.toAmount,
+            currency = state.toCurrency,
+            onAmountChange = { },
+            onCurrencyClick = { onIntent(ExchangeContract.Intent.SelectToCurrency(it)) },
+            availableCurrencies = state.availableCurrencies,
+            favoriteCurrencyCodes = state.favoriteCurrencyCodes,
+            onToggleFavorite = { onIntent(ExchangeContract.Intent.ToggleFavorite(it)) },
+            isEditable = false,
+            label = stringResource(R.string.target_amount),
+        )
+
+        ExchangeRateInfo(
+            fromCurrency = state.fromCurrency,
+            toCurrency = state.toCurrency,
+            exchangeRate = state.exchangeRate,
+            exchangeRateDateText = exchangeRateDateText,
+        )
+    }
+}
+
+@Composable
+private fun SwapCurrencyButton(
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(56.dp)
+            .background(
+                MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(28.dp),
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        IconButton(onClick = onClick) {
+            Icon(
+                imageVector = Icons.Default.SwapVert,
+                contentDescription = stringResource(R.string.swap_currency),
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(28.dp),
             )
-
-            state.fromCurrency?.let { _ ->
-                state.toCurrency?.let { _ ->
-                    if (state.exchangeRate > 0) {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "1 ${state.fromCurrency.code} = ${
-                                String.format(
-                                    Locale.US,
-                                    "%.4f",
-                                    state.exchangeRate
-                                )
-                            } ${state.toCurrency.code}",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-
-                        exchangeRateDateText?.let { rateDate ->
-                            Text(
-                                text = stringResource(R.string.exchange_rate_date, rateDate),
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-            }
         }
+    }
+}
+
+@Composable
+private fun ExchangeRateInfo(
+    fromCurrency: CurrencyInfo?,
+    toCurrency: CurrencyInfo?,
+    exchangeRate: Double,
+    exchangeRateDateText: String?,
+) {
+    if (fromCurrency == null || toCurrency == null || exchangeRate <= 0) return
+
+    Spacer(modifier = Modifier.height(24.dp))
+    Text(
+        text = "1 ${fromCurrency.code} = ${
+            String.format(
+                Locale.US,
+                "%.4f",
+                exchangeRate,
+            )
+        } ${toCurrency.code}",
+        fontSize = 12.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    exchangeRateDateText?.let { rateDate ->
+        Text(
+            text = stringResource(R.string.exchange_rate_date, rateDate),
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -237,6 +273,6 @@ fun ExchangeScreenPreview() {
             exchangeRate = 1350.0,
             exchangeRateDate = "20260529",
         ),
-        onIntent = {}
+        onIntent = {},
     )
 }

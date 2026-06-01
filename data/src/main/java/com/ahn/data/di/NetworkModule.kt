@@ -17,17 +17,18 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-
     @Provides
     @Singleton
     fun provideKtorClient(): HttpClient {
         return HttpClient(Android) {
             install(ContentNegotiation) {
-                json(Json {
-                    ignoreUnknownKeys = true    // 알 수 없는 필드 무시
-                    coerceInputValues = true    // null 값 기본값 처리
-                    isLenient = true            // 유연한 파싱
-                })
+                json(
+                    Json {
+                        ignoreUnknownKeys = true // 알 수 없는 필드 무시
+                        coerceInputValues = true // null 값 기본값 처리
+                        isLenient = true // 유연한 파싱
+                    },
+                )
             }
 
             install(Logging) {

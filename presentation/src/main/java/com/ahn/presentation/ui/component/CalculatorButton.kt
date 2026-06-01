@@ -42,7 +42,7 @@ fun CalculatorButton(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.buttonNumber,
     textColor: Color = MaterialTheme.colorScheme.buttonTextPrimary,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val elevation = calculatorButtonElevation()
 
@@ -58,13 +58,13 @@ fun CalculatorButton(
             .clip(CircleShape)
             .background(color = backgroundColor)
             .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             fontSize = 30.sp,
             fontWeight = FontWeight.Medium,
-            color = textColor
+            color = textColor,
         )
     }
 }
@@ -76,7 +76,7 @@ fun CalculatorIconButton(
     backgroundColor: Color = MaterialTheme.colorScheme.buttonFunction,
     contentColor: Color = MaterialTheme.colorScheme.buttonTextSecondary,
     contentDescription: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val elevation = calculatorButtonElevation()
 
@@ -92,13 +92,13 @@ fun CalculatorIconButton(
             .clip(CircleShape)
             .background(color = backgroundColor)
             .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = imageVector,
             contentDescription = contentDescription,
             tint = contentColor,
-            modifier = Modifier.size(32.dp)
+            modifier = Modifier.size(32.dp),
         )
     }
 }
@@ -109,7 +109,7 @@ fun DeleteCalculatorButton(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.buttonFunction,
     textColor: Color = MaterialTheme.colorScheme.buttonTextSecondary,
-    onDeleteAction: () -> Unit
+    onDeleteAction: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var isPressed by remember { mutableStateOf(false) }
@@ -142,16 +142,16 @@ fun DeleteCalculatorButton(
 
                         job.cancel()
                         isPressed = false
-                    }
+                    },
                 )
             },
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             fontSize = 31.sp,
             fontWeight = FontWeight.Medium,
-            color = textColor
+            color = textColor,
         )
     }
 }

@@ -4,10 +4,8 @@ import com.ahn.data.currency.local.datasource.CurrencySelectionDataSource
 import com.ahn.domain.currency.repository.CurrencySelectionRepository
 import javax.inject.Inject
 
-class CurrencySelectionRepositoryImpl @Inject constructor(
-    private val dataSource: CurrencySelectionDataSource,
-) : CurrencySelectionRepository {
-
+class CurrencySelectionRepositoryImpl @Inject constructor(private val dataSource: CurrencySelectionDataSource) :
+    CurrencySelectionRepository {
     override suspend fun getCalculatorSelection() = dataSource.getCalculatorSelection()
 
     override suspend fun saveCalculatorMainCurrencyCode(code: String) {

@@ -1,0 +1,73 @@
+config:
+  validation: true
+  warningsAsErrors: false
+
+ktlint:
+  active: true
+  code_style: android_studio
+  autoCorrect: true
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+  FunctionSignature:
+    active: false
+  FunctionExpressionBody:
+    active: false
+  ChainMethodContinuation:
+    active: false
+  ClassSignature:
+    active: false
+  ImportOrdering:
+    active: false
+  Indentation:
+    active: false
+  MultilineExpressionWrapping:
+    active: false
+  TrailingCommaOnCallSite:
+    active: true
+
+style:
+  ReturnCount:
+    active: true
+    max: 4
+  MagicNumber:
+    active: false
+  LoopWithTooManyJumpStatements:
+    active: false
+
+empty-blocks:
+  EmptyClassBlock:
+    active: false
+  EmptyFunctionBlock:
+    active: false
+
+complexity:
+  CyclomaticComplexMethod:
+    active: true
+    allowedComplexity: 15
+  LongMethod:
+    active: true
+    allowedLines: 100
+  LongParameterList:
+    active: false
+  LargeClass:
+    active: true
+    allowedLines: 800
+  TooManyFunctions:
+    active: true
+    allowedFunctionsPerFile: 30
+    allowedFunctionsPerClass: 20
+    allowedFunctionsPerInterface: 15
+    allowedFunctionsPerObject: 20
+    allowedFunctionsPerEnum: 15
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
+
+naming:
+  FunctionNaming:
+    active: true
+    functionPattern: '[a-zA-Z][a-zA-Z0-9]*'
+  MatchingDeclarationName:
+    active: true

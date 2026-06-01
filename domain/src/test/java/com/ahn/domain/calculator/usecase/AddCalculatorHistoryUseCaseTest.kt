@@ -9,31 +9,32 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 
-class AddCalculatorHistoryUseCaseTest : DescribeSpec({
+class AddCalculatorHistoryUseCaseTest :
+    DescribeSpec({
 
-    isolationMode = IsolationMode.InstancePerRoot
+        isolationMode = IsolationMode.InstancePerRoot
 
-    val repository = mockk<CalculatorHistoryRepository>()
-    val useCase = AddCalculatorHistoryUseCase(repository)
+        val repository = mockk<CalculatorHistoryRepository>()
+        val useCase = AddCalculatorHistoryUseCase(repository)
 
-    beforeEach {
-        clearAllMocks()
-    }
+        beforeEach {
+            clearAllMocks()
+        }
 
-    describe("계산 기록 추가") {
-        it("repository에 계산 기록 추가를 요청한다") {
-            val history = CalculatorHistory(
-                expression = "1+1",
-                result = "2",
-            )
+        describe("계산 기록 추가") {
+            it("repository에 계산 기록 추가를 요청한다") {
+                val history = CalculatorHistory(
+                    expression = "1+1",
+                    result = "2",
+                )
 
-            coEvery { repository.addHistory(history) } returns Unit
+                coEvery { repository.addHistory(history) } returns Unit
 
-            useCase(history)
+                useCase(history)
 
-            coVerify(exactly = 1) {
-                repository.addHistory(history)
+                coVerify(exactly = 1) {
+                    repository.addHistory(history)
+                }
             }
         }
-    }
-})
+    })

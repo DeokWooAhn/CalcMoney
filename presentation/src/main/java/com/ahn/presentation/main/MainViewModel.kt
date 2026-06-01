@@ -1,4 +1,3 @@
 package com.ahn.presentation.main
 
-class MainViewModel {
-}
+class MainViewModel

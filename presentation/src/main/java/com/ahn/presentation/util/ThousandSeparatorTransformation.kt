@@ -98,7 +98,7 @@ private fun formatWithThousandSeparatorAndBreaks(text: String): String {
             // 연산자 앞에 Zero-Width Space 추가 (줄바꿈 힌트)
             // +, -, ×, ÷ 앞에서 줄바꿈 가능하도록
             if (char.isCalculatorOperator()) {
-                result.append("\u200B")  // 줄바꿈 가능 위치 힌트
+                result.append("\u200B") // 줄바꿈 가능 위치 힌트
             }
 
             result.append(char)

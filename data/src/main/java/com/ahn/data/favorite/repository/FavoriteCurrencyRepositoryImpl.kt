@@ -5,10 +5,8 @@ import com.ahn.domain.favorite.repository.FavoriteCurrencyRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class FavoriteCurrencyRepositoryImpl @Inject constructor(
-    private val dataSource: FavoriteCurrencyDataSource
-) : FavoriteCurrencyRepository {
-
+class FavoriteCurrencyRepositoryImpl @Inject constructor(private val dataSource: FavoriteCurrencyDataSource) :
+    FavoriteCurrencyRepository {
     override fun getFavoriteCurrencyCodes(): Flow<List<String>> {
         return dataSource.getFavoriteCodes()
     }

@@ -232,8 +232,11 @@ class CalculatorViewModel @Inject constructor(
         val expression = state.expression
         if (expression.isEmpty()) return@intent
 
+        val shouldRepeatOperation = state.repeatOperation != null && expression.toDoubleOrNull() != null
+        if (!shouldRepeatOperation && !expression.hasBinaryOperator()) return@intent
+
         val expressionToCalculate =
-            if (state.repeatOperation != null && expression.toDoubleOrNull() != null) {
+            if (shouldRepeatOperation) {
                 expression + state.repeatOperation
             } else {
                 expression
@@ -463,17 +466,27 @@ class CalculatorViewModel @Inject constructor(
         if (expression.isEmpty()) return ""
 
         val lastChar = expression.lastOrNull() ?: return ""
-        val hasOperator = expression.any { it.toString() in OPERATORS }
-        val isJustNegativeNumber = expression.startsWith("-") &&
-                expression.count { it.toString() in OPERATORS } == 1
 
-        // 연산자가 없거나, 마지막이 연산자거나, 단순 음수면 미리보기 안 함
-        if (!hasOperator || lastChar.toString() in OPERATORS || isJustNegativeNumber) {
+        if (!expression.hasBinaryOperator() || lastChar.toString() in OPERATORS) {
             return ""
         }
 
         val result = calculatorUseCases.calculateExpression.calculate(expression)
         return if (result == "Error") "" else result
+    }
+
+    private fun String.hasBinaryOperator(): Boolean {
+        return indices.any { index ->
+            val char = this[index]
+            char.toString() in OPERATORS && !isUnaryMinusOperator(index)
+        }
+    }
+
+    private fun String.isUnaryMinusOperator(index: Int): Boolean {
+        if (this[index] != '-') return false
+
+        val previousChar = getOrNull(index - 1)
+        return index == 0 || previousChar == '(' || previousChar.toString() in OPERATORS
     }
 
     private fun canInsertNumber(expression: String, cursorPos: Int): Boolean {

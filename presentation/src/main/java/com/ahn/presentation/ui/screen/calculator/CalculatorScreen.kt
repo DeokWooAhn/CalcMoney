@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -549,7 +548,7 @@ fun CalculatorScreen(
                                 DeleteCalculatorButton(
                                     text = "⌫",
                                     modifier = Modifier.size(buttonSize),
-                                    backgroundColor = MaterialTheme.colorScheme.buttonFunction,      // ✅ 변경
+                                    backgroundColor = MaterialTheme.colorScheme.buttonFunction,
                                     textColor = MaterialTheme.colorScheme.buttonTextSecondary,
                                     onDeleteAction = { onIntent(CalculatorContract.Intent.Delete) }
                                 )

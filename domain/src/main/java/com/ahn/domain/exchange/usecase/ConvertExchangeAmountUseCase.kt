@@ -59,7 +59,8 @@ class ConvertExchangeAmountUseCase @Inject constructor(
         if (text.isEmpty() || rate <= 0.0 || currencyCode == null) return ""
 
         val amount = text.toDoubleOrNull()
-            ?: calculateExpressionUseCase.calculate(text)
+            ?: calculateExpressionUseCase
+                .calculate(text)
                 .takeIf { it != "Error" }
                 ?.toDoubleOrNull()
             ?: return ""

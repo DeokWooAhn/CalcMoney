@@ -4,6 +4,32 @@ import com.ahn.data.exchange.local.entity.ExchangeRateEntity
 import com.ahn.data.exchange.remote.dto.ExchangeRateResponse
 import com.ahn.domain.currency.model.CurrencyInfo
 
+private val currencyCountryCodes = mapOf(
+    "KRW" to "KR",
+    "USD" to "US",
+    "JPY" to "JP",
+    "EUR" to "EU",
+    "CNH" to "CN",
+    "GBP" to "GB",
+    "AUD" to "AU",
+    "CAD" to "CA",
+    "CHF" to "CH",
+    "HKD" to "HK",
+    "AED" to "AE",
+    "BHD" to "BH",
+    "BND" to "BN",
+    "DKK" to "DK",
+    "IDR" to "ID",
+    "KWD" to "KW",
+    "MYR" to "MY",
+    "NOK" to "NO",
+    "NZD" to "NZ",
+    "SAR" to "SA",
+    "SEK" to "SE",
+    "SGD" to "SG",
+    "THB" to "TH",
+)
+
 /**
  * 유효한 원격 환율 응답을 로컬 캐시에 저장할 [ExchangeRateEntity]로 변환합니다.
  *
@@ -91,34 +117,7 @@ private fun String.toRateNumber(currencyUnit: String? = null): Double? {
  * @return 지원하는 통화이면 국기 이모지를, 지원하지 않으면 빈 문자열을 반환합니다.
  */
 private fun getFlagEmoji(currencyCode: String): String {
-    val countryCode = when (currencyCode) {
-        "KRW" -> "KR"
-        "USD" -> "US"
-        "JPY" -> "JP"
-        "EUR" -> "EU"
-        "CNH" -> "CN"
-        "GBP" -> "GB"
-        "AUD" -> "AU"
-        "CAD" -> "CA"
-        "CHF" -> "CH"
-        "HKD" -> "HK"
-        "AED" -> "AE"
-        "BHD" -> "BH"
-        "BND" -> "BN"
-        "DKK" -> "DK"
-        "IDR" -> "ID"
-        "KWD" -> "KW"
-        "MYR" -> "MY"
-        "NOK" -> "NO"
-        "NZD" -> "NZ"
-        "SAR" -> "SA"
-        "SEK" -> "SE"
-        "SGD" -> "SG"
-        "THB" -> "TH"
-        else -> return ""
-    }
-
-    return countryFlag(countryCode)
+    return currencyCountryCodes[currencyCode]?.let(::countryFlag).orEmpty()
 }
 
 /**
@@ -128,7 +127,9 @@ private fun getFlagEmoji(currencyCode: String): String {
  * @return 국가 코드에 해당하는 국기 이모지입니다. 빈 문자열이면 빈 문자열을 반환합니다.
  */
 private fun countryFlag(countryCode: String): String {
-    return countryCode.uppercase().map { char ->
-        Character.toChars(0x1F1E6 + (char.code - 'A'.code)).concatToString()
-    }.joinToString("")
+    return countryCode
+        .uppercase()
+        .map { char ->
+            Character.toChars(0x1F1E6 + (char.code - 'A'.code)).concatToString()
+        }.joinToString("")
 }

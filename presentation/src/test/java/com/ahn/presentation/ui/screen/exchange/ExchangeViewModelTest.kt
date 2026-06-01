@@ -129,7 +129,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                                 isLoading = false,
                                 availableCurrencies = mockCurrencies,
                                 fromCurrency = usd,
-                                toCurrency = krw
+                                toCurrency = krw,
                             )
                         }
 
@@ -143,7 +143,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                             copy(
                                 isLoading = false,
                                 exchangeRate = 1500.00,
-                                toAmount = "1500.00" // 기본 금액 "1" * 1500.00
+                                toAmount = "1500.00", // 기본 금액 "1" * 1500.00
                             )
                         }
                         // observeFavorites() 무한 collect 때문에 joinIntents가 끝나지 않음 → 컨테이너 취소 필요
@@ -408,7 +408,6 @@ class ExchangeViewModelTest : BehaviorSpec({
                         // 1. 초기화 시작
                         runOnCreate()
 
-
                         expectState { copy(isLoading = true) }
 
                         // 통화 목록 세팅 완료, 로딩 꺼짐
@@ -417,7 +416,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                                 isLoading = false,
                                 availableCurrencies = mockCurrencies,
                                 fromCurrency = usd,
-                                toCurrency = krw
+                                toCurrency = krw,
                             )
                         }
 
@@ -428,7 +427,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                             copy(
                                 isLoading = false,
                                 exchangeRate = 1500.00,
-                                toAmount = "1500.00"
+                                toAmount = "1500.00",
                             )
                         }
                         // ────────────────────────────────
@@ -440,7 +439,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                         expectState {
                             copy(
                                 fromAmount = "1000",
-                                toAmount = "1500000.00"
+                                toAmount = "1500000.00",
                             )
                         }
                         cancelAndIgnoreRemainingItems()
@@ -471,7 +470,12 @@ class ExchangeViewModelTest : BehaviorSpec({
 
                         // 4. 에러 스낵바 SideEffect 발생 검증
                         expectSideEffect(
-                            ExchangeContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.load_currency_list_failed, listOf("Network Error")))
+                            ExchangeContract.SideEffect.ShowSnackBar(
+                                UiText.StringResource(
+                                    R.string.load_currency_list_failed,
+                                    listOf("Network Error"),
+                                ),
+                            ),
                         )
                         cancelAndIgnoreRemainingItems()
                     }
@@ -500,7 +504,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                                 isLoading = false,
                                 availableCurrencies = mockCurrencies,
                                 fromCurrency = usd,
-                                toCurrency = krw
+                                toCurrency = krw,
                             )
                         }
 
@@ -510,7 +514,12 @@ class ExchangeViewModelTest : BehaviorSpec({
 
                         // SideEffect 검증
                         expectSideEffect(
-                            ExchangeContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.load_exchange_rate_failed, listOf("Network Error")))
+                            ExchangeContract.SideEffect.ShowSnackBar(
+                                UiText.StringResource(
+                                    R.string.load_exchange_rate_failed,
+                                    listOf("Network Error"),
+                                ),
+                            ),
                         )
                         cancelAndIgnoreRemainingItems()
                     }
@@ -543,7 +552,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                                 isLoading = false,
                                 availableCurrencies = mockCurrencies,
                                 fromCurrency = usd,
-                                toCurrency = krw
+                                toCurrency = krw,
                             )
                         }
                         expectState { copy(isLoading = true) }
@@ -551,7 +560,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                             copy(
                                 isLoading = false,
                                 exchangeRate = 1500.00,
-                                toAmount = "1500.00"
+                                toAmount = "1500.00",
                             )
                         }
 
@@ -559,7 +568,7 @@ class ExchangeViewModelTest : BehaviorSpec({
 
                         // postSideEffect가 Flow collect의 reduce보다 먼저 스트림에 올 수 있음
                         expectSideEffect(
-                            ExchangeContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_added))
+                            ExchangeContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_added)),
                         )
                         expectState {
                             copy(favoriteCurrencyCodes = listOf("USD"))
@@ -594,7 +603,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                                 isLoading = false,
                                 availableCurrencies = mockCurrencies,
                                 fromCurrency = usd,
-                                toCurrency = krw
+                                toCurrency = krw,
                             )
                         }
                         expectState { copy(isLoading = true) }
@@ -602,7 +611,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                             copy(
                                 isLoading = false,
                                 exchangeRate = 1500.00,
-                                toAmount = "1500.00"
+                                toAmount = "1500.00",
                             )
                         }
                         // performLoadCurrencies + 환율 완료 후 observeFavorites()에서 [USD] 반영
@@ -611,7 +620,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                         containerHost.processIntent(ExchangeContract.Intent.ToggleFavorite("USD"))
 
                         expectSideEffect(
-                            ExchangeContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_removed))
+                            ExchangeContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_removed)),
                         )
                         expectState { copy(favoriteCurrencyCodes = emptyList()) }
                         cancelAndIgnoreRemainingItems()

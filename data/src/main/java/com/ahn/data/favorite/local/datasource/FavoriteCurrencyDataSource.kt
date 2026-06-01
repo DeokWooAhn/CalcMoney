@@ -17,13 +17,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "favorite_currencies"
+    name = "favorite_currencies",
 )
 
 @Singleton
-class FavoriteCurrencyDataSource @Inject constructor(
-    @param:ApplicationContext private val context: Context
-){
+class FavoriteCurrencyDataSource @Inject constructor(@param:ApplicationContext private val context: Context) {
     private val key = stringPreferencesKey("favorite_codes")
 
     fun getFavoriteCodes(): Flow<List<String>> {

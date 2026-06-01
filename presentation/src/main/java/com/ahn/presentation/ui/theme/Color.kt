@@ -10,11 +10,11 @@ val DarkOnBackground = Color.White
 val DarkOnSurface = Color.White
 val DarkGray = Color(0xFF9E9E9E)
 
-val DarkButtonNumber = Color(0xFF333333)        // 숫자 버튼 배경
-val DarkButtonFunction = Color(0xFF9E9E9E)      // AC, ( ) 버튼 배경
-val DarkButtonOperator = Color(0xFFFF9500)      // 연산자 버튼 배경
-val DarkButtonTextPrimary = Color.White         // 기본 텍스트
-val DarkButtonTextSecondary = Color.Black       // AC, ( ) 버튼 텍스트
+val DarkButtonNumber = Color(0xFF333333) // 숫자 버튼 배경
+val DarkButtonFunction = Color(0xFF9E9E9E) // AC, ( ) 버튼 배경
+val DarkButtonOperator = Color(0xFFFF9500) // 연산자 버튼 배경
+val DarkButtonTextPrimary = Color.White // 기본 텍스트
+val DarkButtonTextSecondary = Color.Black // AC, ( ) 버튼 텍스트
 val DarkCurrencySelectorSurface = Color(0xFF24242A)
 val DarkCurrencySelectorBorder = Color(0xFF3A3A42)
 
@@ -26,12 +26,12 @@ val LightOnBackground = Color(0xFF1C1B1F)
 val LightOnSurface = Color(0xFF1C1B1F)
 val LightGray = Color(0xFF616161)
 
-val LightButtonNumber = Color(0xFFE0E0E0)       // 숫자 버튼 배경
-val LightButtonFunction = Color(0xFF757575)     // AC, ( ) 버튼 배경
-val LightButtonOperator = Color(0xFFFF9500)     // 연산자 버튼 배경
-val LightCalculatorAccent = Color(0xFFE36F00)   // 계산식 강조 텍스트
-val LightButtonTextPrimary = Color.Black        // 기본 텍스트
-val LightButtonTextSecondary = Color.White      // AC, ( ) 버튼 텍스트
+val LightButtonNumber = Color(0xFFE0E0E0) // 숫자 버튼 배경
+val LightButtonFunction = Color(0xFF757575) // AC, ( ) 버튼 배경
+val LightButtonOperator = Color(0xFFFF9500) // 연산자 버튼 배경
+val LightCalculatorAccent = Color(0xFFE36F00) // 계산식 강조 텍스트
+val LightButtonTextPrimary = Color.Black // 기본 텍스트
+val LightButtonTextSecondary = Color.White // AC, ( ) 버튼 텍스트
 val LightCurrencySelectorSurface = Color(0xFFE9ECEF)
 val LightCurrencySelectorBorder = Color(0xFFD0D7DE)
 

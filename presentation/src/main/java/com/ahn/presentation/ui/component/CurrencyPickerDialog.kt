@@ -123,7 +123,7 @@ private fun CurrencyPickerItem(
                     MaterialTheme.colorScheme.surfaceVariant
                 } else {
                     Color.Transparent
-                }
+                },
             )
             .padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),

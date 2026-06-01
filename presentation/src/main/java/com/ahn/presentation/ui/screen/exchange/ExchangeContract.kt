@@ -18,10 +18,15 @@ interface ExchangeContract {
 
     sealed interface Intent {
         data class UpdateFromAmount(val amount: String) : Intent
+
         data class SelectFromCurrency(val currency: CurrencyInfo) : Intent
+
         data class SelectToCurrency(val currency: CurrencyInfo) : Intent
+
         data class ToggleFavorite(val currencyCode: String) : Intent
+
         object SwapCurrencies : Intent
+
         object LoadCurrencies : Intent
     }
 

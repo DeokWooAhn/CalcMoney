@@ -4,7 +4,6 @@ import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.util.UiText
 
 interface CalculatorContract {
-
     data class HistoryItem(
         val expression: String,
         val result: String,
@@ -26,19 +25,27 @@ interface CalculatorContract {
         val repeatOperation: String? = null, // 마지막 연산자 저장 (반복 계산용)
         val histories: List<HistoryItem> = emptyList(),
         val isError: Boolean = false,
-        val errorMessage: UiText? = null
+        val errorMessage: UiText? = null,
     )
 
     // 2. 의도: 추상화된 입력
     sealed interface Intent {
         data class Input(val token: CalculatorToken) : Intent
+
         data class SelectMainExchangeCurrency(val currency: CurrencyInfo) : Intent
+
         data class SelectExchangeCurrency(val currency: CurrencyInfo) : Intent
+
         data class ToggleFavorite(val currencyCode: String) : Intent
+
         object SwapExchangeCurrencies : Intent
+
         object Delete : Intent
+
         object Clear : Intent
+
         object Calculate : Intent
+
         object ClearHistory : Intent
     }
 
@@ -51,7 +58,10 @@ interface CalculatorContract {
 // 토큰 정의 (입력 타입 구분)
 sealed interface CalculatorToken {
     data class Number(val value: String) : CalculatorToken
+
     data class Operator(val value: String) : CalculatorToken
+
     object Dot : CalculatorToken
+
     object Parenthesis : CalculatorToken // 괄호는 로직이 복잡하므로 별도 토큰
 }

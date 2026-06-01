@@ -44,7 +44,7 @@ fun ExchangeInputContainer(
             text = label,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
         )
 
         Row(
@@ -52,7 +52,7 @@ fun ExchangeInputContainer(
                 .fillMaxWidth()
                 .background(
                     MaterialTheme.colorScheme.surface,
-                    RoundedCornerShape(16.dp)
+                    RoundedCornerShape(16.dp),
                 )
                 .padding(15.dp, 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -65,12 +65,12 @@ fun ExchangeInputContainer(
                     textStyle = TextStyle(
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 25.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
                     ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
                 )
             } else {
                 Text(
@@ -78,7 +78,7 @@ fun ExchangeInputContainer(
                     fontSize = 28.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
 
@@ -115,7 +115,7 @@ fun ExchangeInputContainerPreview() {
             favoriteCurrencyCodes = emptyList(),
             onToggleFavorite = {},
             isEditable = true,
-            label = stringResource(R.string.preview_send_amount)
+            label = stringResource(R.string.preview_send_amount),
         )
     }
 }

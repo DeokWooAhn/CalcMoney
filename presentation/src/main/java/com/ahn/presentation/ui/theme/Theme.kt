@@ -64,14 +64,13 @@ private val LightColorScheme = lightColorScheme(
     onBackground = LightOnBackground,
     onSurface = LightOnSurface,
     onSurfaceVariant = LightGray,
-
 )
 
 @Composable
 fun CalcMoneyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
@@ -86,6 +85,6 @@ fun CalcMoneyTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content
+        content = content,
     )
 }

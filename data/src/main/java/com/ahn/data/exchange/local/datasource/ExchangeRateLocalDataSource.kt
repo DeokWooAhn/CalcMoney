@@ -4,9 +4,7 @@ import com.ahn.data.exchange.local.dao.ExchangeRateDao
 import com.ahn.data.exchange.local.entity.ExchangeRateEntity
 import javax.inject.Inject
 
-class ExchangeRateLocalDataSource @Inject constructor(
-    private val dao: ExchangeRateDao,
-) {
+class ExchangeRateLocalDataSource @Inject constructor(private val dao: ExchangeRateDao) {
     suspend fun getCachedRates(): List<ExchangeRateEntity> {
         return dao.getAll()
     }

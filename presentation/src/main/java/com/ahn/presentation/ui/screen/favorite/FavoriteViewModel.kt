@@ -20,7 +20,6 @@ class FavoriteViewModel @Inject constructor(
     private val exchangeUseCases: ExchangeUseCases,
     private val favoriteUseCases: FavoriteUseCases,
 ) : ViewModel() {
-
     private val _state = MutableStateFlow(FavoriteContract.State())
     val state = _state.asStateFlow()
 
@@ -103,7 +102,7 @@ class FavoriteViewModel @Inject constructor(
         _state.update { prev ->
             prev.copy(
                 isLoading = if (finishLoading) false else prev.isLoading,
-                items = items
+                items = items,
             )
         }
     }

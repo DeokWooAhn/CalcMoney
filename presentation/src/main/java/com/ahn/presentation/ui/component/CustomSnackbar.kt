@@ -27,17 +27,17 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun CustomSnackbarHost(
     snackbarHostState: SnackbarHostState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     SnackbarHost(
         hostState = snackbarHostState,
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(16.dp),
     ) { data ->
         Box(
             modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.BottomCenter
+            contentAlignment = Alignment.BottomCenter,
         ) {
             CustomWrapSnackbar(snackbarData = data)
         }
@@ -60,17 +60,17 @@ fun CustomWrapSnackbar(
         shape = RoundedCornerShape(cornerRadius.dp),
         color = containColor,
         contentColor = contentColor,
-        shadowElevation = 6.dp
+        shadowElevation = 6.dp,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = snackbarData.visuals.message,
                 fontSize = 15.sp,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
 
             val actionLabel = snackbarData.visuals.actionLabel

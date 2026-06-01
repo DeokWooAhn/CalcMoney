@@ -23,7 +23,6 @@ class ExchangeRateRepositoryImpl internal constructor(
     private val localDataSource: ExchangeRateLocalDataSource,
     private val clock: Clock,
 ) : ExchangeRateRepository {
-
     @Inject
     constructor(
         remoteDataSource: ExchangeRateRemoteDataSource,

@@ -42,7 +42,7 @@ import androidx.navigation.compose.rememberNavController
 
 @Composable
 fun MainScreen(
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
 ) {
     val context = LocalContext.current
     val backPressExitMessage = stringResource(R.string.back_press_exit)
@@ -56,7 +56,7 @@ fun MainScreen(
         BottomNavItem.Calculator,
         BottomNavItem.Exchange,
         BottomNavItem.Favorite,
-        BottomNavItem.Settings
+        BottomNavItem.Settings,
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -96,7 +96,7 @@ fun MainScreen(
             navController = navController,
             modifier = Modifier
                 .padding(innerPadding)
-                .fillMaxSize()
+                .fillMaxSize(),
         )
     }
 }
@@ -125,14 +125,14 @@ private fun MainScreenScaffold(
                             Icon(
                                 painterResource(if (selected) item.selectedIcon else item.icon),
                                 contentDescription = stringResource(item.titleRes),
-                                tint = MaterialTheme.colorScheme.onBackground
+                                tint = MaterialTheme.colorScheme.onBackground,
                             )
                         },
                         selected = selected,
                         onClick = { onItemClick(item) },
                         colors = NavigationBarItemDefaults.colors(
                             indicatorColor = Color.Transparent,
-                        )
+                        ),
                     )
                 }
             }

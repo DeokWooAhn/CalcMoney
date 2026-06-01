@@ -22,7 +22,6 @@ class ExchangeViewModel @Inject constructor(
     private val favoriteUseCases: FavoriteUseCases,
     private val currencySelectionUseCases: CurrencySelectionUseCases,
 ) : ViewModel(), ContainerHost<ExchangeContract.State, ExchangeContract.SideEffect> {
-
     override val container = container(
         initialState = ExchangeContract.State(),
     ) {
@@ -46,7 +45,7 @@ class ExchangeViewModel @Inject constructor(
             reduce {
                 state.copy(
                     fromAmount = amount,
-                    toAmount = exchangeUseCases.exchangeAmount(amount, state.exchangeRate)
+                    toAmount = exchangeUseCases.exchangeAmount(amount, state.exchangeRate),
                 )
             }
         }
@@ -93,16 +92,16 @@ class ExchangeViewModel @Inject constructor(
             postSideEffect(
                 ExchangeContract.SideEffect.ShowSnackBar(
                     UiText.StringResource(
-                        if (wasFavorite) R.string.favorite_removed else R.string.favorite_added
-                    )
-                )
+                        if (wasFavorite) R.string.favorite_removed else R.string.favorite_added,
+                    ),
+                ),
             )
         }.onFailure { e ->
             if (e is CancellationException) throw e
             postSideEffect(
                 ExchangeContract.SideEffect.ShowSnackBar(
-                    UiText.StringResource(R.string.favorite_change_failed)
-                )
+                    UiText.StringResource(R.string.favorite_change_failed),
+                ),
             )
         }
     }
@@ -112,40 +111,24 @@ class ExchangeViewModel @Inject constructor(
             reduce { state.copy(isLoading = true) }
 
             val currencies = exchangeUseCases.getSupportedCurrencies()
-            val krw = currencies.find { it.code == "KRW" }
-            val usd = currencies.find { it.code == "USD" }
             val savedSelection = getSavedExchangeSelectionOrNull()
-
-            val preservedFrom = state.fromCurrency?.let { current ->
-                currencies.find { it.code == current.code }
-            }
-
-            val fromCurrency = preservedFrom
-                ?: currencies.find { it.code == savedSelection?.fromCode }
-                ?: usd
-                ?: currencies.firstOrNull()
-                ?: state.fromCurrency
-
-            val preservedTo = state.toCurrency?.let { current ->
-                currencies.find { it.code == current.code }
-            }
-
-            val toCurrency = preservedTo
-                ?: currencies.find { it.code == savedSelection?.toCode && it.code != fromCurrency?.code }
-                ?: krw?.takeIf { it.code != fromCurrency?.code }
-                ?: currencies.firstOrNull { it.code != fromCurrency?.code }
-                ?: state.toCurrency
+            val selectedCurrencies = resolveExchangeCurrencies(
+                currencies = currencies,
+                savedSelection = savedSelection,
+                currentFromCurrency = state.fromCurrency,
+                currentToCurrency = state.toCurrency,
+            )
 
             reduce {
                 state.copy(
                     availableCurrencies = currencies,
-                    fromCurrency = fromCurrency,
-                    toCurrency = toCurrency,
-                    isLoading = false
+                    fromCurrency = selectedCurrencies.from,
+                    toCurrency = selectedCurrencies.to,
+                    isLoading = false,
                 )
             }
 
-            if (state.fromCurrency != null && state.toCurrency != null) {
+            if (selectedCurrencies.isComplete) {
                 performFetchExchangeRate()
             }
         } catch (e: Exception) {
@@ -156,9 +139,72 @@ class ExchangeViewModel @Inject constructor(
                     UiText.StringResource(
                         R.string.load_currency_list_failed,
                         listOf(e.message.orEmpty()),
-                    )
-                )
+                    ),
+                ),
             )
+        }
+    }
+
+    private fun resolveExchangeCurrencies(
+        currencies: List<CurrencyInfo>,
+        savedSelection: ExchangeCurrencySelection?,
+        currentFromCurrency: CurrencyInfo?,
+        currentToCurrency: CurrencyInfo?,
+    ): SelectedExchangeCurrencies {
+        val krw = currencies.findByCode("KRW")
+        val usd = currencies.findByCode("USD")
+        val fromCurrency = resolveFromCurrency(
+            currencies = currencies,
+            savedSelection = savedSelection,
+            currentFromCurrency = currentFromCurrency,
+            usd = usd,
+        )
+        val toCurrency = resolveToCurrency(
+            currencies = currencies,
+            savedSelection = savedSelection,
+            currentToCurrency = currentToCurrency,
+            fromCurrency = fromCurrency,
+            krw = krw,
+        )
+
+        return SelectedExchangeCurrencies(
+            from = fromCurrency,
+            to = toCurrency,
+        )
+    }
+
+    private fun resolveFromCurrency(
+        currencies: List<CurrencyInfo>,
+        savedSelection: ExchangeCurrencySelection?,
+        currentFromCurrency: CurrencyInfo?,
+        usd: CurrencyInfo?,
+    ): CurrencyInfo? {
+        return currencies.findByCode(currentFromCurrency?.code)
+            ?: currencies.findByCode(savedSelection?.fromCode)
+            ?: usd
+            ?: currencies.firstOrNull()
+            ?: currentFromCurrency
+    }
+
+    private fun resolveToCurrency(
+        currencies: List<CurrencyInfo>,
+        savedSelection: ExchangeCurrencySelection?,
+        currentToCurrency: CurrencyInfo?,
+        fromCurrency: CurrencyInfo?,
+        krw: CurrencyInfo?,
+    ): CurrencyInfo? {
+        val fromCurrencyCode = fromCurrency?.code
+
+        return currencies.findByCode(currentToCurrency?.code)
+            ?: currencies.findByCode(savedSelection?.toCode)?.takeIf { it.code != fromCurrencyCode }
+            ?: krw?.takeIf { it.code != fromCurrencyCode }
+            ?: currencies.firstOrNull { it.code != fromCurrencyCode }
+            ?: currentToCurrency
+    }
+
+    private fun List<CurrencyInfo>.findByCode(code: String?): CurrencyInfo? {
+        return code?.let { targetCode ->
+            find { it.code == targetCode }
         }
     }
 
@@ -171,7 +217,7 @@ class ExchangeViewModel @Inject constructor(
             state.copy(
                 fromCurrency = newFrom,
                 toCurrency = newTo,
-                fromAmount = newFromAmount
+                fromAmount = newFromAmount,
             )
         }
 
@@ -225,14 +271,17 @@ class ExchangeViewModel @Inject constructor(
 
             // 응답이 돌아왔을 때 상태가 이미 바뀌었으면 적용하지 않음
             if (state.fromCurrency?.code != requestedFrom ||
-                state.toCurrency?.code != requestedTo) return
+                state.toCurrency?.code != requestedTo
+            ) {
+                    return
+                }
 
             reduce {
                 state.copy(
                     exchangeRate = rate,
                     exchangeRateDate = rateDate,
                     isLoading = false,
-                    toAmount = exchangeUseCases.exchangeAmount(state.fromAmount, rate)
+                    toAmount = exchangeUseCases.exchangeAmount(state.fromAmount, rate),
                 )
             }
         } catch (e: Exception) {
@@ -243,9 +292,16 @@ class ExchangeViewModel @Inject constructor(
                     UiText.StringResource(
                         R.string.load_exchange_rate_failed,
                         listOf(e.message.orEmpty()),
-                    )
-                )
+                    ),
+                ),
             )
         }
     }
+}
+
+private data class SelectedExchangeCurrencies(
+    val from: CurrencyInfo?,
+    val to: CurrencyInfo?,
+) {
+    val isComplete: Boolean = from != null && to != null
 }

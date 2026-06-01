@@ -327,6 +327,7 @@ class CalculatorViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             postSideEffect(
                 CalculatorContract.SideEffect.ShowSnackBar(
                     UiText.StringResource(

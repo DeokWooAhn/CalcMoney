@@ -28,6 +28,8 @@ android {
 
     buildTypes {
         release {
+            // Current generated kotlinx.serialization DTOs do not need extra keep rules.
+            // See app/proguard-rules.pro before adding polymorphic serialization.
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

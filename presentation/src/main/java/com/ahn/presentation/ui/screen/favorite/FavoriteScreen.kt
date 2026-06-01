@@ -1,5 +1,6 @@
 package com.ahn.presentation.ui.screen.favorite
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -207,6 +208,7 @@ private fun ColumnScope.FavoriteLoading() {
 
 @Composable
 private fun ColumnScope.FavoriteEmptyMessage(
+    @StringRes
     messageResId: Int,
 ) {
     Box(

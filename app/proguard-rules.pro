@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Kotlinx Serialization currently uses generated serializers for DTOs.
+# TODO: Add explicit keep rules if polymorphic serialization,
+# serializersModule, classDiscriminator, or reflection-based serialization is introduced.

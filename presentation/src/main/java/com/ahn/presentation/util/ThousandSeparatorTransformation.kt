@@ -67,7 +67,7 @@ private fun String.withOperatorColor(operatorColor: Color): AnnotatedString {
 
     return AnnotatedString.Builder(this).apply {
         forEachIndexed { index, char ->
-            if (char.isCalculatorOperator()) {
+            if (char.isCalculatorOperator() && !isUnaryMinus(index)) {
                 addStyle(
                     style = SpanStyle(color = operatorColor),
                     start = index,
@@ -76,6 +76,18 @@ private fun String.withOperatorColor(operatorColor: Color): AnnotatedString {
             }
         }
     }.toAnnotatedString()
+}
+
+private fun String.isUnaryMinus(index: Int): Boolean {
+    if (this[index] != '-') return false
+
+    val previousChar = previousVisibleChar(index)
+    return previousChar == null || previousChar == '(' || previousChar.isCalculatorOperator()
+}
+
+private fun String.previousVisibleChar(index: Int): Char? {
+    return take(index)
+        .lastOrNull { it != '\u200B' && it != ',' }
 }
 
 // 천 단위 쉼표 + 연산자 앞 줄바꿈 힌트 추가

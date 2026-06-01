@@ -282,6 +282,7 @@ class CalculatorViewModelTest : BehaviorSpec({
                 }
             }
         }
+
     }
 
     Given("보조 환율 통화가 선택된 상태에서") {

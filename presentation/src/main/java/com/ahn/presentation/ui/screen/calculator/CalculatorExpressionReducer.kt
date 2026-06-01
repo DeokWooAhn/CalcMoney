@@ -34,22 +34,28 @@ internal class CalculatorExpressionReducer(
         val expression = currentState.expression
         val cursorPosition = currentState.cursorPosition
 
-        if (expression.isEmpty() || cursorPosition == 0) return null
+        if (expression.isEmpty() && operator != "-") return null
+        if (cursorPosition == 0 && operator != "-") return null
 
         val charBefore = expression.getOrNull(cursorPosition - 1)
 
-        if (charBefore != null && charBefore.toString() in OPERATORS) {
-            val newExpression = StringBuilder(expression)
-                .deleteCharAt(cursorPosition - 1)
-                .insert(cursorPosition - 1, operator)
-                .toString()
+        return when {
+            charBefore != null && charBefore.toString() in OPERATORS && operator == "-" && charBefore != '-' -> {
+                buildInsertState(currentState, operator)
+            }
 
-            return buildNewExpressionState(currentState, newExpression, cursorPosition)
+            charBefore != null && charBefore.toString() in OPERATORS -> {
+                val newExpression = StringBuilder(expression)
+                    .deleteCharAt(cursorPosition - 1)
+                    .insert(cursorPosition - 1, operator)
+                    .toString()
+
+                buildNewExpressionState(currentState, newExpression, cursorPosition)
+            }
+
+            charBefore == '(' && operator != "-" -> null
+            else -> buildInsertState(currentState, operator)
         }
-
-        if (charBefore == '(') return null
-
-        return buildInsertState(currentState, operator)
     }
 
     fun inputDot(currentState: CalculatorContract.State): CalculatorContract.State? {

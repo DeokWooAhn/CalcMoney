@@ -478,7 +478,7 @@ private fun CalculatorKeyButton(
             modifier = modifier,
             backgroundColor = MaterialTheme.colorScheme.buttonFunction,
             contentColor = MaterialTheme.colorScheme.buttonTextSecondary,
-            contentDescription = "calculator history",
+            contentDescription = stringResource(R.string.calculator_history),
             onClick = onHistoryClick,
         )
 

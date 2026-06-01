@@ -35,6 +35,7 @@ turbine = "1.2.0"
 orbit = "9.0.0"
 datastorePreferences = "1.2.1"
 room = "2.8.4"
+# Keep the 2.x dev.detekt plugin line while it is alpha-only; switch to stable when 2.x is released.
 detekt = "2.0.0-alpha.0"
 
 [libraries]

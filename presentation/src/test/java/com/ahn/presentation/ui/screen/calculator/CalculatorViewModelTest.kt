@@ -34,6 +34,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -763,6 +764,90 @@ class CalculatorViewModelTest : BehaviorSpec({
         }
     }
 
+    Given("계산 결과를 연산자 없는 숫자로 수정한 상태에서") {
+        When("=을 누르면") {
+            Then("계산 완료 상태로 바꾸거나 계산 기록에 추가하지 않아야 한다") {
+                runTest {
+                    every { calculateExpressionUseCase.calculate(any()) } returns "0"
+                    every { calculateExpressionUseCase.calculate("12+1") } returns "13"
+                    every { calculateExpressionUseCase.calculate("12+10") } returns "22"
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
+                        )
+                        expectState { copy(expression = "1", cursorPosition = 1, previewResult = "") }
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("2"))
+                        )
+                        expectState { copy(expression = "12", cursorPosition = 2, previewResult = "") }
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.Input(CalculatorToken.Operator("+"))
+                        )
+                        expectState { copy(expression = "12+", cursorPosition = 3, previewResult = "") }
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("1"))
+                        )
+                        expectState { copy(expression = "12+1", cursorPosition = 4, previewResult = "13") }
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.Input(CalculatorToken.Number("0"))
+                        )
+                        expectState { copy(expression = "12+10", cursorPosition = 5, previewResult = "22") }
+
+                        containerHost.processIntent(CalculatorContract.Intent.Calculate)
+                        expectState {
+                            copy(
+                                expression = "22",
+                                cursorPosition = 2,
+                                previewResult = "",
+                                repeatOperation = "+10",
+                                isCalculatedResult = true,
+                                histories = listOf(
+                                    CalculatorContract.HistoryItem(
+                                        expression = "12+10",
+                                        result = "22",
+                                    )
+                                ),
+                            )
+                        }
+
+                        containerHost.processIntent(CalculatorContract.Intent.Delete)
+                        expectState {
+                            copy(
+                                expression = "2",
+                                cursorPosition = 1,
+                                previewResult = "",
+                                repeatOperation = null,
+                                isCalculatedResult = false,
+                                histories = listOf(
+                                    CalculatorContract.HistoryItem(
+                                        expression = "12+10",
+                                        result = "22",
+                                    )
+                                ),
+                            )
+                        }
+
+                        containerHost.processIntent(CalculatorContract.Intent.Calculate)
+
+                        verify(exactly = 0) { calculateExpressionUseCase.calculate("2") }
+                        coVerify(exactly = 1) { addCalculatorHistoryUseCase(any()) }
+
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+    }
+
     Given("계산 기록이 있는 상태에서") {
         When("AC를 누르면") {
             Then("계산 기록은 유지되어야 한다") {
@@ -832,6 +917,13 @@ class CalculatorViewModelTest : BehaviorSpec({
                             )
                         )
                         expectState { copy(expression = "1", cursorPosition = 1) }
+
+                        containerHost.processIntent(
+                            CalculatorContract.Intent.Input(
+                                CalculatorToken.Operator("+")
+                            )
+                        )
+                        expectState { copy(expression = "1+", cursorPosition = 2) }
 
                         // 2. 계산 액션 발생
                         containerHost.processIntent(CalculatorContract.Intent.Calculate)

@@ -519,6 +519,56 @@ class ExchangeViewModelTest : BehaviorSpec({
         }
     }
 
+    Given("환율 새로고침이 실패할 때") {
+        When("새로고침 Intent를 처리하면") {
+            Then("로딩이 종료되고 에러 스낵바 SideEffect가 발생해야 한다") {
+                runTest {
+                    coEvery { refreshExchangeRatesUseCase() } throws Exception("Refresh Error")
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                availableCurrencies = mockCurrencies,
+                                fromCurrency = usd,
+                                toCurrency = krw,
+                            )
+                        }
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                exchangeRate = 1500.00,
+                                toAmount = "1500.00",
+                            )
+                        }
+
+                        containerHost.processIntent(ExchangeContract.Intent.RefreshExchangeRates)
+
+                        expectState { copy(isLoading = true) }
+                        expectState { copy(isLoading = false) }
+                        expectSideEffect(
+                            ExchangeContract.SideEffect.ShowSnackBar(
+                                UiText.StringResource(
+                                    R.string.load_exchange_rate_failed,
+                                    listOf("Refresh Error"),
+                                ),
+                            ),
+                        )
+                        coVerify(exactly = 1) { refreshExchangeRatesUseCase() }
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+    }
+
     Given("통화 목록 로드가 실패할 때") {
         When("ViewModel이 생성되면") {
             Then("에러 스낵바 SideEffect가 발생해야 한다") {

@@ -1,10 +1,12 @@
 package com.ahn.presentation.main
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ahn.domain.setting.model.ThemeMode
 import com.ahn.domain.setting.usecase.ThemeUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -24,7 +26,13 @@ class MainViewModel @Inject constructor(
 
     fun saveThemeMode(themeMode: ThemeMode) {
         viewModelScope.launch {
-            themeUseCases.saveThemeMode(themeMode)
+            try {
+                themeUseCases.saveThemeMode(themeMode)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w("MainViewModel", "Failed to save theme mode.", e)
+            }
         }
     }
 }

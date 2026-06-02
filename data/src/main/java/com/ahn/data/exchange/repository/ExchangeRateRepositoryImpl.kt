@@ -97,6 +97,17 @@ class ExchangeRateRepositoryImpl internal constructor(
         return localDataSource.getLatestRateDate()
     }
 
+    override suspend fun getLatestFetchedAt(): Long {
+        return localDataSource.getLatestFetchedAt()
+    }
+
+    override suspend fun refreshExchangeRates() {
+        refreshMutex.withLock {
+            val valid = fetchValidRates(clock.millis())
+            localDataSource.replaceRates(valid)
+        }
+    }
+
     /**
      * 지원 통화 목록을 반환합니다.
      *

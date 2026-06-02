@@ -1,6 +1,7 @@
 package com.ahn.presentation.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.R
+import com.ahn.presentation.ui.theme.currencySelectorBorder
+import com.ahn.presentation.ui.theme.currencySelectorSurface
 
 @Composable
 fun CurrencySelector(
@@ -34,17 +38,19 @@ fun CurrencySelector(
     onCurrencySelected: (CurrencyInfo) -> Unit,
     onToggleFavorite: (String) -> Unit,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Color.Black,
-    textColor: Color = Color.White,
+    backgroundColor: Color = MaterialTheme.colorScheme.currencySelectorSurface,
+    textColor: Color = MaterialTheme.colorScheme.onSurface,
     dialogTitle: String = stringResource(R.string.select_currency),
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var favoriteCodesSnapshot by remember { mutableStateOf<List<String>>(emptyList()) }
+    val shape = RoundedCornerShape(12.dp)
 
     selectedCurrency?.let { currency ->
         Row(
             modifier = modifier
-                .background(backgroundColor, RoundedCornerShape(12.dp))
+                .background(backgroundColor, shape)
+                .border(1.dp, MaterialTheme.colorScheme.currencySelectorBorder, shape)
                 .clickable {
                     showDialog = true
                     favoriteCodesSnapshot = favoriteCurrencyCodes

@@ -13,6 +13,7 @@ interface ExchangeContract {
         val favoriteCurrencyCodes: List<String> = emptyList(),
         val exchangeRate: Double = 0.0,
         val exchangeRateDate: String = "",
+        val exchangeRateFetchedAt: Long = 0L,
         val isLoading: Boolean = false,
     )
 
@@ -28,6 +29,8 @@ interface ExchangeContract {
         object SwapCurrencies : Intent
 
         object LoadCurrencies : Intent
+
+        object RefreshExchangeRates : Intent
     }
 
     sealed interface SideEffect {

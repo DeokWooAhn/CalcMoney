@@ -15,8 +15,10 @@ import com.ahn.domain.exchange.usecase.CalculateExchangeAmountUseCase
 import com.ahn.domain.exchange.usecase.ConvertExchangeAmountUseCase
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
+import com.ahn.domain.exchange.usecase.GetLatestExchangeRateFetchedAtUseCase
 import com.ahn.domain.exchange.usecase.GetLatestExchangeRateDateUseCase
 import com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase
+import com.ahn.domain.exchange.usecase.RefreshExchangeRatesUseCase
 import com.ahn.domain.favorite.usecase.BuildFavoriteRatesUseCase
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
 import com.ahn.domain.favorite.usecase.GetFavoriteCurrenciesUseCase
@@ -53,7 +55,9 @@ class ExchangeViewModelTest : BehaviorSpec({
 
     val getExchangeRateUseCase = mockk<GetExchangeRateUseCase>()
     val getLatestExchangeRateDateUseCase = mockk<GetLatestExchangeRateDateUseCase>()
+    val getLatestExchangeRateFetchedAtUseCase = mockk<GetLatestExchangeRateFetchedAtUseCase>()
     val getSupportedCurrenciesUseCase = mockk<GetSupportedCurrenciesUseCase>()
+    val refreshExchangeRatesUseCase = mockk<RefreshExchangeRatesUseCase>()
     val getFavoriteCurrenciesUseCase = mockk<GetFavoriteCurrenciesUseCase>()
     val toggleFavoriteCurrencyUseCase = mockk<ToggleFavoriteCurrencyUseCase>()
     val calculateExchangeAmountUseCase = mockk<CalculateExchangeAmountUseCase>()
@@ -74,6 +78,8 @@ class ExchangeViewModelTest : BehaviorSpec({
             convertExchangeAmount = convertExchangeAmountUseCase,
             getExchangeRate = getExchangeRateUseCase,
             getLatestRateDate = getLatestExchangeRateDateUseCase,
+            getLatestFetchedAt = getLatestExchangeRateFetchedAtUseCase,
+            refreshExchangeRates = refreshExchangeRatesUseCase,
             getSupportedCurrencies = getSupportedCurrenciesUseCase,
         ),
         favoriteUseCases = FavoriteUseCases(
@@ -98,6 +104,8 @@ class ExchangeViewModelTest : BehaviorSpec({
         coEvery { getSupportedCurrenciesUseCase() } returns mockCurrencies
         coEvery { getExchangeRateUseCase(any(), any()) } returns 1500.00
         coEvery { getLatestExchangeRateDateUseCase() } returns ""
+        coEvery { getLatestExchangeRateFetchedAtUseCase() } returns 0L
+        coEvery { refreshExchangeRatesUseCase() } returns Unit
         every { getFavoriteCurrenciesUseCase() } returns MutableStateFlow(emptyList())
         coEvery { toggleFavoriteCurrencyUseCase(any()) } returns Unit
         every { calculateExchangeAmountUseCase(any(), any()) } returns "1500.00"
@@ -192,9 +200,10 @@ class ExchangeViewModelTest : BehaviorSpec({
         }
 
         When("환율 정보를 가져오면") {
-            Then("환율 데이터 기준 날짜가 상태에 반영되어야 한다") {
+            Then("환율 데이터 기준 날짜와 갱신 시각이 상태에 반영되어야 한다") {
                 runTest {
                     coEvery { getLatestExchangeRateDateUseCase() } returns "20260529"
+                    coEvery { getLatestExchangeRateFetchedAtUseCase() } returns 1_780_409_600_000L
 
                     val viewModel = createViewModel()
 
@@ -217,6 +226,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                                 isLoading = false,
                                 exchangeRate = 1500.00,
                                 exchangeRateDate = "20260529",
+                                exchangeRateFetchedAt = 1_780_409_600_000L,
                                 toAmount = "1500.00",
                             )
                         }
@@ -442,6 +452,116 @@ class ExchangeViewModelTest : BehaviorSpec({
                                 toAmount = "1500000.00",
                             )
                         }
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+    }
+
+    Given("환율 새로고침을 요청할 때") {
+        When("새로고침 Intent를 처리하면") {
+            Then("원격 환율을 다시 가져오고 기준 정보가 상태에 반영되어야 한다") {
+                runTest {
+                    val refreshedAt = 1_780_409_600_000L
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                availableCurrencies = mockCurrencies,
+                                fromCurrency = usd,
+                                toCurrency = krw,
+                            )
+                        }
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                exchangeRate = 1500.00,
+                                toAmount = "1500.00",
+                            )
+                        }
+
+                        coEvery { getLatestExchangeRateDateUseCase() } returns "20260601"
+                        coEvery { getLatestExchangeRateFetchedAtUseCase() } returns refreshedAt
+
+                        containerHost.processIntent(ExchangeContract.Intent.RefreshExchangeRates)
+
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                availableCurrencies = mockCurrencies,
+                                fromCurrency = usd,
+                                toCurrency = krw,
+                                exchangeRate = 1500.00,
+                                exchangeRateDate = "20260601",
+                                exchangeRateFetchedAt = refreshedAt,
+                                toAmount = "1500.00",
+                            )
+                        }
+                        expectSideEffect(
+                            ExchangeContract.SideEffect.ShowSnackBar(
+                                UiText.StringResource(R.string.exchange_rate_refresh_success),
+                            ),
+                        )
+                        coVerify(exactly = 1) { refreshExchangeRatesUseCase() }
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+    }
+
+    Given("환율 새로고침이 실패할 때") {
+        When("새로고침 Intent를 처리하면") {
+            Then("로딩이 종료되고 에러 스낵바 SideEffect가 발생해야 한다") {
+                runTest {
+                    coEvery { refreshExchangeRatesUseCase() } throws Exception("Refresh Error")
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                availableCurrencies = mockCurrencies,
+                                fromCurrency = usd,
+                                toCurrency = krw,
+                            )
+                        }
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                exchangeRate = 1500.00,
+                                toAmount = "1500.00",
+                            )
+                        }
+
+                        containerHost.processIntent(ExchangeContract.Intent.RefreshExchangeRates)
+
+                        expectState { copy(isLoading = true) }
+                        expectState { copy(isLoading = false) }
+                        expectSideEffect(
+                            ExchangeContract.SideEffect.ShowSnackBar(
+                                UiText.StringResource(
+                                    R.string.load_exchange_rate_failed,
+                                    listOf("Refresh Error"),
+                                ),
+                            ),
+                        )
+                        coVerify(exactly = 1) { refreshExchangeRatesUseCase() }
                         cancelAndIgnoreRemainingItems()
                     }
                 }

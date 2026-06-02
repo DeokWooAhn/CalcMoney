@@ -246,24 +246,18 @@ class CalculatorViewModel @Inject constructor(
             val deviceCurrencyCode = getDeviceCurrencyCode()
             val savedSelection = getSavedCalculatorSelectionOrNull()
 
-            val preservedMain = state.mainExchangeCurrency?.let { current ->
-                currencies.find { it.code == current.code }
-            }
-
-            val mainCurrency = preservedMain
-                ?: currencies.find { it.code == savedSelection?.mainCode }
-                ?: currencies.find { it.code == deviceCurrencyCode }
-                ?: currencies.find { it.code == "KRW" }
-                ?: currencies.firstOrNull()
-
-            val preservedSub = state.selectedExchangeCurrency?.let { current ->
-                currencies.find { it.code == current.code && it.code != mainCurrency?.code }
-            }
-
-            val subCurrency = preservedSub
-                ?: currencies.find { it.code == savedSelection?.subCode && it.code != mainCurrency?.code }
-                ?: currencies.find { it.code == "USD" && it.code != mainCurrency?.code }
-                ?: currencies.firstOrNull { it.code != mainCurrency?.code }
+            val mainCurrency = resolveCalculatorMainCurrency(
+                currencies = currencies,
+                currentCurrency = state.mainExchangeCurrency,
+                savedSelection = savedSelection,
+                deviceCurrencyCode = deviceCurrencyCode,
+            )
+            val subCurrency = resolveCalculatorSubCurrency(
+                currencies = currencies,
+                currentCurrency = state.selectedExchangeCurrency,
+                savedSelection = savedSelection,
+                mainCurrency = mainCurrency,
+            )
 
             reduce {
                 state.copy(
@@ -291,12 +285,6 @@ class CalculatorViewModel @Inject constructor(
                 e,
             )
         }
-    }
-
-    private fun getDeviceCurrencyCode(): String {
-        return runCatching {
-            Currency.getInstance(Locale.getDefault()).currencyCode
-        }.getOrDefault("KRW")
     }
 
     private suspend fun getSavedCalculatorSelectionOrNull(): CalculatorCurrencySelection? {
@@ -449,4 +437,37 @@ class CalculatorViewModel @Inject constructor(
             }
         }
     }
+}
+
+private fun getDeviceCurrencyCode(): String {
+    return runCatching {
+        Currency.getInstance(Locale.getDefault()).currencyCode
+    }.getOrDefault("KRW")
+}
+
+private fun resolveCalculatorMainCurrency(
+    currencies: List<CurrencyInfo>,
+    currentCurrency: CurrencyInfo?,
+    savedSelection: CalculatorCurrencySelection?,
+    deviceCurrencyCode: String,
+): CurrencyInfo? {
+    return currencies.find { it.code == currentCurrency?.code }
+        ?: currencies.find { it.code == savedSelection?.mainCode }
+        ?: currencies.find { it.code == deviceCurrencyCode }
+        ?: currencies.find { it.code == "KRW" }
+        ?: currencies.firstOrNull()
+}
+
+private fun resolveCalculatorSubCurrency(
+    currencies: List<CurrencyInfo>,
+    currentCurrency: CurrencyInfo?,
+    savedSelection: CalculatorCurrencySelection?,
+    mainCurrency: CurrencyInfo?,
+): CurrencyInfo? {
+    val mainCurrencyCode = mainCurrency?.code
+
+    return currencies.find { it.code == currentCurrency?.code && it.code != mainCurrencyCode }
+        ?: currencies.find { it.code == savedSelection?.subCode && it.code != mainCurrencyCode }
+        ?: currencies.find { it.code == "USD" && it.code != mainCurrencyCode }
+        ?: currencies.firstOrNull { it.code != mainCurrencyCode }
 }

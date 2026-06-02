@@ -13,7 +13,7 @@ import androidx.navigation.compose.composable
 import com.ahn.presentation.ui.screen.calculator.CalculatorRoute
 import com.ahn.presentation.ui.screen.exchange.ExchangeRoute
 import com.ahn.presentation.ui.screen.favorite.FavoriteRoute
-import com.ahn.presentation.ui.screen.setting.SettingScreen
+import com.ahn.presentation.ui.screen.setting.SettingRoute
 
 @Composable
 fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
@@ -35,6 +35,11 @@ fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier
         composable(BottomNavItem.Favorite.route) {
             FavoriteRoute(exchangeViewModel = hiltViewModel(sharedOwner))
         }
-        composable(BottomNavItem.Settings.route) { SettingScreen() }
+        composable(BottomNavItem.Settings.route) {
+            SettingRoute(
+                exchangeViewModel = hiltViewModel(sharedOwner),
+                mainViewModel = hiltViewModel(sharedOwner),
+            )
+        }
     }
 }

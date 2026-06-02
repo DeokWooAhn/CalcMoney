@@ -7,5 +7,7 @@ class ExchangeUseCases @Inject constructor(
     val convertExchangeAmount: ConvertExchangeAmountUseCase,
     val getExchangeRate: GetExchangeRateUseCase,
     val getLatestRateDate: GetLatestExchangeRateDateUseCase,
+    val getLatestFetchedAt: GetLatestExchangeRateFetchedAtUseCase,
+    val refreshExchangeRates: RefreshExchangeRatesUseCase,
     val getSupportedCurrencies: GetSupportedCurrenciesUseCase,
 )

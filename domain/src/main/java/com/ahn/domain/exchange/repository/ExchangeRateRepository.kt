@@ -7,5 +7,9 @@ interface ExchangeRateRepository {
 
     suspend fun getLatestRateDate(): String
 
+    suspend fun getLatestFetchedAt(): Long
+
+    suspend fun refreshExchangeRates()
+
     suspend fun getSupportedCurrencies(): List<CurrencyInfo>
 }

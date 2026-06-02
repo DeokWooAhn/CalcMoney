@@ -37,6 +37,7 @@ class ExchangeViewModel @Inject constructor(
             is ExchangeContract.Intent.ToggleFavorite -> handleToggleFavorite(intent.currencyCode)
             is ExchangeContract.Intent.SwapCurrencies -> intent { performSwapCurrencies() }
             is ExchangeContract.Intent.LoadCurrencies -> intent { performLoadCurrencies() }
+            is ExchangeContract.Intent.RefreshExchangeRates -> intent { performRefreshExchangeRates() }
         }
     }
 
@@ -268,6 +269,7 @@ class ExchangeViewModel @Inject constructor(
                 to = requestedTo,
             )
             val rateDate = exchangeUseCases.getLatestRateDate()
+            val fetchedAt = exchangeUseCases.getLatestFetchedAt()
 
             // 응답이 돌아왔을 때 상태가 이미 바뀌었으면 적용하지 않음
             if (state.fromCurrency?.code != requestedFrom ||
@@ -280,6 +282,7 @@ class ExchangeViewModel @Inject constructor(
                 state.copy(
                     exchangeRate = rate,
                     exchangeRateDate = rateDate,
+                    exchangeRateFetchedAt = fetchedAt,
                     isLoading = false,
                     toAmount = exchangeUseCases.exchangeAmount(state.fromAmount, rate),
                 )
@@ -296,6 +299,70 @@ class ExchangeViewModel @Inject constructor(
                 ),
             )
         }
+    }
+
+    private suspend fun Syntax<ExchangeContract.State, ExchangeContract.SideEffect>.performRefreshExchangeRates() {
+        try {
+            reduce { state.copy(isLoading = true) }
+
+            exchangeUseCases.refreshExchangeRates()
+
+            val currencies = exchangeUseCases.getSupportedCurrencies()
+            val selectedCurrencies = resolveExchangeCurrencies(
+                currencies = currencies,
+                savedSelection = getSavedExchangeSelectionOrNull(),
+                currentFromCurrency = state.fromCurrency,
+                currentToCurrency = state.toCurrency,
+            )
+            val rate = getExchangeRateOrDefault(
+                fromCurrency = selectedCurrencies.from,
+                toCurrency = selectedCurrencies.to,
+            )
+            val rateDate = exchangeUseCases.getLatestRateDate()
+            val fetchedAt = exchangeUseCases.getLatestFetchedAt()
+
+            reduce {
+                state.copy(
+                    availableCurrencies = currencies,
+                    fromCurrency = selectedCurrencies.from,
+                    toCurrency = selectedCurrencies.to,
+                    exchangeRate = rate,
+                    exchangeRateDate = rateDate,
+                    exchangeRateFetchedAt = fetchedAt,
+                    isLoading = false,
+                    toAmount = exchangeUseCases.exchangeAmount(state.fromAmount, rate),
+                )
+            }
+            postSideEffect(
+                ExchangeContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(R.string.exchange_rate_refresh_success),
+                ),
+            )
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            reduce { state.copy(isLoading = false) }
+            postSideEffect(
+                ExchangeContract.SideEffect.ShowSnackBar(
+                    UiText.StringResource(
+                        R.string.load_exchange_rate_failed,
+                        listOf(e.message.orEmpty()),
+                    ),
+                ),
+            )
+        }
+    }
+
+    private suspend fun getExchangeRateOrDefault(
+        fromCurrency: CurrencyInfo?,
+        toCurrency: CurrencyInfo?,
+    ): Double {
+        if (fromCurrency == null || toCurrency == null) return 0.0
+        if (fromCurrency.code == toCurrency.code) return 1.0
+
+        return exchangeUseCases.getExchangeRate(
+            from = fromCurrency.code,
+            to = toCurrency.code,
+        )
     }
 }
 

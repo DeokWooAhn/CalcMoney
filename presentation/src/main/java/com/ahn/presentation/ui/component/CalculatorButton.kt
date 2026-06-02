@@ -3,7 +3,6 @@ package com.ahn.presentation.ui.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
@@ -32,6 +31,7 @@ import com.ahn.presentation.ui.theme.buttonFunction
 import com.ahn.presentation.ui.theme.buttonNumber
 import com.ahn.presentation.ui.theme.buttonTextPrimary
 import com.ahn.presentation.ui.theme.buttonTextSecondary
+import com.ahn.presentation.ui.theme.LocalCalcMoneyDarkTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -157,4 +157,4 @@ fun DeleteCalculatorButton(
 }
 
 @Composable
-private fun calculatorButtonElevation() = if (isSystemInDarkTheme()) 0.dp else 2.dp
+private fun calculatorButtonElevation() = if (LocalCalcMoneyDarkTheme.current) 0.dp else 2.dp

@@ -21,8 +21,10 @@ import com.ahn.domain.calculator.usecase.ExtractRepeatOperationUseCase
 import com.ahn.domain.calculator.usecase.GetCalculatorHistoriesUseCase
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.exchange.usecase.GetExchangeRateUseCase
+import com.ahn.domain.exchange.usecase.GetLatestExchangeRateFetchedAtUseCase
 import com.ahn.domain.exchange.usecase.GetLatestExchangeRateDateUseCase
 import com.ahn.domain.exchange.usecase.GetSupportedCurrenciesUseCase
+import com.ahn.domain.exchange.usecase.RefreshExchangeRatesUseCase
 import com.ahn.domain.favorite.usecase.BuildFavoriteRatesUseCase
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
 import com.ahn.domain.favorite.usecase.GetFavoriteCurrenciesUseCase
@@ -57,7 +59,9 @@ class CalculatorViewModelTest : BehaviorSpec({
     val getSupportedCurrenciesUseCase = mockk<GetSupportedCurrenciesUseCase>()
     val getExchangeRateUseCase = mockk<GetExchangeRateUseCase>()
     val getLatestExchangeRateDateUseCase = mockk<GetLatestExchangeRateDateUseCase>()
+    val getLatestExchangeRateFetchedAtUseCase = mockk<GetLatestExchangeRateFetchedAtUseCase>()
     val convertExchangeAmountUseCase = mockk<ConvertExchangeAmountUseCase>()
+    val refreshExchangeRatesUseCase = mockk<RefreshExchangeRatesUseCase>()
     val extractRepeatOperationUseCase = ExtractRepeatOperationUseCase()
     val getCalculatorHistoriesUseCase = mockk<GetCalculatorHistoriesUseCase>()
     val addCalculatorHistoryUseCase = mockk<AddCalculatorHistoryUseCase>()
@@ -89,6 +93,8 @@ class CalculatorViewModelTest : BehaviorSpec({
             convertExchangeAmount = convertExchangeAmountUseCase,
             getExchangeRate = getExchangeRateUseCase,
             getLatestRateDate = getLatestExchangeRateDateUseCase,
+            getLatestFetchedAt = getLatestExchangeRateFetchedAtUseCase,
+            refreshExchangeRates = refreshExchangeRatesUseCase,
             getSupportedCurrencies = getSupportedCurrenciesUseCase,
         ),
         favoriteUseCases = FavoriteUseCases(

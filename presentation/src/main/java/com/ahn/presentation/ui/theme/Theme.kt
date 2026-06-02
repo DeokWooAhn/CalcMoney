@@ -9,40 +9,44 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
+val LocalCalcMoneyDarkTheme = staticCompositionLocalOf { false }
+
 val ColorScheme.buttonNumber: Color
     @Composable
-    get() = if (isSystemInDarkTheme()) DarkButtonNumber else LightButtonNumber
+    get() = if (LocalCalcMoneyDarkTheme.current) DarkButtonNumber else LightButtonNumber
 
 val ColorScheme.buttonFunction: Color
     @Composable
-    get() = if (isSystemInDarkTheme()) DarkButtonFunction else LightButtonFunction
+    get() = if (LocalCalcMoneyDarkTheme.current) DarkButtonFunction else LightButtonFunction
 
 val ColorScheme.buttonOperator: Color
     @Composable
-    get() = if (isSystemInDarkTheme()) DarkButtonOperator else LightButtonOperator
+    get() = if (LocalCalcMoneyDarkTheme.current) DarkButtonOperator else LightButtonOperator
 
 val ColorScheme.calculatorAccent: Color
     @Composable
-    get() = if (isSystemInDarkTheme()) DarkButtonOperator else LightCalculatorAccent
+    get() = if (LocalCalcMoneyDarkTheme.current) DarkButtonOperator else LightCalculatorAccent
 
 val ColorScheme.currencySelectorSurface: Color
     @Composable
-    get() = if (isSystemInDarkTheme()) DarkCurrencySelectorSurface else LightCurrencySelectorSurface
+    get() = if (LocalCalcMoneyDarkTheme.current) DarkCurrencySelectorSurface else LightCurrencySelectorSurface
 
 val ColorScheme.currencySelectorBorder: Color
     @Composable
-    get() = if (isSystemInDarkTheme()) DarkCurrencySelectorBorder else LightCurrencySelectorBorder
+    get() = if (LocalCalcMoneyDarkTheme.current) DarkCurrencySelectorBorder else LightCurrencySelectorBorder
 
 val ColorScheme.buttonTextPrimary: Color
     @Composable
-    get() = if (isSystemInDarkTheme()) DarkButtonTextPrimary else LightButtonTextPrimary
+    get() = if (LocalCalcMoneyDarkTheme.current) DarkButtonTextPrimary else LightButtonTextPrimary
 
 val ColorScheme.buttonTextSecondary: Color
     @Composable
-    get() = if (isSystemInDarkTheme()) DarkButtonTextSecondary else LightButtonTextSecondary
+    get() = if (LocalCalcMoneyDarkTheme.current) DarkButtonTextSecondary else LightButtonTextSecondary
 
 private val DarkColorScheme = darkColorScheme(
     primary = Orange,
@@ -82,9 +86,11 @@ fun CalcMoneyTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content,
-    )
+    CompositionLocalProvider(LocalCalcMoneyDarkTheme provides darkTheme) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content,
+        )
+    }
 }

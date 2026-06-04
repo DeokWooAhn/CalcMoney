@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.R
+import com.ahn.presentation.ui.component.AdMobBanner
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.ExchangeInputContainer
 import com.ahn.presentation.util.showSnackbarImmediately
@@ -88,6 +89,9 @@ fun ExchangeScreen(
             CustomSnackbarHost(snackbarHostState = snackbarHostState)
         },
         topBar = { ExchangeTopBar() },
+        bottomBar = {
+            AdMobBanner(adUnitIdResId = R.string.admob_exchange_banner_id)
+        },
         containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
         ExchangeContent(

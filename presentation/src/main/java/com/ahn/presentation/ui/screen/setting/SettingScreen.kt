@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.sp
 import com.ahn.domain.setting.model.ThemeMode
 import com.ahn.presentation.R
 import com.ahn.presentation.main.MainViewModel
+import com.ahn.presentation.ui.component.AdMobBanner
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.screen.exchange.ExchangeContract
 import com.ahn.presentation.ui.screen.exchange.ExchangeViewModel
@@ -139,6 +140,9 @@ fun SettingScreen(
         modifier = modifier,
         snackbarHost = {
             CustomSnackbarHost(snackbarHostState = snackbarHostState)
+        },
+        bottomBar = {
+            AdMobBanner(adUnitIdResId = R.string.admob_settings_banner_id)
         },
         topBar = {
             CenterAlignedTopAppBar(

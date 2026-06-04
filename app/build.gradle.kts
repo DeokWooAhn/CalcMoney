@@ -1,5 +1,13 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+private val ADMOB_TEST_APP_ID = "ca-app-pub-3940256099942544~3347511713"
+
+fun adMobValue(name: String, fallback: String): String =
+    providers.gradleProperty(name)
+        .orElse(providers.environmentVariable(name))
+        .orElse(fallback)
+        .get()
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -27,11 +35,15 @@ android {
     }
 
     buildTypes {
+        debug {
+            resValue("string", "admob_app_id", ADMOB_TEST_APP_ID)
+        }
         release {
             // Current generated kotlinx.serialization DTOs do not need extra keep rules.
             // See app/proguard-rules.pro before adding polymorphic serialization.
             isMinifyEnabled = true
             isShrinkResources = true
+            resValue("string", "admob_app_id", adMobValue("ADMOB_APP_ID", ADMOB_TEST_APP_ID))
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -72,6 +84,8 @@ dependencies {
 
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.play.services.ads)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

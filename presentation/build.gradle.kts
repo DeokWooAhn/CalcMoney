@@ -1,5 +1,13 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+private val ADMOB_TEST_BANNER_ID = "ca-app-pub-3940256099942544/9214589741"
+
+fun adMobValue(name: String, fallback: String): String =
+    providers.gradleProperty(name)
+        .orElse(providers.environmentVariable(name))
+        .orElse(fallback)
+        .get()
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -23,8 +31,28 @@ android {
     }
 
     buildTypes {
+        debug {
+            resValue("string", "admob_exchange_banner_id", ADMOB_TEST_BANNER_ID)
+            resValue("string", "admob_favorite_banner_id", ADMOB_TEST_BANNER_ID)
+            resValue("string", "admob_settings_banner_id", ADMOB_TEST_BANNER_ID)
+        }
         release {
             isMinifyEnabled = false
+            resValue(
+                "string",
+                "admob_exchange_banner_id",
+                adMobValue("ADMOB_EXCHANGE_BANNER_ID", ADMOB_TEST_BANNER_ID),
+            )
+            resValue(
+                "string",
+                "admob_favorite_banner_id",
+                adMobValue("ADMOB_FAVORITE_BANNER_ID", ADMOB_TEST_BANNER_ID),
+            )
+            resValue(
+                "string",
+                "admob_settings_banner_id",
+                adMobValue("ADMOB_SETTINGS_BANNER_ID", ADMOB_TEST_BANNER_ID),
+            )
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -68,6 +96,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.material)
+    implementation(libs.play.services.ads)
 
     // Compose BOM 및 UI
     implementation(platform(libs.androidx.compose.bom))

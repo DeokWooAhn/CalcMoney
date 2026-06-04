@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ahn.presentation.R
+import com.ahn.presentation.ui.component.AdMobBanner
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.ExchangeInputContainer
 import com.ahn.presentation.ui.screen.exchange.ExchangeContract
@@ -56,6 +58,8 @@ import com.ahn.presentation.util.showSnackbarImmediately
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+
+private const val FAVORITE_AD_INSERT_INDEX = 4
 
 @Composable
 fun FavoriteRoute(
@@ -230,6 +234,9 @@ private fun ColumnScope.FavoriteRateGrid(
     items: List<FavoriteContract.Item>,
     onRemoveFavorite: (String) -> Unit,
 ) {
+    val firstItems = items.take(FAVORITE_AD_INSERT_INDEX)
+    val remainingItems = items.drop(FAVORITE_AD_INSERT_INDEX)
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier
@@ -240,7 +247,29 @@ private fun ColumnScope.FavoriteRateGrid(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(
-            items = items,
+            items = firstItems,
+            key = { it.currency.code },
+        ) { item ->
+            FavoriteRateCard(
+                item = item,
+                onRemoveFavorite = { onRemoveFavorite(item.currency.code) },
+            )
+        }
+
+        if (items.size >= FAVORITE_AD_INSERT_INDEX) {
+            item(
+                key = "favorite_banner_ad",
+                span = { GridItemSpan(maxLineSpan) },
+            ) {
+                AdMobBanner(
+                    adUnitIdResId = R.string.admob_favorite_banner_id,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                )
+            }
+        }
+
+        items(
+            items = remainingItems,
             key = { it.currency.code },
         ) { item ->
             FavoriteRateCard(

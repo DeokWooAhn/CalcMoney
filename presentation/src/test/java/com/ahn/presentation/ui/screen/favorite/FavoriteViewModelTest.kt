@@ -135,6 +135,37 @@ class FavoriteViewModelTest : BehaviorSpec({
             }
         }
 
+        When("동일한 즐겨찾기 조건이 다시 전달되면") {
+            Then("이미 계산한 목록을 유지하고 환율을 다시 조회하지 않아야 한다") {
+                runTest(testDispatcher) {
+                    coEvery { getExchangeRateUseCase("USD", "KRW") } returns 1500.0
+
+                    val viewModel = createViewModel()
+
+                    viewModel.onExchangeStateChanged(
+                        fromCurrency = usd,
+                        favoriteCurrencyCodes = listOf("KRW"),
+                        availableCurrencies = currencies,
+                        exchangeRateDate = "20260601",
+                        exchangeRateFetchedAt = 1000L,
+                    )
+                    advanceUntilIdle()
+
+                    viewModel.onExchangeStateChanged(
+                        fromCurrency = usd,
+                        favoriteCurrencyCodes = listOf("KRW"),
+                        availableCurrencies = currencies,
+                        exchangeRateDate = "20260601",
+                        exchangeRateFetchedAt = 1000L,
+                    )
+                    advanceUntilIdle()
+
+                    viewModel.state.value.items.single().convertedAmount shouldBe "1500.00"
+                    coVerify(exactly = 1) { getExchangeRateUseCase("USD", "KRW") }
+                }
+            }
+        }
+
         When("즐겨찾기에 기준 통화, 없는 통화, 실패한 통화가 섞여 있으면") {
             Then("성공적으로 조회된 통화만 목록에 보여야 한다") {
                 runTest(testDispatcher) {

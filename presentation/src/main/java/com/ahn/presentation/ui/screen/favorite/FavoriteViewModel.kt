@@ -29,6 +29,7 @@ class FavoriteViewModel @Inject constructor(
     private var currentBaseAmount: String = "1"
     private var currentCurrencies: List<CurrencyInfo> = emptyList()
     private var currentFavoriteCodes: List<String> = emptyList()
+    private var currentRateInput: FavoriteRateInput? = null
 
     private var cachedRates: Map<String, Double> = emptyMap()
 
@@ -36,7 +37,25 @@ class FavoriteViewModel @Inject constructor(
         fromCurrency: CurrencyInfo?,
         favoriteCurrencyCodes: List<String>,
         availableCurrencies: List<CurrencyInfo>,
+        exchangeRateDate: String = "",
+        exchangeRateFetchedAt: Long = 0L,
     ) {
+        val nextRateInput = FavoriteRateInput(
+            fromCurrency = fromCurrency,
+            favoriteCurrencyCodes = favoriteCurrencyCodes.toList(),
+            availableCurrencies = availableCurrencies.toList(),
+            exchangeRateDate = exchangeRateDate,
+            exchangeRateFetchedAt = exchangeRateFetchedAt,
+        )
+
+        if (
+            nextRateInput == currentRateInput &&
+            (loadJob?.isActive == true || _state.value.items.isNotEmpty())
+        ) {
+            return
+        }
+
+        currentRateInput = nextRateInput
         currentBaseCurrency = fromCurrency
         currentFavoriteCodes = favoriteCurrencyCodes
         currentCurrencies = availableCurrencies
@@ -107,3 +126,11 @@ class FavoriteViewModel @Inject constructor(
         }
     }
 }
+
+private data class FavoriteRateInput(
+    val fromCurrency: CurrencyInfo?,
+    val favoriteCurrencyCodes: List<String>,
+    val availableCurrencies: List<CurrencyInfo>,
+    val exchangeRateDate: String,
+    val exchangeRateFetchedAt: Long,
+)

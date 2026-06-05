@@ -44,7 +44,8 @@ class ExchangeRateMapperTest :
                 entity?.code shouldBe "JPY"
                 entity?.currencyUnit shouldBe "JPY(100)"
                 entity shouldNotBe null
-                entity!!.baseRate shouldBeExactly 9.5012
+                val nonNullEntity = requireNotNull(entity)
+                nonNullEntity.baseRate shouldBeExactly 9.5012
             }
 
             it("통화명이 없으면 Unknown으로 변환한다") {

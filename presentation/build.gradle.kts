@@ -3,11 +3,29 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 private val ADMOB_TEST_APP_ID = "ca-app-pub-3940256099942544~3347511713"
 private val ADMOB_TEST_BANNER_ID = "ca-app-pub-3940256099942544/9214589741"
 
-fun adMobValue(name: String, fallback: String): String =
-    providers.gradleProperty(name)
+private fun isReleaseBuildRequested(): Boolean =
+    gradle.startParameter.taskNames.any { taskName ->
+        taskName.contains("Release", ignoreCase = true) ||
+            taskName == "assemble" ||
+            taskName.endsWith(":assemble") ||
+            taskName == "bundle" ||
+            taskName.endsWith(":bundle") ||
+            taskName == "build" ||
+            taskName.endsWith(":build")
+    }
+
+fun adMobValueStrict(name: String): String {
+    val provider = providers.gradleProperty(name)
         .orElse(providers.environmentVariable(name))
-        .orElse(fallback)
-        .get()
+
+    if (provider.isPresent) return provider.get()
+
+    if (isReleaseBuildRequested()) {
+        error("Missing $name. Set $name as a Gradle property or environment variable for release builds.")
+    }
+
+    return ""
+}
 
 plugins {
     alias(libs.plugins.android.library)
@@ -43,17 +61,17 @@ android {
             resValue(
                 "string",
                 "admob_exchange_banner_id",
-                adMobValue("ADMOB_EXCHANGE_BANNER_ID", ADMOB_TEST_BANNER_ID),
+                adMobValueStrict("ADMOB_EXCHANGE_BANNER_ID"),
             )
             resValue(
                 "string",
                 "admob_favorite_banner_id",
-                adMobValue("ADMOB_FAVORITE_BANNER_ID", ADMOB_TEST_BANNER_ID),
+                adMobValueStrict("ADMOB_FAVORITE_BANNER_ID"),
             )
             resValue(
                 "string",
                 "admob_settings_banner_id",
-                adMobValue("ADMOB_SETTINGS_BANNER_ID", ADMOB_TEST_BANNER_ID),
+                adMobValueStrict("ADMOB_SETTINGS_BANNER_ID"),
             )
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

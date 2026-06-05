@@ -33,6 +33,7 @@
     <string name="load_exchange_rate_failed">환율 정보를 가져올 수 없습니다. %1$s</string>
     <string name="exchange_rate_refresh_success">환율 정보를 새로고침했습니다.</string>
     <string name="exchange_rate_date">환율 기준: %1$s</string>
+    <string name="refreshing_exchange_rates">환율 정보를 새로고침하는 중입니다.</string>
     <string name="calculator_history_delete_failed">계산 기록을 삭제하지 못했습니다.</string>
     <string name="preview_currency_krw">대한민국 원</string>
     <string name="preview_currency_usd">미국 달러</string>

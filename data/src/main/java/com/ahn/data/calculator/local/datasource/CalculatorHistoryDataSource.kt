@@ -1,14 +1,12 @@
 package com.ahn.data.calculator.local.datasource
 
-import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
+import com.ahn.data.di.CalculatorHistoryPreferencesDataStore
 import com.ahn.domain.calculator.model.CalculatorHistory
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -16,18 +14,16 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val Context.calculatorHistoryDataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "calculator_history",
-)
-
 @Singleton
-class CalculatorHistoryDataSource @Inject constructor(@param:ApplicationContext private val context: Context) {
+class CalculatorHistoryDataSource @Inject constructor(
+    @param:CalculatorHistoryPreferencesDataStore private val dataStore: DataStore<Preferences>,
+) {
     private val key = stringPreferencesKey("histories")
     private val itemSeparator = "\u001E"
     private val fieldSeparator = "\u001F"
 
     fun getHistories(): Flow<List<CalculatorHistory>> {
-        return context.calculatorHistoryDataStore.data
+        return dataStore.data
             .catch { exception ->
                 if (exception is IOException) {
                     emit(emptyPreferences())
@@ -40,14 +36,14 @@ class CalculatorHistoryDataSource @Inject constructor(@param:ApplicationContext 
     }
 
     suspend fun addHistory(history: CalculatorHistory) {
-        context.calculatorHistoryDataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             val current = decodeHistories(prefs[key].orEmpty())
             prefs[key] = encodeHistories(current + history)
         }
     }
 
     suspend fun clearHistories() {
-        context.calculatorHistoryDataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             prefs[key] = ""
         }
     }

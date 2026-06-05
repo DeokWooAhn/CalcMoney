@@ -86,11 +86,15 @@ fun FavoriteRoute(
         exchangeState.fromCurrency,
         exchangeState.favoriteCurrencyCodes,
         exchangeState.availableCurrencies,
+        exchangeState.exchangeRateDate,
+        exchangeState.exchangeRateFetchedAt,
     ) {
         favoriteViewModel.onExchangeStateChanged(
             fromCurrency = exchangeState.fromCurrency,
             favoriteCurrencyCodes = exchangeState.favoriteCurrencyCodes,
             availableCurrencies = exchangeState.availableCurrencies,
+            exchangeRateDate = exchangeState.exchangeRateDate,
+            exchangeRateFetchedAt = exchangeState.exchangeRateFetchedAt,
         )
     }
 
@@ -186,15 +190,16 @@ private fun ColumnScope.FavoriteRateContent(
     onExchangeIntent: (ExchangeContract.Intent) -> Unit,
 ) {
     when {
-        favoriteState.isLoading -> FavoriteLoading()
-        exchangeState.favoriteCurrencyCodes.isEmpty() -> FavoriteEmptyMessage(R.string.empty_favorite_currency)
-        favoriteState.items.isEmpty() -> FavoriteEmptyMessage(R.string.favorite_rate_load_failed)
-        else -> FavoriteRateGrid(
+        favoriteState.items.isNotEmpty() -> FavoriteRateGrid(
             items = favoriteState.items,
+            isRefreshing = favoriteState.isLoading,
             onRemoveFavorite = { currencyCode ->
                 onExchangeIntent(ExchangeContract.Intent.ToggleFavorite(currencyCode))
             },
         )
+        favoriteState.isLoading -> FavoriteLoading()
+        exchangeState.favoriteCurrencyCodes.isEmpty() -> FavoriteEmptyMessage(R.string.empty_favorite_currency)
+        favoriteState.items.isEmpty() -> FavoriteEmptyMessage(R.string.favorite_rate_load_failed)
     }
 }
 
@@ -232,49 +237,63 @@ private fun ColumnScope.FavoriteEmptyMessage(
 @Composable
 private fun ColumnScope.FavoriteRateGrid(
     items: List<FavoriteContract.Item>,
+    isRefreshing: Boolean = false,
     onRemoveFavorite: (String) -> Unit,
 ) {
     val firstItems = items.take(FAVORITE_AD_INSERT_INDEX)
     val remainingItems = items.drop(FAVORITE_AD_INSERT_INDEX)
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .weight(1f),
-        contentPadding = PaddingValues(bottom = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(
-            items = firstItems,
-            key = { it.currency.code },
-        ) { item ->
-            FavoriteRateCard(
-                item = item,
-                onRemoveFavorite = { onRemoveFavorite(item.currency.code) },
-            )
-        }
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(
+                items = firstItems,
+                key = { it.currency.code },
+            ) { item ->
+                FavoriteRateCard(
+                    item = item,
+                    onRemoveFavorite = { onRemoveFavorite(item.currency.code) },
+                )
+            }
 
-        if (items.size >= FAVORITE_AD_INSERT_INDEX) {
-            item(
-                key = "favorite_banner_ad",
-                span = { GridItemSpan(maxLineSpan) },
-            ) {
-                AdMobBanner(
-                    adUnitIdResId = R.string.admob_favorite_banner_id,
-                    modifier = Modifier.padding(vertical = 8.dp),
+            if (items.size >= FAVORITE_AD_INSERT_INDEX) {
+                item(
+                    key = "favorite_banner_ad",
+                    span = { GridItemSpan(maxLineSpan) },
+                ) {
+                    AdMobBanner(
+                        adUnitIdResId = R.string.admob_favorite_banner_id,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
+            }
+
+            items(
+                items = remainingItems,
+                key = { it.currency.code },
+            ) { item ->
+                FavoriteRateCard(
+                    item = item,
+                    onRemoveFavorite = { onRemoveFavorite(item.currency.code) },
                 )
             }
         }
 
-        items(
-            items = remainingItems,
-            key = { it.currency.code },
-        ) { item ->
-            FavoriteRateCard(
-                item = item,
-                onRemoveFavorite = { onRemoveFavorite(item.currency.code) },
+        if (isRefreshing) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+                    .requiredSize(24.dp),
             )
         }
     }

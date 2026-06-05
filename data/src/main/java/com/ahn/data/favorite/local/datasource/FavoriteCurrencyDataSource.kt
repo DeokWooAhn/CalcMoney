@@ -1,13 +1,11 @@
 package com.ahn.data.favorite.local.datasource
 
-import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import dagger.hilt.android.qualifiers.ApplicationContext
+import com.ahn.data.di.FavoriteCurrencyPreferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -16,16 +14,14 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "favorite_currencies",
-)
-
 @Singleton
-class FavoriteCurrencyDataSource @Inject constructor(@param:ApplicationContext private val context: Context) {
+class FavoriteCurrencyDataSource @Inject constructor(
+    @param:FavoriteCurrencyPreferencesDataStore private val dataStore: DataStore<Preferences>,
+) {
     private val key = stringPreferencesKey("favorite_codes")
 
     fun getFavoriteCodes(): Flow<List<String>> {
-        return context.dataStore.data
+        return dataStore.data
             .safePreferences()
             .map { prefs ->
                 getCurrent(prefs)
@@ -33,7 +29,7 @@ class FavoriteCurrencyDataSource @Inject constructor(@param:ApplicationContext p
     }
 
     suspend fun addFavorite(code: String) {
-        context.dataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             val current = getCurrent(prefs)
             if (code !in current) {
                 prefs[key] = (current + code).joinToString(",")
@@ -42,14 +38,14 @@ class FavoriteCurrencyDataSource @Inject constructor(@param:ApplicationContext p
     }
 
     suspend fun removeFavorite(code: String) {
-        context.dataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             val current = getCurrent(prefs)
             prefs[key] = current.filter { it != code }.joinToString(",")
         }
     }
 
     suspend fun isFavorite(code: String): Boolean {
-        val current = context.dataStore.data
+        val current = dataStore.data
             .safePreferences()
             .map { prefs -> getCurrent(prefs) }
             .first()

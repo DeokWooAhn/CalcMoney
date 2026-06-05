@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+private val ADMOB_TEST_APP_ID = "ca-app-pub-3940256099942544~3347511713"
 private val ADMOB_TEST_BANNER_ID = "ca-app-pub-3940256099942544/9214589741"
 
 fun adMobValue(name: String, fallback: String): String =
@@ -32,6 +33,7 @@ android {
 
     buildTypes {
         debug {
+            resValue("string", "admob_app_id", ADMOB_TEST_APP_ID)
             resValue("string", "admob_exchange_banner_id", ADMOB_TEST_BANNER_ID)
             resValue("string", "admob_favorite_banner_id", ADMOB_TEST_BANNER_ID)
             resValue("string", "admob_settings_banner_id", ADMOB_TEST_BANNER_ID)

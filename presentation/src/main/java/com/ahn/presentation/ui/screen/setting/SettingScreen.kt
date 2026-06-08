@@ -70,14 +70,12 @@ import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.screen.exchange.ExchangeContract
 import com.ahn.presentation.ui.screen.exchange.ExchangeViewModel
 import com.ahn.presentation.ui.theme.CalcMoneyTheme
+import com.ahn.presentation.util.formatExchangeRateDate
+import com.ahn.presentation.util.formatExchangeRateFetchedAt
 import com.ahn.presentation.util.showSnackbarImmediately
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @Composable
 fun SettingRoute(
@@ -624,22 +622,6 @@ private fun SettingScreenPreview() {
             exchangeRateFetchedAtText = "2026.06.02 14:32",
         )
     }
-}
-
-private fun formatExchangeRateDate(rateDate: String): String {
-    return if (rateDate.length == 8) {
-        "${rateDate.substring(0, 4)}.${rateDate.substring(4, 6)}.${rateDate.substring(6, 8)}"
-    } else {
-        rateDate
-    }
-}
-
-private fun formatExchangeRateFetchedAt(fetchedAt: Long): String? {
-    if (fetchedAt <= 0L) return null
-
-    return Instant.ofEpochMilli(fetchedAt)
-        .atZone(ZoneId.systemDefault())
-        .format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm", Locale.KOREA))
 }
 
 data class AppInfo(

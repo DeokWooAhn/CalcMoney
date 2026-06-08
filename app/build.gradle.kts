@@ -32,6 +32,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
     id("com.google.devtools.ksp")
 }
 

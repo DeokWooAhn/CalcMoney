@@ -56,6 +56,7 @@ import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.ExchangeInputContainer
 import com.ahn.presentation.ui.screen.exchange.ExchangeContract
 import com.ahn.presentation.ui.screen.exchange.ExchangeViewModel
+import com.ahn.presentation.util.localizedName
 import com.ahn.presentation.util.showSnackbarImmediately
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
@@ -308,6 +309,8 @@ private fun FavoriteRateCard(
     item: FavoriteContract.Item,
     onRemoveFavorite: () -> Unit,
 ) {
+    val currencyName = item.currency.localizedName()
+
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
@@ -337,7 +340,7 @@ private fun FavoriteRateCard(
                             maxLines = 1,
                         )
                         Text(
-                            item.currency.name,
+                            currencyName,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .basicMarquee(),

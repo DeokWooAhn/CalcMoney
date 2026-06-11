@@ -6,13 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,11 +27,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
@@ -115,9 +107,6 @@ fun SettingRoute(
         isExchangeRateLoading = exchangeState.isLoading,
         snackbarHostState = snackbarHostState,
         onThemeModeSelected = mainViewModel::saveThemeMode,
-        onRefreshExchangeRate = {
-            exchangeViewModel.processIntent(ExchangeContract.Intent.RefreshExchangeRates)
-        },
     )
 }
 
@@ -132,7 +121,6 @@ fun SettingScreen(
     isExchangeRateLoading: Boolean = false,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onThemeModeSelected: (ThemeMode) -> Unit = {},
-    onRefreshExchangeRate: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
@@ -167,7 +155,6 @@ fun SettingScreen(
             exchangeRateFetchedAtText = exchangeRateFetchedAtText,
             isExchangeRateLoading = isExchangeRateLoading,
             onThemeModeSelected = onThemeModeSelected,
-            onRefreshExchangeRate = onRefreshExchangeRate,
         )
     }
 }
@@ -181,7 +168,6 @@ private fun SettingContent(
     exchangeRateFetchedAtText: String?,
     isExchangeRateLoading: Boolean,
     onThemeModeSelected: (ThemeMode) -> Unit,
-    onRefreshExchangeRate: () -> Unit,
 ) {
     val emptyValue = stringResource(R.string.setting_exchange_rate_date_empty)
     val loadingValue = stringResource(R.string.setting_loading)
@@ -210,11 +196,6 @@ private fun SettingContent(
         }
 
         SettingSection(title = stringResource(R.string.setting_section_currency)) {
-            RefreshSettingCard(
-                title = stringResource(R.string.setting_exchange_rate_refresh),
-                isLoading = isExchangeRateLoading,
-                onClick = onRefreshExchangeRate,
-            )
             ExchangeRateInfoCard(
                 title = stringResource(R.string.setting_exchange_rate_detail),
                 summary = exchangeRateDateValue,
@@ -222,6 +203,7 @@ private fun SettingContent(
                 dataSource = stringResource(R.string.setting_exchange_rate_source_value),
                 lastUpdated = lastUpdatedValue,
                 notice = stringResource(R.string.setting_exchange_rate_notice_value),
+                disclaimer = stringResource(R.string.setting_exchange_rate_disclaimer_value),
                 expanded = isRateInfoExpanded,
                 onExpandedChange = { isRateInfoExpanded = !isRateInfoExpanded },
             )
@@ -317,7 +299,11 @@ private fun SettingCardHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(
+                onClickLabel = title,
+                role = Role.Button,
+                onClick = onClick,
+            )
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -439,74 +425,6 @@ private fun ThemeModeOption(
 }
 
 @Composable
-private fun RefreshSettingCard(
-    title: String,
-    isLoading: Boolean,
-    onClick: () -> Unit,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.surface,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = title,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(vertical = 10.dp),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-
-            RefreshIconButton(
-                isLoading = isLoading,
-                onClick = onClick,
-            )
-        }
-    }
-
-    Spacer(modifier = Modifier.height(8.dp))
-}
-
-@Composable
-private fun RefreshIconButton(
-    isLoading: Boolean,
-    onClick: () -> Unit,
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "refreshIconTransition")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 900, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "refreshIconRotation",
-    )
-
-    IconButton(
-        enabled = !isLoading,
-        onClick = onClick,
-    ) {
-        Icon(
-            imageVector = Icons.Default.Refresh,
-            contentDescription = stringResource(R.string.setting_exchange_rate_refresh),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .size(22.dp)
-                .graphicsLayer(rotationZ = if (isLoading) rotation else 0f),
-        )
-    }
-}
-
-@Composable
 private fun ExchangeRateInfoCard(
     title: String,
     summary: String,
@@ -514,6 +432,7 @@ private fun ExchangeRateInfoCard(
     dataSource: String,
     lastUpdated: String,
     notice: String,
+    disclaimer: String,
     expanded: Boolean,
     onExpandedChange: () -> Unit,
 ) {
@@ -540,6 +459,13 @@ private fun ExchangeRateInfoCard(
 
         Text(
             text = notice,
+            fontSize = 10.sp,
+            lineHeight = 17.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = disclaimer,
             fontSize = 10.sp,
             lineHeight = 17.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -556,8 +556,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                         expectSideEffect(
                             ExchangeContract.SideEffect.ShowSnackBar(
                                 UiText.StringResource(
-                                    R.string.load_exchange_rate_failed,
-                                    listOf("Refresh Error"),
+                                    R.string.exchange_rate_temporarily_unavailable,
                                 ),
                             ),
                         )
@@ -592,8 +591,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                         expectSideEffect(
                             ExchangeContract.SideEffect.ShowSnackBar(
                                 UiText.StringResource(
-                                    R.string.load_currency_list_failed,
-                                    listOf("Network Error"),
+                                    R.string.exchange_rate_temporarily_unavailable,
                                 ),
                             ),
                         )
@@ -636,8 +634,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                         expectSideEffect(
                             ExchangeContract.SideEffect.ShowSnackBar(
                                 UiText.StringResource(
-                                    R.string.load_exchange_rate_failed,
-                                    listOf("Network Error"),
+                                    R.string.exchange_rate_temporarily_unavailable,
                                 ),
                             ),
                         )

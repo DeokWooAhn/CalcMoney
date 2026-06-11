@@ -38,12 +38,13 @@ plugins {
 
 android {
     namespace = "com.ahn.calcmoney"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.ahn.calcmoney"
         minSdk = 28
-        targetSdk = 35
+        //noinspection OldTargetApi
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 

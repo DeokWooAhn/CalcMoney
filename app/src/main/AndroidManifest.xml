@@ -22,7 +22,13 @@
         <activity
             android:name="com.ahn.presentation.main.MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.CalcMoney">
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.CalcMoney"
+            tools:ignore="LockedOrientationActivity">
+            <property
+                android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
+                android:value="true" />
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

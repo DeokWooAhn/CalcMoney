@@ -6,6 +6,7 @@ import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -84,6 +85,8 @@ class FavoriteViewModel @Inject constructor(
                     exchangeUseCases.getExchangeRate(base.code, code)
                 }.onSuccess { rate ->
                     nextRates[code] = rate
+                }.onFailure { e ->
+                    if (e is CancellationException) throw e
                 }
             }
 

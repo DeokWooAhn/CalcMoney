@@ -10,7 +10,6 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class ExchangeRateRemoteDataSource @Inject constructor(private val firestore: FirebaseFirestore) {
-
     /**
      * Firebase 서버 캐시에 저장된 최신 환율 목록을 가져옵니다.
      *

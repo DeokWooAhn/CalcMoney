@@ -42,6 +42,7 @@ import com.ahn.presentation.R
 import com.ahn.presentation.ui.component.AdMobBanner
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.ExchangeInputContainer
+import com.ahn.presentation.util.formatExchangeRateDate
 import com.ahn.presentation.util.showSnackbarImmediately
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
@@ -230,14 +231,6 @@ private fun ExchangeRateInfo(
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-    }
-}
-
-private fun formatExchangeRateDate(rateDate: String): String {
-    return if (rateDate.length == 8) {
-        "${rateDate.substring(0, 4)}.${rateDate.substring(4, 6)}.${rateDate.substring(6, 8)}"
-    } else {
-        rateDate
     }
 }
 

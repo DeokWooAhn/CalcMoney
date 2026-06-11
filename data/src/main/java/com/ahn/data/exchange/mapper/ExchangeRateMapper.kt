@@ -1,7 +1,6 @@
 package com.ahn.data.exchange.mapper
 
 import com.ahn.data.exchange.local.entity.ExchangeRateEntity
-import com.ahn.data.exchange.remote.dto.ExchangeRateResponse
 import com.ahn.domain.currency.model.CurrencyInfo
 
 private val currencyCountryCodes = mapOf(
@@ -29,37 +28,6 @@ private val currencyCountryCodes = mapOf(
     "SGD" to "SG",
     "THB" to "TH",
 )
-
-/**
- * 유효한 원격 환율 응답을 로컬 캐시에 저장할 [ExchangeRateEntity]로 변환합니다.
- *
- * `result`가 1이 아니거나, `currencyUnit` 또는 `baseRate`가 비어 있거나,
- * `baseRate`를 숫자로 파싱할 수 없으면 `null`을 반환합니다.
- *
- * @param fetchedAt 환율을 가져온 시각입니다. Unix epoch 기준 밀리초입니다.
- * @param rateDate 환율 데이터의 기준 날짜입니다. `yyyyMMdd` 형식입니다.
- * @return 정규화된 통화 코드, 통화 단위, 통화명, 기준 환율, 조회 시각을 가진 엔티티입니다.
- *         응답이 유효하지 않거나 파싱에 실패하면 `null`을 반환합니다.
- */
-internal fun ExchangeRateResponse.toEntity(
-    fetchedAt: Long,
-    rateDate: String,
-): ExchangeRateEntity? {
-    if (result != 1 || currencyUnit.isNullOrBlank() || baseRate.isNullOrBlank()) return null
-
-    val unit = currencyUnit.trim()
-    val code = unit.replace("(100)", "").trim()
-    val rate = baseRate.toRateNumber(unit) ?: return null
-
-    return ExchangeRateEntity(
-        code = code,
-        currencyUnit = unit,
-        currencyName = currencyName ?: "Unknown",
-        baseRate = rate,
-        fetchedAt = fetchedAt,
-        rateDate = rateDate,
-    )
-}
 
 /**
  * 환율 목록에서 지정한 통화 코드의 기준 환율을 찾습니다.
@@ -90,24 +58,6 @@ internal fun krwCurrencyInfo(): CurrencyInfo {
         name = "한국 원",
         flagEmoji = getFlagEmoji("KRW"),
     )
-}
-
-/**
- * 환율 문자열을 숫자로 파싱하고, 통화 단위에 따라 필요한 배율을 적용합니다.
- *
- * 통화 단위에 `"(100)"`이 포함되어 있으면 API가 100단위 환율을 내려준 것이므로
- * 파싱한 값을 100으로 나눕니다.
- *
- * @param currencyUnit `(100)` 단위 여부를 확인할 통화 단위 문자열입니다.
- * @return 파싱된 환율입니다. 숫자로 변환할 수 없으면 `null`을 반환합니다.
- */
-private fun String.toRateNumber(currencyUnit: String? = null): Double? {
-    val number = replace(",", "").toDoubleOrNull() ?: return null
-    return if (currencyUnit?.contains("(100)") == true) {
-        number / 100.0
-    } else {
-        number
-    }
 }
 
 /**

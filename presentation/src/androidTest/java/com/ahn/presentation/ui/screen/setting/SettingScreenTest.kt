@@ -59,11 +59,14 @@ class SettingScreenTest {
         composeRule.onNodeWithText("기준일").assertExists()
         composeRule.onNode(hasText("2026.05.29") and hasAnySibling(hasText("기준일"))).assertExists()
         composeRule.onNodeWithText("데이터 출처").assertExists()
-        composeRule.onNodeWithText("한국수출입은행").assertExists()
+        composeRule.onNodeWithText("한국수출입은행 Open API").assertExists()
         composeRule.onNodeWithText("마지막 갱신").assertExists()
         composeRule.onNodeWithText("2026.06.02 14:32").assertExists()
         composeRule
             .onNodeWithText("주말·공휴일에는 새 환율이 제공되지 않을 수 있으며, 이 경우 직전 영업일 환율을 사용합니다.")
+            .assertExists()
+        composeRule
+            .onNodeWithText("제공되는 환율은 참고용이며 실제 거래 환율과 다를 수 있습니다.")
             .assertExists()
     }
 

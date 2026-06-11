@@ -224,6 +224,7 @@ private fun SettingContent(
                 dataSource = stringResource(R.string.setting_exchange_rate_source_value),
                 lastUpdated = lastUpdatedValue,
                 notice = stringResource(R.string.setting_exchange_rate_notice_value),
+                disclaimer = stringResource(R.string.setting_exchange_rate_disclaimer_value),
                 expanded = isRateInfoExpanded,
                 onExpandedChange = { isRateInfoExpanded = !isRateInfoExpanded },
             )
@@ -516,6 +517,7 @@ private fun ExchangeRateInfoCard(
     dataSource: String,
     lastUpdated: String,
     notice: String,
+    disclaimer: String,
     expanded: Boolean,
     onExpandedChange: () -> Unit,
 ) {
@@ -542,6 +544,13 @@ private fun ExchangeRateInfoCard(
 
         Text(
             text = notice,
+            fontSize = 10.sp,
+            lineHeight = 17.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = disclaimer,
             fontSize = 10.sp,
             lineHeight = 17.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

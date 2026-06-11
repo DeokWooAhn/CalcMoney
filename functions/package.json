@@ -1,0 +1,16 @@
+{
+  "name": "calcmoney-functions",
+  "description": "Firebase functions for CalcMoney exchange rate cache",
+  "engines": {
+    "node": "22"
+  },
+  "main": "index.js",
+  "scripts": {
+    "lint": "node --check index.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.1"
+  },
+  "private": true
+}

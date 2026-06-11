@@ -14,3 +14,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+functions/node_modules/
+functions/.env
+functions/.env.*
+firebase-debug.log
+firebase-debug.*.log

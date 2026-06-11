@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.R
+import com.ahn.presentation.util.localizedName
 
 @Composable
 fun CurrencyPickerDialog(
@@ -105,10 +106,11 @@ private fun CurrencyPickerItem(
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
 ) {
+    val currencyName = currency.localizedName()
     val selectCurrencyLabel = stringResource(
         R.string.select_currency_accessibility,
         currency.displayCode,
-        currency.name,
+        currencyName,
     )
 
     Row(
@@ -142,7 +144,7 @@ private fun CurrencyPickerItem(
             )
 
             Text(
-                text = currency.name,
+                text = currencyName,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }

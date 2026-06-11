@@ -71,7 +71,7 @@ fun CurrencySelector(
             )
             Icon(
                 imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = "Dropdown Icon",
+                contentDescription = null,
                 tint = textColor,
             )
         }

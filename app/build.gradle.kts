@@ -26,6 +26,19 @@ fun adMobValueStrict(name: String): String {
     return ""
 }
 
+fun releaseSigningValueStrict(name: String): String {
+    val provider = providers.gradleProperty(name)
+        .orElse(providers.environmentVariable(name))
+
+    if (provider.isPresent) return provider.get()
+
+    if (isReleaseBuildRequested()) {
+        error("Missing $name. Set $name as a Gradle property or environment variable for release signing.")
+    }
+
+    return ""
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -54,6 +67,18 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            val keystoreFile = releaseSigningValueStrict("RELEASE_KEYSTORE_FILE")
+            if (keystoreFile.isNotBlank()) {
+                storeFile = file(keystoreFile)
+            }
+            storePassword = releaseSigningValueStrict("RELEASE_KEYSTORE_PASSWORD")
+            keyAlias = releaseSigningValueStrict("RELEASE_KEY_ALIAS")
+            keyPassword = releaseSigningValueStrict("RELEASE_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         debug {
             resValue("string", "admob_app_id", ADMOB_TEST_APP_ID)
@@ -64,6 +89,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             resValue("string", "admob_app_id", adMobValueStrict("ADMOB_APP_ID"))
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

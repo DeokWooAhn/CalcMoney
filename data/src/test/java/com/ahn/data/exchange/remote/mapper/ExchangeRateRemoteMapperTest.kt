@@ -66,6 +66,23 @@ class ExchangeRateRemoteMapperTest :
                 entities.first().code shouldBe "JPY"
             }
 
+            it("currencyUnit과 currencyName이 없으면 기본값을 사용한다") {
+                val entities = listOf(
+                    mapOf(
+                        "code" to "AUD",
+                        "baseRate" to 910.0,
+                    ),
+                ).toExchangeRateEntities(
+                    fetchedAt = 3500L,
+                    rateDate = "20260603",
+                )
+
+                entities shouldHaveSize 1
+                entities.first().code shouldBe "AUD"
+                entities.first().currencyUnit shouldBe "AUD"
+                entities.first().currencyName shouldBe "Unknown"
+            }
+
             it("rates 필드가 비어 있거나 목록이 아니면 빈 목록을 반환한다") {
                 emptyList<Any>().toExchangeRateEntities(
                     fetchedAt = 4000L,

@@ -7,6 +7,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.tasks.await
+import java.util.Locale
 import javax.inject.Inject
 
 class ExchangeRateRemoteDataSource @Inject constructor(private val firestore: FirebaseFirestore) {
@@ -20,7 +21,7 @@ class ExchangeRateRemoteDataSource @Inject constructor(private val firestore: Fi
     suspend fun fetchExchangeRates(): List<ExchangeRateEntity> {
         val snapshot = fetchLatestSnapshot().requireExists()
         val rateDate = snapshot.getString("rateDate").orEmpty()
-        val fetchedAt = snapshot.getLong("rateFetchedAt") ?: snapshot.getLong("fetchedAt") ?: 0L
+        val fetchedAt = snapshot.requireFetchedAt()
         val entities = snapshot.get("rates").toExchangeRateEntities(fetchedAt, rateDate)
 
         return entities.ifNotEmptyOrThrow(snapshot)
@@ -44,6 +45,14 @@ class ExchangeRateRemoteDataSource @Inject constructor(private val firestore: Fi
         return this
     }
 
+    private fun DocumentSnapshot.requireFetchedAt(): Long {
+        return getLong("rateFetchedAt")
+            ?: getLong("fetchedAt")
+            ?: throw ExchangeRateException.TemporarilyUnavailable(
+                NoSuchElementException(ERROR_FETCHED_AT_MISSING),
+            )
+    }
+
     private fun List<ExchangeRateEntity>.ifNotEmptyOrThrow(snapshot: DocumentSnapshot): List<ExchangeRateEntity> {
         if (isEmpty()) throw snapshot.toEmptyExchangeRatesException()
 
@@ -63,15 +72,24 @@ class ExchangeRateRemoteDataSource @Inject constructor(private val firestore: Fi
     private fun DocumentSnapshot.toEmptyExchangeRatesException(): ExchangeRateException {
         val lastError = getString("lastError").orEmpty()
 
-        return if (lastError.contains("아직 고시") || lastError.contains("no data", ignoreCase = true)) {
+        return if (lastError.isNotReadyError()) {
             ExchangeRateException.NotReady()
         } else {
             ExchangeRateException.TemporarilyUnavailable()
         }
     }
 
+    private fun String.isNotReadyError(): Boolean {
+        val normalized = trim().lowercase(Locale.ROOT)
+
+        // Cloud Functions currently stores upstream no-data cases as text in lastError.
+        return NOT_READY_ERROR_PATTERNS.any { normalized.contains(it) }
+    }
+
     private companion object {
         const val EXCHANGE_RATES_COLLECTION = "exchangeRates"
         const val LATEST_DOCUMENT_ID = "latest"
+        const val ERROR_FETCHED_AT_MISSING = "Exchange rate fetched timestamp is missing."
+        val NOT_READY_ERROR_PATTERNS = listOf("아직 고시", "no data")
     }
 }

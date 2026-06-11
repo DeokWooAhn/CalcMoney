@@ -19,7 +19,11 @@ sealed class ExchangeRateException(
         cause = cause,
     )
 
-    class RateNotFound(val currencyCode: String) : ExchangeRateException(
+    class RateNotFound(
+        val currencyCode: String,
+        cause: Throwable? = null,
+    ) : ExchangeRateException(
         message = "Exchange rate data not found for $currencyCode.",
+        cause = cause,
     )
 }

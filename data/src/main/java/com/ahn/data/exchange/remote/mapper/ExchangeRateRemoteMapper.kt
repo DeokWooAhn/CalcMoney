@@ -22,7 +22,7 @@ private fun Any?.toExchangeRateEntity(
     return ExchangeRateEntity(
         code = code,
         currencyUnit = rate["currencyUnit"] as? String ?: code,
-        currencyName = rate["currencyName"] as? String ?: "Unknown",
+        currencyName = rate["currencyName"] as? String ?: UNKNOWN_CURRENCY_NAME,
         baseRate = baseRate,
         fetchedAt = fetchedAt,
         rateDate = rateDate,
@@ -36,3 +36,5 @@ private fun Any?.toDoubleOrNull(): Double? {
         else -> null
     }
 }
+
+private const val UNKNOWN_CURRENCY_NAME = "Unknown"

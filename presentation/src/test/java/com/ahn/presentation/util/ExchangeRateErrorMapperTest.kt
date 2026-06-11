@@ -23,6 +23,11 @@ class ExchangeRateErrorMapperTest :
                     UiText.StringResource(R.string.exchange_rate_not_found)
             }
 
+            it("일시적으로 사용할 수 없는 환율은 잠시 후 다시 시도 안내로 변환한다") {
+                ExchangeRateException.TemporarilyUnavailable().toExchangeRateErrorUiText() shouldBe
+                    UiText.StringResource(R.string.exchange_rate_temporarily_unavailable)
+            }
+
             it("알 수 없는 오류는 잠시 후 다시 시도 안내로 변환한다") {
                 IllegalStateException("internal error").toExchangeRateErrorUiText() shouldBe
                     UiText.StringResource(R.string.exchange_rate_temporarily_unavailable)

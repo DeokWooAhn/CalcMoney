@@ -39,8 +39,8 @@ class ExchangeRateRepositoryImpl internal constructor(
      * 동시에 여러 갱신 작업이 실행되지 않도록 [refreshMutex]로 보호합니다.
      *
      * @return 유효한 캐시 또는 새로 가져와 저장한 환율 엔티티 목록입니다.
-     * @throws IllegalStateException 원격 응답에 유효한 환율이 없고 사용할 캐시도 없을 때 발생합니다.
-     * @throws Exception 원격 조회 또는 로컬 저장에 실패했고 사용할 캐시도 없을 때 원래 예외를 다시 던집니다.
+     * @throws ExchangeRateException 원격 응답에 유효한 환율이 없고 사용할 캐시도 없을 때 발생합니다.
+     * @throws Exception 원격 조회 또는 로컬 저장에 실패했고 사용할 캐시도 없을 때 발생한 원래 예외를 다시 던집니다.
      */
     private suspend fun fetchRatesIfNeeded(): List<ExchangeRateEntity> {
         return refreshMutex.withLock {
@@ -69,7 +69,7 @@ class ExchangeRateRepositoryImpl internal constructor(
      * @param from 기준 통화 코드입니다.
      * @param to 대상 통화 코드입니다.
      * @return `from` 1단위를 `to` 단위로 변환하기 위한 배율입니다.
-     * @throws IllegalStateException 현재 환율 목록에서 둘 중 하나의 통화 코드를 찾을 수 없을 때 발생합니다.
+     * @throws ExchangeRateException.RateNotFound 현재 환율 목록에서 둘 중 하나의 통화 코드를 찾을 수 없을 때 발생합니다.
      */
     override suspend fun getExchangeRate(from: String, to: String): Double {
         if (from == to) return 1.0

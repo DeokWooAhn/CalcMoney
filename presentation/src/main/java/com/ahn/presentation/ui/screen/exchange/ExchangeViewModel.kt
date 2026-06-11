@@ -9,6 +9,7 @@ import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
 import com.ahn.presentation.R
 import com.ahn.presentation.util.UiText
+import com.ahn.presentation.util.toExchangeRateErrorUiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import org.orbitmvi.orbit.ContainerHost
@@ -137,10 +138,7 @@ class ExchangeViewModel @Inject constructor(
             reduce { state.copy(isLoading = false) }
             postSideEffect(
                 ExchangeContract.SideEffect.ShowSnackBar(
-                    UiText.StringResource(
-                        R.string.load_currency_list_failed,
-                        listOf(e.message.orEmpty()),
-                    ),
+                    e.toExchangeRateErrorUiText(),
                 ),
             )
         }
@@ -292,10 +290,7 @@ class ExchangeViewModel @Inject constructor(
             reduce { state.copy(isLoading = false) }
             postSideEffect(
                 ExchangeContract.SideEffect.ShowSnackBar(
-                    UiText.StringResource(
-                        R.string.load_exchange_rate_failed,
-                        listOf(e.message.orEmpty()),
-                    ),
+                    e.toExchangeRateErrorUiText(),
                 ),
             )
         }
@@ -343,10 +338,7 @@ class ExchangeViewModel @Inject constructor(
             reduce { state.copy(isLoading = false) }
             postSideEffect(
                 ExchangeContract.SideEffect.ShowSnackBar(
-                    UiText.StringResource(
-                        R.string.load_exchange_rate_failed,
-                        listOf(e.message.orEmpty()),
-                    ),
+                    e.toExchangeRateErrorUiText(),
                 ),
             )
         }

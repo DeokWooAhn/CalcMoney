@@ -2,11 +2,9 @@ package com.ahn.presentation.ui.screen.setting
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnySibling
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.ahn.domain.setting.model.ThemeMode
@@ -35,19 +33,6 @@ class SettingScreenTest {
     }
 
     @Test
-    fun givenSettingScreen_whenRefreshButtonClicked_thenCallsRefresh() {
-        var refreshClickCount = 0
-
-        composeRule.setSettingScreenContent(
-            onRefreshExchangeRate = { refreshClickCount++ },
-        )
-
-        composeRule.onNodeWithContentDescription("환율 새로고침").performClick()
-
-        assertEquals(1, refreshClickCount)
-    }
-
-    @Test
     fun givenSettingScreen_whenExchangeRateInfoExpanded_thenShowsDetailInformation() {
         composeRule.setSettingScreenContent(
             exchangeRateDateText = "2026.05.29",
@@ -62,9 +47,10 @@ class SettingScreenTest {
         composeRule.onNodeWithText("한국수출입은행 Open API").assertExists()
         composeRule.onNodeWithText("마지막 갱신").assertExists()
         composeRule.onNodeWithText("2026.06.02 14:32").assertExists()
-        composeRule
-            .onNodeWithText("주말·공휴일에는 새 환율이 제공되지 않을 수 있으며, 이 경우 직전 영업일 환율을 사용합니다.")
-            .assertExists()
+        composeRule.onNodeWithText(
+            "환율 정보는 영업일 11시 전후 고시되는 기준 환율을 사용합니다.\n" +
+                "주말·공휴일에는 새 환율이 제공되지 않을 수 있으며, 이 경우 직전 영업일 환율을 사용합니다.",
+        ).assertExists()
         composeRule
             .onNodeWithText("제공되는 환율은 참고용이며 실제 거래 환율과 다를 수 있습니다.")
             .assertExists()
@@ -80,19 +66,6 @@ class SettingScreenTest {
         composeRule.onNodeWithText("1.2.3").assertExists()
     }
 
-    @Test
-    fun givenSettingScreen_whenExchangeRateLoading_thenDisablesRefreshButton() {
-        var refreshClickCount = 0
-
-        composeRule.setSettingScreenContent(
-            isExchangeRateLoading = true,
-            onRefreshExchangeRate = { refreshClickCount++ },
-        )
-
-        composeRule.onNodeWithContentDescription("환율 새로고침").assertIsNotEnabled()
-
-        assertEquals(0, refreshClickCount)
-    }
 }
 
 private fun androidx.compose.ui.test.junit4.ComposeContentTestRule.setSettingScreenContent(
@@ -102,7 +75,6 @@ private fun androidx.compose.ui.test.junit4.ComposeContentTestRule.setSettingScr
     exchangeRateFetchedAtText: String? = null,
     isExchangeRateLoading: Boolean = false,
     onThemeModeSelected: (ThemeMode) -> Unit = {},
-    onRefreshExchangeRate: () -> Unit = {},
 ) {
     setContent {
         CompositionLocalProvider(LocalInspectionMode provides true) {
@@ -114,7 +86,6 @@ private fun androidx.compose.ui.test.junit4.ComposeContentTestRule.setSettingScr
                     exchangeRateFetchedAtText = exchangeRateFetchedAtText,
                     isExchangeRateLoading = isExchangeRateLoading,
                     onThemeModeSelected = onThemeModeSelected,
-                    onRefreshExchangeRate = onRefreshExchangeRate,
                 )
             }
         }

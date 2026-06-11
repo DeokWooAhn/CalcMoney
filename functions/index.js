@@ -18,36 +18,50 @@ const MAX_FALLBACK_DAYS = 7;
 exports.syncExchangeRates = onSchedule(
   {
     region: "asia-northeast3",
-    schedule: "30 9,11 * * *",
+    schedule: "10 11 * * *",
     timeZone: KOREA_TIME_ZONE,
     secrets: [koreaEximApiKey],
   },
-  async () => {
-    const fetchedAt = Date.now();
-
-    try {
-      const { rateDate, rates } = await fetchValidExchangeRates(koreaEximApiKey.value());
-
-      await latestExchangeRateRef.set({
-        rateDate,
-        fetchedAt,
-        source: "KOREA_EXIM",
-        sourceName: "한국수출입은행 환율 정보 Open API",
-        status: "FRESH",
-        message: null,
-        rates,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
-      logger.info("Exchange rates synced", {
-        rateDate,
-        rateCount: rates.length,
-      });
-    } catch (error) {
-      await keepPreviousRatesAsStale(fetchedAt, error);
-    }
-  },
+  syncExchangeRates,
 );
+
+exports.retrySyncExchangeRates = onSchedule(
+  {
+    region: "asia-northeast3",
+    schedule: "30 12 * * *",
+    timeZone: KOREA_TIME_ZONE,
+    secrets: [koreaEximApiKey],
+  },
+  syncExchangeRates,
+);
+
+async function syncExchangeRates() {
+  const checkedAt = Date.now();
+
+  try {
+    const { rateDate, rates } = await fetchValidExchangeRates(koreaEximApiKey.value());
+
+    await latestExchangeRateRef.set({
+      rateDate,
+      fetchedAt: checkedAt,
+      rateFetchedAt: checkedAt,
+      lastCheckedAt: checkedAt,
+      source: "KOREA_EXIM",
+      sourceName: "한국수출입은행 환율 정보 Open API",
+      status: "FRESH",
+      message: null,
+      rates,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    logger.info("Exchange rates synced", {
+      rateDate,
+      rateCount: rates.length,
+    });
+  } catch (error) {
+    await keepPreviousRatesAsStale(checkedAt, error);
+  }
+}
 
 async function fetchValidExchangeRates(authKey) {
   for (const searchDate of exchangeRateSearchDates()) {
@@ -110,7 +124,7 @@ function normalizeExchangeRate(row) {
   };
 }
 
-async function keepPreviousRatesAsStale(fetchedAt, error) {
+async function keepPreviousRatesAsStale(checkedAt, error) {
   logger.error("Exchange rate sync failed", error);
 
   const latest = await latestExchangeRateRef.get();
@@ -118,7 +132,7 @@ async function keepPreviousRatesAsStale(fetchedAt, error) {
   if (latest.exists && Array.isArray(previousRates) && previousRates.length > 0) {
     await latestExchangeRateRef.set(
       {
-        fetchedAt,
+        lastCheckedAt: checkedAt,
         status: "STALE",
         message: "오늘 환율 갱신에 실패하여 이전 환율을 사용합니다.",
         lastError: error.message,
@@ -132,7 +146,9 @@ async function keepPreviousRatesAsStale(fetchedAt, error) {
   await latestExchangeRateRef.set(
     {
       rateDate: "",
-      fetchedAt,
+      fetchedAt: 0,
+      rateFetchedAt: 0,
+      lastCheckedAt: checkedAt,
       source: "KOREA_EXIM",
       sourceName: "한국수출입은행 환율 정보 Open API",
       status: "ERROR",

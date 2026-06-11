@@ -1,16 +1,15 @@
 package com.ahn.data.exchange.remote.datasource
 
 import com.ahn.data.exchange.local.entity.ExchangeRateEntity
+import com.ahn.data.exchange.remote.mapper.toExchangeRateEntities
+import com.ahn.domain.exchange.model.ExchangeRateException
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class ExchangeRateRemoteDataSource @Inject constructor(private val firestore: FirebaseFirestore) {
-    private companion object {
-        const val EXCHANGE_RATES_COLLECTION = "exchangeRates"
-        const val LATEST_DOCUMENT_ID = "latest"
-        const val ERROR_EXCHANGE_RATES_NOT_READY = "환율 서버 데이터가 아직 준비되지 않았습니다."
-    }
 
     /**
      * Firebase 서버 캐시에 저장된 최신 환율 목록을 가져옵니다.
@@ -20,47 +19,60 @@ class ExchangeRateRemoteDataSource @Inject constructor(private val firestore: Fi
      * @return 서버 캐시에 저장된 환율 엔티티 목록입니다.
      */
     suspend fun fetchExchangeRates(): List<ExchangeRateEntity> {
-        val snapshot = firestore
-            .collection(EXCHANGE_RATES_COLLECTION)
-            .document(LATEST_DOCUMENT_ID)
-            .get()
-            .await()
-
+        val snapshot = fetchLatestSnapshot().requireExists()
         val rateDate = snapshot.getString("rateDate").orEmpty()
-        val fetchedAt = snapshot.getLong("fetchedAt") ?: 0L
-        val rates = snapshot.get("rates") as? List<*> ?: emptyList<Any>()
-        val entities = rates.mapNotNull { it.toExchangeRateEntity(fetchedAt, rateDate) }
+        val fetchedAt = snapshot.getLong("rateFetchedAt") ?: snapshot.getLong("fetchedAt") ?: 0L
+        val entities = snapshot.get("rates").toExchangeRateEntities(fetchedAt, rateDate)
 
-        if (entities.isEmpty()) {
-            throw IllegalStateException(snapshot.getString("message") ?: ERROR_EXCHANGE_RATES_NOT_READY)
-        }
-
-        return entities
+        return entities.ifNotEmptyOrThrow(snapshot)
     }
 
-    private fun Any?.toExchangeRateEntity(
-        fetchedAt: Long,
-        rateDate: String,
-    ): ExchangeRateEntity? {
-        val rate = this as? Map<*, *> ?: return null
-        val code = rate["code"] as? String ?: return null
-        val baseRate = rate["baseRate"].toDoubleOrNull() ?: return null
-
-        return ExchangeRateEntity(
-            code = code,
-            currencyUnit = rate["currencyUnit"] as? String ?: code,
-            currencyName = rate["currencyName"] as? String ?: "Unknown",
-            baseRate = baseRate,
-            fetchedAt = fetchedAt,
-            rateDate = rateDate,
-        )
+    private suspend fun fetchLatestSnapshot(): DocumentSnapshot {
+        return try {
+            firestore
+                .collection(EXCHANGE_RATES_COLLECTION)
+                .document(LATEST_DOCUMENT_ID)
+                .get()
+                .await()
+        } catch (e: FirebaseFirestoreException) {
+            throw e.toExchangeRateException()
+        }
     }
 
-    private fun Any?.toDoubleOrNull(): Double? {
-        return when (this) {
-            is Number -> toDouble()
-            is String -> replace(",", "").toDoubleOrNull()
-            else -> null
+    private fun DocumentSnapshot.requireExists(): DocumentSnapshot {
+        if (!exists()) throw ExchangeRateException.NotReady()
+
+        return this
+    }
+
+    private fun List<ExchangeRateEntity>.ifNotEmptyOrThrow(snapshot: DocumentSnapshot): List<ExchangeRateEntity> {
+        if (isEmpty()) throw snapshot.toEmptyExchangeRatesException()
+
+        return this
+    }
+
+    private fun FirebaseFirestoreException.toExchangeRateException(): ExchangeRateException {
+        return when (code) {
+            FirebaseFirestoreException.Code.UNAVAILABLE,
+            FirebaseFirestoreException.Code.DEADLINE_EXCEEDED,
+            -> ExchangeRateException.NetworkUnavailable(this)
+
+            else -> ExchangeRateException.TemporarilyUnavailable(this)
         }
+    }
+
+    private fun DocumentSnapshot.toEmptyExchangeRatesException(): ExchangeRateException {
+        val lastError = getString("lastError").orEmpty()
+
+        return if (lastError.contains("아직 고시") || lastError.contains("no data", ignoreCase = true)) {
+            ExchangeRateException.NotReady()
+        } else {
+            ExchangeRateException.TemporarilyUnavailable()
+        }
+    }
+
+    private companion object {
+        const val EXCHANGE_RATES_COLLECTION = "exchangeRates"
+        const val LATEST_DOCUMENT_ID = "latest"
     }
 }

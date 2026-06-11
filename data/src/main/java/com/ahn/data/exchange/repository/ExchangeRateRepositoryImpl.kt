@@ -7,6 +7,7 @@ import com.ahn.data.exchange.mapper.rateOf
 import com.ahn.data.exchange.mapper.toCurrencyInfo
 import com.ahn.data.exchange.remote.datasource.ExchangeRateRemoteDataSource
 import com.ahn.domain.currency.model.CurrencyInfo
+import com.ahn.domain.exchange.model.ExchangeRateException
 import com.ahn.domain.exchange.repository.ExchangeRateRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
@@ -28,11 +29,6 @@ class ExchangeRateRepositoryImpl internal constructor(
         localDataSource = localDataSource,
         clock = Clock.systemDefaultZone(),
     )
-
-    companion object {
-        private const val CACHE_TTL_MS = 12 * 60 * 60 * 1000L
-        private const val ERROR_EXCHANGE_RATE_NOT_FOUND = "Exchange rate data not found"
-    }
 
     private val refreshMutex = Mutex()
 
@@ -79,8 +75,8 @@ class ExchangeRateRepositoryImpl internal constructor(
         if (from == to) return 1.0
 
         val rates = fetchRatesIfNeeded()
-        val fromRate = rates.rateOf(from) ?: throw IllegalStateException(ERROR_EXCHANGE_RATE_NOT_FOUND)
-        val toRate = rates.rateOf(to) ?: throw IllegalStateException(ERROR_EXCHANGE_RATE_NOT_FOUND)
+        val fromRate = rates.rateOf(from) ?: throw ExchangeRateException.RateNotFound(from)
+        val toRate = rates.rateOf(to) ?: throw ExchangeRateException.RateNotFound(to)
 
         return fromRate / toRate
     }
@@ -110,5 +106,9 @@ class ExchangeRateRepositoryImpl internal constructor(
 
         return (listOf(krwCurrencyInfo()) + rates.map { it.toCurrencyInfo() })
             .distinctBy { it.code }
+    }
+
+    companion object {
+        private const val CACHE_TTL_MS = 12 * 60 * 60 * 1000L
     }
 }

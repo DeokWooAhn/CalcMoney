@@ -85,9 +85,10 @@ class MainActivity : ComponentActivity() {
             try {
                 MobileAds.initialize(this@MainActivity)
                 withContext(Dispatchers.Main) {
+                    val canRequestAds = adConsentManager.canRequestAds()
                     isMobileAdsInitialized = true
                     isMobileAdsInitializing = false
-                    adConsentState = adConsentState.copy(canRequestAds = true)
+                    adConsentState = adConsentState.copy(canRequestAds = canRequestAds)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to initialize Mobile Ads SDK.", e)

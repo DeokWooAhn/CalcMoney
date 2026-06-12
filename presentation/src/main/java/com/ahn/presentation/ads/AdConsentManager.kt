@@ -44,6 +44,8 @@ class AdConsentManager(private val activity: Activity) {
         }
     }
 
+    fun canRequestAds(): Boolean = consentInformation.canRequestAds()
+
     private fun currentState(): AdConsentState {
         return AdConsentState(
             canRequestAds = consentInformation.canRequestAds(),

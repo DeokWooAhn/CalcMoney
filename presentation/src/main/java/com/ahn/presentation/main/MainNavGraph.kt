@@ -10,13 +10,19 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.ahn.presentation.ads.AdConsentState
 import com.ahn.presentation.ui.screen.calculator.CalculatorRoute
 import com.ahn.presentation.ui.screen.exchange.ExchangeRoute
 import com.ahn.presentation.ui.screen.favorite.FavoriteRoute
 import com.ahn.presentation.ui.screen.setting.SettingRoute
 
 @Composable
-fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
+fun MainNavGraph(
+    navController: NavHostController,
+    adConsentState: AdConsentState,
+    onPrivacyOptionsClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val sharedOwner = LocalActivity.current as ViewModelStoreOwner
 
     NavHost(
@@ -30,15 +36,24 @@ fun MainNavGraph(navController: NavHostController, modifier: Modifier = Modifier
     ) {
         composable(BottomNavItem.Calculator.route) { CalculatorRoute() }
         composable(BottomNavItem.Exchange.route) {
-            ExchangeRoute(viewModel = hiltViewModel(sharedOwner))
+            ExchangeRoute(
+                viewModel = hiltViewModel(sharedOwner),
+                canRequestAds = adConsentState.canRequestAds,
+            )
         }
         composable(BottomNavItem.Favorite.route) {
-            FavoriteRoute(exchangeViewModel = hiltViewModel(sharedOwner))
+            FavoriteRoute(
+                exchangeViewModel = hiltViewModel(sharedOwner),
+                canRequestAds = adConsentState.canRequestAds,
+            )
         }
         composable(BottomNavItem.Settings.route) {
             SettingRoute(
                 exchangeViewModel = hiltViewModel(sharedOwner),
                 mainViewModel = hiltViewModel(sharedOwner),
+                canRequestAds = adConsentState.canRequestAds,
+                isPrivacyOptionsRequired = adConsentState.isPrivacyOptionsRequired,
+                onPrivacyOptionsClick = onPrivacyOptionsClick,
             )
         }
     }

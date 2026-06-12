@@ -25,6 +25,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -73,6 +74,9 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 fun SettingRoute(
     exchangeViewModel: ExchangeViewModel,
     mainViewModel: MainViewModel,
+    canRequestAds: Boolean = false,
+    isPrivacyOptionsRequired: Boolean = false,
+    onPrivacyOptionsClick: () -> Unit = {},
 ) {
     val exchangeState by exchangeViewModel.collectAsState()
     val themeMode by mainViewModel.themeMode.collectAsState()
@@ -105,8 +109,11 @@ fun SettingRoute(
         exchangeRateDateText = exchangeRateDateText,
         exchangeRateFetchedAtText = exchangeRateFetchedAtText,
         isExchangeRateLoading = exchangeState.isLoading,
+        canRequestAds = canRequestAds,
+        isPrivacyOptionsRequired = isPrivacyOptionsRequired,
         snackbarHostState = snackbarHostState,
         onThemeModeSelected = mainViewModel::saveThemeMode,
+        onPrivacyOptionsClick = onPrivacyOptionsClick,
     )
 }
 
@@ -119,8 +126,11 @@ fun SettingScreen(
     exchangeRateDateText: String? = null,
     exchangeRateFetchedAtText: String? = null,
     isExchangeRateLoading: Boolean = false,
+    canRequestAds: Boolean = false,
+    isPrivacyOptionsRequired: Boolean = false,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onThemeModeSelected: (ThemeMode) -> Unit = {},
+    onPrivacyOptionsClick: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
@@ -128,7 +138,10 @@ fun SettingScreen(
             CustomSnackbarHost(snackbarHostState = snackbarHostState)
         },
         bottomBar = {
-            AdMobBanner(adUnitIdResId = R.string.admob_settings_banner_id)
+            AdMobBanner(
+                adUnitIdResId = R.string.admob_settings_banner_id,
+                canRequestAds = canRequestAds,
+            )
         },
         topBar = {
             CenterAlignedTopAppBar(
@@ -154,7 +167,9 @@ fun SettingScreen(
             exchangeRateDateText = exchangeRateDateText,
             exchangeRateFetchedAtText = exchangeRateFetchedAtText,
             isExchangeRateLoading = isExchangeRateLoading,
+            isPrivacyOptionsRequired = isPrivacyOptionsRequired,
             onThemeModeSelected = onThemeModeSelected,
+            onPrivacyOptionsClick = onPrivacyOptionsClick,
         )
     }
 }
@@ -167,7 +182,9 @@ private fun SettingContent(
     exchangeRateDateText: String?,
     exchangeRateFetchedAtText: String?,
     isExchangeRateLoading: Boolean,
+    isPrivacyOptionsRequired: Boolean,
     onThemeModeSelected: (ThemeMode) -> Unit,
+    onPrivacyOptionsClick: () -> Unit,
 ) {
     val emptyValue = stringResource(R.string.setting_exchange_rate_date_empty)
     val loadingValue = stringResource(R.string.setting_loading)
@@ -195,6 +212,16 @@ private fun SettingContent(
             )
         }
 
+        if (isPrivacyOptionsRequired) {
+            SettingSection(title = stringResource(R.string.setting_section_privacy)) {
+                SettingActionCard(
+                    title = stringResource(R.string.setting_privacy_options),
+                    summary = stringResource(R.string.setting_privacy_options_summary),
+                    onClick = onPrivacyOptionsClick,
+                )
+            }
+        }
+
         SettingSection(title = stringResource(R.string.setting_section_currency)) {
             ExchangeRateInfoCard(
                 title = stringResource(R.string.setting_exchange_rate_detail),
@@ -216,6 +243,57 @@ private fun SettingContent(
             )
         }
     }
+}
+
+@Composable
+private fun SettingActionCard(
+    title: String,
+    summary: String,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                onClickLabel = title,
+                role = Role.Button,
+                onClick = onClick,
+            ),
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = summary,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
 }
 
 @Composable

@@ -131,7 +131,6 @@ dependencies {
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.play.services.ads)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

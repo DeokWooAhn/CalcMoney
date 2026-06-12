@@ -39,10 +39,13 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.ahn.presentation.ads.AdConsentState
 
 @Composable
 fun MainScreen(
     navController: NavHostController = rememberNavController(),
+    adConsentState: AdConsentState = AdConsentState(),
+    onPrivacyOptionsClick: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val backPressExitMessage = stringResource(R.string.back_press_exit)
@@ -94,6 +97,8 @@ fun MainScreen(
     ) { innerPadding ->
         MainNavGraph(
             navController = navController,
+            adConsentState = adConsentState,
+            onPrivacyOptionsClick = onPrivacyOptionsClick,
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize(),

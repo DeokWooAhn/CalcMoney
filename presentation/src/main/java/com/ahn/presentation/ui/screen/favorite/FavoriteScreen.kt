@@ -68,6 +68,7 @@ private const val FAVORITE_AD_INSERT_INDEX = 4
 fun FavoriteRoute(
     exchangeViewModel: ExchangeViewModel,
     favoriteViewModel: FavoriteViewModel = hiltViewModel(),
+    canRequestAds: Boolean = false,
 ) {
     val exchangeState by exchangeViewModel.collectAsState()
     val favoriteState by favoriteViewModel.state.collectAsState()
@@ -108,6 +109,7 @@ fun FavoriteRoute(
     FavoriteScreen(
         exchangeState = exchangeState,
         favoriteState = favoriteState,
+        canRequestAds = canRequestAds,
         onExchangeIntent = exchangeViewModel::processIntent,
         snackbarHostState = snackBarHostState,
     )
@@ -117,6 +119,7 @@ fun FavoriteRoute(
 fun FavoriteScreen(
     exchangeState: ExchangeContract.State,
     favoriteState: FavoriteContract.State,
+    canRequestAds: Boolean = false,
     onExchangeIntent: (ExchangeContract.Intent) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
@@ -128,6 +131,7 @@ fun FavoriteScreen(
         FavoriteContent(
             exchangeState = exchangeState,
             favoriteState = favoriteState,
+            canRequestAds = canRequestAds,
             onExchangeIntent = onExchangeIntent,
             modifier = Modifier.padding(paddingValues),
         )
@@ -156,6 +160,7 @@ private fun FavoriteTopBar() {
 private fun FavoriteContent(
     exchangeState: ExchangeContract.State,
     favoriteState: FavoriteContract.State,
+    canRequestAds: Boolean,
     onExchangeIntent: (ExchangeContract.Intent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -181,6 +186,7 @@ private fun FavoriteContent(
         FavoriteRateContent(
             exchangeState = exchangeState,
             favoriteState = favoriteState,
+            canRequestAds = canRequestAds,
             onExchangeIntent = onExchangeIntent,
         )
     }
@@ -190,12 +196,14 @@ private fun FavoriteContent(
 private fun ColumnScope.FavoriteRateContent(
     exchangeState: ExchangeContract.State,
     favoriteState: FavoriteContract.State,
+    canRequestAds: Boolean,
     onExchangeIntent: (ExchangeContract.Intent) -> Unit,
 ) {
     when {
         favoriteState.items.isNotEmpty() -> FavoriteRateGrid(
             items = favoriteState.items,
             isRefreshing = favoriteState.isLoading,
+            canRequestAds = canRequestAds,
             onRemoveFavorite = { currencyCode ->
                 onExchangeIntent(ExchangeContract.Intent.ToggleFavorite(currencyCode))
             },
@@ -241,6 +249,7 @@ private fun ColumnScope.FavoriteEmptyMessage(
 private fun ColumnScope.FavoriteRateGrid(
     items: List<FavoriteContract.Item>,
     isRefreshing: Boolean = false,
+    canRequestAds: Boolean,
     onRemoveFavorite: (String) -> Unit,
 ) {
     val firstItems = items.take(FAVORITE_AD_INSERT_INDEX)
@@ -269,13 +278,14 @@ private fun ColumnScope.FavoriteRateGrid(
                 )
             }
 
-            if (items.size >= FAVORITE_AD_INSERT_INDEX) {
+            if (items.size >= FAVORITE_AD_INSERT_INDEX && canRequestAds) {
                 item(
                     key = "favorite_banner_ad",
                     span = { GridItemSpan(maxLineSpan) },
                 ) {
                     AdMobBanner(
                         adUnitIdResId = R.string.admob_favorite_banner_id,
+                        canRequestAds = canRequestAds,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                 }

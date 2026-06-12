@@ -116,7 +116,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.material)
-    implementation(libs.play.services.ads)
 
     // Compose BOM 및 UI
     implementation(platform(libs.androidx.compose.bom))
@@ -159,4 +158,7 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
 
+    // 광고
+    implementation(libs.play.services.ads)
+    implementation(libs.user.messaging.platform)
 }

@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>심플 환율 계산기 개인정보처리방침</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --background: #f7f7f8;
+      --surface: #ffffff;
+      --text: #202124;
+      --muted: #5f6368;
+      --border: #dadce0;
+      --accent: #f59a00;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #121212;
+        --surface: #1f1f1f;
+        --text: #f1f3f4;
+        --muted: #bdc1c6;
+        --border: #3c4043;
+        --accent: #ffb23f;
+      }
+    }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(920px, calc(100% - 32px));
+      margin: 40px auto;
+      padding: 32px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.3;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 2rem;
+    }
+
+    h2 {
+      margin-top: 40px;
+      border-top: 1px solid var(--border);
+      padding-top: 28px;
+      font-size: 1.4rem;
+    }
+
+    h3 {
+      margin-top: 28px;
+      font-size: 1.1rem;
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    .meta,
+    .note {
+      color: var(--muted);
+    }
+
+    .lang-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .lang-nav a {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      text-decoration: none;
+    }
+
+    ul {
+      padding-left: 22px;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>심플 환율 계산기 개인정보처리방침</h1>
+  <p class="meta">시행일: 2026년 6월 12일</p>
+  <p>
+    심플 환율 계산기(Simple Currency Calculator, 이하 “앱”)는 환율 계산, 즐겨찾기 통화 관리,
+    계산 기록 저장, 광고 표시, 앱 품질 개선을 위해 아래와 같이 정보를 처리합니다.
+  </p>
+
+  <nav class="lang-nav" aria-label="Language">
+    <a href="#ko">한국어</a>
+    <a href="#en">English</a>
+  </nav>
+
+  <section id="ko">
+    <h2>1. 수집하거나 처리하는 정보</h2>
+    <p>
+      앱은 회원가입이나 로그인을 제공하지 않으며, 이름, 전화번호, 주소, 연락처, 사진과 같은
+      직접 식별 정보를 앱 자체 서버로 수집하지 않습니다.
+    </p>
+    <p>앱 사용 과정에서 다음 정보가 기기 또는 제3자 서비스에서 처리될 수 있습니다.</p>
+    <ul>
+      <li>계산 기록: 사용자가 계산한 식과 결과는 기기 내에 저장됩니다.</li>
+      <li>즐겨찾기 통화, 선택한 통화, 테마 설정: 기기 내에 저장됩니다.</li>
+      <li>환율 캐시: 환율 표시를 위해 기기 내 Room 데이터베이스에 저장됩니다.</li>
+      <li>광고 관련 정보: Google AdMob이 광고 식별자, 기기 정보, 대략적인 위치, 광고 상호작용 정보를 처리할 수 있습니다.</li>
+      <li>분석 정보: Firebase Analytics가 앱 실행, 화면 조회, 사용 이벤트, 기기 및 앱 버전 정보를 처리할 수 있습니다.</li>
+      <li>크래시 정보: Firebase Crashlytics가 오류 로그, 기기 모델, OS 버전, 앱 버전, 진단 정보를 처리할 수 있습니다.</li>
+    </ul>
+
+    <h2>2. 정보 사용 목적</h2>
+    <ul>
+      <li>환율 계산 기능 제공</li>
+      <li>사용자가 선택한 통화, 즐겨찾기, 테마 설정 유지</li>
+      <li>계산 기록 표시 및 삭제 기능 제공</li>
+      <li>광고 표시 및 광고 성과 측정</li>
+      <li>앱 안정성 개선과 오류 분석</li>
+      <li>앱 사용 흐름 파악 및 품질 개선</li>
+    </ul>
+
+    <h2>3. 환율 데이터</h2>
+    <p>
+      앱은 한국수출입은행 환율 정보 Open API를 출처로 하는 기준 환율 정보를 사용합니다.
+      앱은 한국수출입은행 API를 직접 호출하지 않고, Firebase Cloud Functions가 갱신한
+      Firestore 문서를 읽어 환율 정보를 표시합니다.
+    </p>
+    <p>
+      사용자가 입력한 계산식, 계산 금액, 즐겨찾기 통화 목록은 환율 서버로 전송되지 않습니다.
+      제공되는 환율은 참고용이며 실제 거래 환율과 다를 수 있습니다.
+    </p>
+
+    <h2>4. 광고 및 동의 관리</h2>
+    <p>
+      앱은 Google AdMob을 사용하여 광고를 표시합니다. 유럽경제지역(EEA), 영국, 스위스,
+      미국 일부 주 등 개인정보 보호 규정이 적용되는 지역의 사용자는 Google User Messaging
+      Platform(UMP)을 통해 광고 개인화 및 개인정보 처리에 대한 선택을 관리할 수 있습니다.
+    </p>
+    <p>
+      광고 제공 과정에서 Google 및 Google의 광고 파트너가 쿠키에 준하는 모바일 식별자,
+      광고 ID, 기기 정보, 대략적인 위치, 광고 조회 및 클릭 정보를 처리할 수 있습니다.
+    </p>
+
+    <h2>5. 제3자 서비스</h2>
+    <p>앱은 다음 제3자 서비스를 사용합니다.</p>
+    <ul>
+      <li><a href="https://policies.google.com/privacy" rel="noopener">Google 개인정보처리방침</a></li>
+      <li><a href="https://support.google.com/admob/answer/6128543" rel="noopener">Google AdMob</a></li>
+      <li><a href="https://firebase.google.com/support/privacy" rel="noopener">Firebase 개인정보 및 보안</a></li>
+      <li><a href="https://www.koreaexim.go.kr/" rel="noopener">한국수출입은행</a></li>
+    </ul>
+
+    <h2>6. 기기 내 저장 및 백업</h2>
+    <p>
+      계산 기록과 환율 캐시는 사용자의 기기에 저장되며, 사용자가 앱 데이터를 삭제하거나 앱을
+      삭제하면 제거될 수 있습니다. 즐겨찾기 통화, 선택한 통화, 테마 설정은 Android 백업 기능이
+      켜져 있는 경우 Google 백업 및 기기 이전 과정에서 복원될 수 있습니다.
+    </p>
+
+    <h2>7. 보관 기간</h2>
+    <p>
+      기기 내 데이터는 사용자가 직접 삭제하거나 앱 데이터를 삭제할 때까지 보관됩니다.
+      Firebase Analytics, Crashlytics, AdMob에서 처리되는 데이터는 각 서비스 제공자의 보관 정책에 따릅니다.
+    </p>
+
+    <h2>8. 사용자 선택권</h2>
+    <ul>
+      <li>계산 기록은 앱 안에서 삭제할 수 있습니다.</li>
+      <li>즐겨찾기 통화는 앱 안에서 추가하거나 제거할 수 있습니다.</li>
+      <li>앱 설정에서 테마를 변경할 수 있습니다.</li>
+      <li>기기 설정에서 광고 ID 재설정 또는 맞춤 광고 제한을 설정할 수 있습니다.</li>
+      <li>규정상 필요한 지역에서는 앱 안의 개인정보 및 광고 설정을 통해 광고 동의 선택을 관리할 수 있습니다.</li>
+    </ul>
+
+    <h2>9. 아동 개인정보</h2>
+    <p>
+      앱은 만 13세 미만 아동을 대상으로 하지 않으며, 아동의 개인정보를 고의로 수집하지 않습니다.
+    </p>
+
+    <h2>10. 개인정보처리방침 변경</h2>
+    <p>
+      본 방침은 앱 기능, 사용 서비스, 법령 또는 정책 변경에 따라 수정될 수 있습니다.
+      중요한 변경이 있는 경우 앱 또는 배포 페이지를 통해 안내할 수 있습니다.
+    </p>
+
+    <h2>11. 문의</h2>
+    <p>
+      개인정보처리방침에 대한 문의는 Google Play 스토어에 표시된 개발자 연락처 또는
+      <a href="mailto:fjrlvkdlxj@gmail.com">fjrlvkdlxj@gmail.com</a>으로 연락해 주세요.
+    </p>
+  </section>
+
+  <section id="en" lang="en">
+    <h2>Privacy Policy</h2>
+    <p class="meta">Effective date: June 12, 2026</p>
+    <p>
+      Simple Currency Calculator (“the app”) provides currency conversion, favorite currency
+      management, calculation history, advertising, analytics, and crash reporting features.
+    </p>
+
+    <h3>1. Information We Process</h3>
+    <p>
+      The app does not provide account registration or login, and we do not collect directly
+      identifying information such as your name, phone number, address, contacts, or photos on
+      our own app server.
+    </p>
+    <ul>
+      <li>Calculation history is stored locally on your device.</li>
+      <li>Favorite currencies, selected currencies, and theme preference are stored locally on your device.</li>
+      <li>Exchange rate cache is stored locally in the app database.</li>
+      <li>Google AdMob may process advertising identifiers, device information, approximate location, and ad interaction data.</li>
+      <li>Firebase Analytics may process app usage events, screen views, device information, and app version information.</li>
+      <li>Firebase Crashlytics may process crash logs, device model, OS version, app version, and diagnostic information.</li>
+    </ul>
+
+    <h3>2. How We Use Information</h3>
+    <ul>
+      <li>To provide currency conversion features</li>
+      <li>To remember selected currencies, favorites, and theme preference</li>
+      <li>To show and delete calculation history</li>
+      <li>To show ads and measure ad performance</li>
+      <li>To analyze crashes and improve app stability</li>
+      <li>To understand app usage and improve quality</li>
+    </ul>
+
+    <h3>3. Exchange Rate Data</h3>
+    <p>
+      The app uses reference exchange rate information sourced from the Korea Eximbank Exchange Rate
+      Open API. The app does not call the Korea Eximbank API directly. Instead, it reads exchange
+      rate documents updated by Firebase Cloud Functions in Firestore.
+    </p>
+    <p>
+      Calculation expressions, entered amounts, and favorite currency lists are not sent to the
+      exchange rate server. Exchange rates are provided for reference only and may differ from
+      actual transaction rates.
+    </p>
+
+    <h3>4. Ads and Consent</h3>
+    <p>
+      The app uses Google AdMob to display ads. Users in regions subject to privacy regulations,
+      such as the EEA, the United Kingdom, Switzerland, and certain U.S. states, may manage choices
+      for ad personalization and data processing through Google User Messaging Platform (UMP).
+    </p>
+    <p>
+      Google and its ad partners may process mobile identifiers, advertising IDs, device information,
+      approximate location, and ad impression or click data when serving ads.
+    </p>
+
+    <h3>5. Third-Party Services</h3>
+    <ul>
+      <li><a href="https://policies.google.com/privacy" rel="noopener">Google Privacy Policy</a></li>
+      <li><a href="https://support.google.com/admob/answer/6128543" rel="noopener">Google AdMob</a></li>
+      <li><a href="https://firebase.google.com/support/privacy" rel="noopener">Firebase Privacy and Security</a></li>
+      <li><a href="https://www.koreaexim.go.kr/" rel="noopener">Korea Eximbank</a></li>
+    </ul>
+
+    <h3>6. Local Storage and Backup</h3>
+    <p>
+      Calculation history and exchange rate cache are stored on your device and may be removed when
+      you clear app data or uninstall the app. Favorite currencies, selected currencies, and theme
+      preference may be restored through Google backup or device transfer if Android backup is enabled
+      on your device.
+    </p>
+
+    <h3>7. Retention</h3>
+    <p>
+      Local data is retained until you delete it, clear app data, or uninstall the app. Data processed
+      by Firebase Analytics, Firebase Crashlytics, and Google AdMob is retained according to each
+      service provider's policies.
+    </p>
+
+    <h3>8. Your Choices</h3>
+    <ul>
+      <li>You can delete calculation history in the app.</li>
+      <li>You can add or remove favorite currencies in the app.</li>
+      <li>You can change the app theme in settings.</li>
+      <li>You can reset your advertising ID or limit ad personalization in your device settings.</li>
+      <li>Where required by regulation, you can manage ad consent choices through the app's privacy and ad settings.</li>
+    </ul>
+
+    <h3>9. Children's Privacy</h3>
+    <p>
+      The app is not directed to children under 13, and we do not knowingly collect personal
+      information from children.
+    </p>
+
+    <h3>10. Changes to This Policy</h3>
+    <p>
+      We may update this policy when app features, third-party services, laws, or policies change.
+      If there are material changes, we may provide notice in the app or on the app distribution page.
+    </p>
+
+    <h3>11. Contact</h3>
+    <p>
+      If you have questions about this Privacy Policy, please contact us through the developer contact
+      listed on Google Play or at <a href="mailto:fjrlvkdlxj@gmail.com">fjrlvkdlxj@gmail.com</a>.
+    </p>
+  </section>
+</main>
+</body>
+</html>

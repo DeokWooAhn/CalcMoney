@@ -26,6 +26,7 @@ import kotlin.math.roundToInt
 @Composable
 fun AdMobBanner(
     @StringRes adUnitIdResId: Int,
+    canRequestAds: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -39,6 +40,8 @@ fun AdMobBanner(
             AdBannerPreviewPlaceholder(modifier = Modifier.fillMaxWidth())
             return@BoxWithConstraints
         }
+
+        if (!canRequestAds) return@BoxWithConstraints
 
         val adWidth = maxWidth.value.roundToInt()
         if (adWidth <= 0) return@BoxWithConstraints

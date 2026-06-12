@@ -52,6 +52,7 @@ import java.util.Locale
 @Composable
 fun ExchangeRoute(
     viewModel: ExchangeViewModel = hiltViewModel(),
+    canRequestAds: Boolean = false,
 ) {
     val state by viewModel.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -70,6 +71,7 @@ fun ExchangeRoute(
 
     ExchangeScreen(
         state = state,
+        canRequestAds = canRequestAds,
         onIntent = viewModel::processIntent,
         snackbarHostState = snackbarHostState,
     )
@@ -78,6 +80,7 @@ fun ExchangeRoute(
 @Composable
 fun ExchangeScreen(
     state: ExchangeContract.State,
+    canRequestAds: Boolean = false,
     onIntent: (ExchangeContract.Intent) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
@@ -91,7 +94,10 @@ fun ExchangeScreen(
         },
         topBar = { ExchangeTopBar() },
         bottomBar = {
-            AdMobBanner(adUnitIdResId = R.string.admob_exchange_banner_id)
+            AdMobBanner(
+                adUnitIdResId = R.string.admob_exchange_banner_id,
+                canRequestAds = canRequestAds,
+            )
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->

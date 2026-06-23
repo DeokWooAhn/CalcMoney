@@ -72,6 +72,7 @@
     <string name="setting_theme_light">Light</string>
     <string name="setting_theme_dark">Dark</string>
     <string name="setting_section_privacy">Privacy</string>
+    <string name="setting_privacy_policy">Privacy policy</string>
     <string name="setting_privacy_options">Privacy and ad settings</string>
     <string name="setting_privacy_options_summary">Manage consent choices for ads and privacy options.</string>
     <string name="setting_section_currency">Exchange rates</string>

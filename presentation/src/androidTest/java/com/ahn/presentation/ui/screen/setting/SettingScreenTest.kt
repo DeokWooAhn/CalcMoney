@@ -66,6 +66,19 @@ class SettingScreenTest {
         composeRule.onNodeWithText("1.2.3").assertExists()
     }
 
+    @Test
+    fun givenSettingScreen_whenPrivacyPolicyClicked_thenCallsPrivacyPolicyAction() {
+        var clickCount = 0
+
+        composeRule.setSettingScreenContent(
+            onPrivacyPolicyClick = { clickCount++ },
+        )
+
+        composeRule.onNodeWithText("개인정보 처리방침").performClick()
+
+        assertEquals(1, clickCount)
+    }
+
 }
 
 private fun androidx.compose.ui.test.junit4.ComposeContentTestRule.setSettingScreenContent(
@@ -75,6 +88,7 @@ private fun androidx.compose.ui.test.junit4.ComposeContentTestRule.setSettingScr
     exchangeRateFetchedAtText: String? = null,
     isExchangeRateLoading: Boolean = false,
     onThemeModeSelected: (ThemeMode) -> Unit = {},
+    onPrivacyPolicyClick: () -> Unit = {},
 ) {
     setContent {
         CompositionLocalProvider(LocalInspectionMode provides true) {
@@ -86,6 +100,7 @@ private fun androidx.compose.ui.test.junit4.ComposeContentTestRule.setSettingScr
                     exchangeRateFetchedAtText = exchangeRateFetchedAtText,
                     isExchangeRateLoading = isExchangeRateLoading,
                     onThemeModeSelected = onThemeModeSelected,
+                    onPrivacyPolicyClick = onPrivacyPolicyClick,
                 )
             }
         }

@@ -72,6 +72,7 @@
     <string name="setting_theme_light">라이트</string>
     <string name="setting_theme_dark">다크</string>
     <string name="setting_section_privacy">개인정보</string>
+    <string name="setting_privacy_policy">개인정보 처리방침</string>
     <string name="setting_privacy_options">개인정보 및 광고 설정</string>
     <string name="setting_privacy_options_summary">광고 동의와 개인정보 선택 항목을 관리합니다.</string>
     <string name="setting_section_currency">환율</string>

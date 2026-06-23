@@ -84,8 +84,6 @@ android {
             resValue("string", "admob_app_id", ADMOB_TEST_APP_ID)
         }
         release {
-            // Current generated kotlinx.serialization DTOs do not need extra keep rules.
-            // See app/proguard-rules.pro before adding polymorphic serialization.
             isMinifyEnabled = true
             isShrinkResources = true
             resValue("string", "admob_app_id", adMobValueStrict("ADMOB_APP_ID"))

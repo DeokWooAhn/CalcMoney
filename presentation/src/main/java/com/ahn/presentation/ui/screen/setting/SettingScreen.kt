@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +84,7 @@ fun SettingRoute(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val appInfo = remember(context) { context.getAppInfo() }
     val exchangeRateDateText = remember(exchangeState.exchangeRateDate) {
         exchangeState.exchangeRateDate
@@ -113,6 +115,7 @@ fun SettingRoute(
         isPrivacyOptionsRequired = isPrivacyOptionsRequired,
         snackbarHostState = snackbarHostState,
         onThemeModeSelected = mainViewModel::saveThemeMode,
+        onPrivacyPolicyClick = { uriHandler.openUri(PRIVACY_POLICY_URL) },
         onPrivacyOptionsClick = onPrivacyOptionsClick,
     )
 }
@@ -130,6 +133,7 @@ fun SettingScreen(
     isPrivacyOptionsRequired: Boolean = false,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onThemeModeSelected: (ThemeMode) -> Unit = {},
+    onPrivacyPolicyClick: () -> Unit = {},
     onPrivacyOptionsClick: () -> Unit = {},
 ) {
     Scaffold(
@@ -169,6 +173,7 @@ fun SettingScreen(
             isExchangeRateLoading = isExchangeRateLoading,
             isPrivacyOptionsRequired = isPrivacyOptionsRequired,
             onThemeModeSelected = onThemeModeSelected,
+            onPrivacyPolicyClick = onPrivacyPolicyClick,
             onPrivacyOptionsClick = onPrivacyOptionsClick,
         )
     }
@@ -184,6 +189,7 @@ private fun SettingContent(
     isExchangeRateLoading: Boolean,
     isPrivacyOptionsRequired: Boolean,
     onThemeModeSelected: (ThemeMode) -> Unit,
+    onPrivacyPolicyClick: () -> Unit,
     onPrivacyOptionsClick: () -> Unit,
 ) {
     val emptyValue = stringResource(R.string.setting_exchange_rate_date_empty)
@@ -212,16 +218,6 @@ private fun SettingContent(
             )
         }
 
-        if (isPrivacyOptionsRequired) {
-            SettingSection(title = stringResource(R.string.setting_section_privacy)) {
-                SettingActionCard(
-                    title = stringResource(R.string.setting_privacy_options),
-                    summary = stringResource(R.string.setting_privacy_options_summary),
-                    onClick = onPrivacyOptionsClick,
-                )
-            }
-        }
-
         SettingSection(title = stringResource(R.string.setting_section_currency)) {
             ExchangeRateInfoCard(
                 title = stringResource(R.string.setting_exchange_rate_detail),
@@ -236,6 +232,21 @@ private fun SettingContent(
             )
         }
 
+        SettingSection(title = stringResource(R.string.setting_section_privacy)) {
+            SettingActionCard(
+                title = stringResource(R.string.setting_privacy_policy),
+                onClick = onPrivacyPolicyClick,
+            )
+
+            if (isPrivacyOptionsRequired) {
+                SettingActionCard(
+                    title = stringResource(R.string.setting_privacy_options),
+                    summary = stringResource(R.string.setting_privacy_options_summary),
+                    onClick = onPrivacyOptionsClick,
+                )
+            }
+        }
+
         SettingSection(title = stringResource(R.string.setting_section_app_info)) {
             AppInfoCard(
                 title = stringResource(R.string.setting_app_version),
@@ -248,7 +259,7 @@ private fun SettingContent(
 @Composable
 private fun SettingActionCard(
     title: String,
-    summary: String,
+    summary: String? = null,
     onClick: () -> Unit,
 ) {
     Surface(
@@ -276,12 +287,14 @@ private fun SettingActionCard(
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = summary,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                summary?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = it,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
             Icon(
@@ -631,6 +644,8 @@ private fun SettingScreenPreview() {
 data class AppInfo(
     val versionName: String = "",
 )
+
+private const val PRIVACY_POLICY_URL = "https://deokwooahn.github.io/CalcMoney/privacy-policy.html"
 
 private fun Context.getAppInfo(): AppInfo {
     val packageInfo = getPackageInfoCompat()

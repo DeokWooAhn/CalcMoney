@@ -1,0 +1,45 @@
+name: Firebase CD
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'functions/**'
+      - 'firebase.json'
+      - 'firestore.rules'
+      - '.firebaserc'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Firebase Functions and Firestore rules
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install Functions dependencies
+        run: npm ci --prefix functions
+
+      - name: Validate Functions source
+        run: npm run lint --prefix functions
+
+      - name: Authenticate with Firebase deploy service account
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Deploy Firebase resources
+        run: npx --yes firebase-tools@latest deploy --only functions,firestore --project calculator-money-6ebb9 --non-interactive

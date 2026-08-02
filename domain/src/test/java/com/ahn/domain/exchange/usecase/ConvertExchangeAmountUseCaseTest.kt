@@ -18,7 +18,7 @@ class ConvertExchangeAmountUseCaseTest :
                     expression = "100+200",
                     rate = 0.01,
                     currencyCode = "USD",
-                ) shouldBe "1 USD + 2 USD"
+                ) shouldBe "1.00 USD + 2.00 USD"
             }
 
             it("소수점 숫자도 변환한다") {
@@ -26,7 +26,7 @@ class ConvertExchangeAmountUseCaseTest :
                     expression = "1.5+2.5",
                     rate = 10.0,
                     currencyCode = "VND",
-                ) shouldBe "15 VND + 25 VND"
+                ) shouldBe "15.00 VND + 25.00 VND"
             }
 
             it("빈 수식이면 빈 문자열을 반환한다") {
@@ -60,6 +60,14 @@ class ConvertExchangeAmountUseCaseTest :
                     currencyCode = null,
                 ) shouldBe ""
             }
+
+            it("환산 결과가 무한대면 원본 숫자를 유지한다") {
+                useCase.convertExpression(
+                    expression = "100+200",
+                    rate = Double.POSITIVE_INFINITY,
+                    currencyCode = "USD",
+                ) shouldBe "100 + 200"
+            }
         }
 
         describe("계산기 단일 금액 환율 변환") {
@@ -68,7 +76,15 @@ class ConvertExchangeAmountUseCaseTest :
                     text = "100",
                     rate = 0.01,
                     currencyCode = "USD",
-                ) shouldBe "1 USD"
+                ) shouldBe "1.00 USD"
+            }
+
+            it("달러 환산 결과의 소수점을 유지한다") {
+                useCase.convertSingleAmount(
+                    text = "1300",
+                    rate = 1 / 1441.10,
+                    currencyCode = "USD",
+                ) shouldBe "0.90 USD"
             }
 
             it("계산식 텍스트면 계산 결과를 환율로 변환한다") {
@@ -78,7 +94,7 @@ class ConvertExchangeAmountUseCaseTest :
                     text = "100+200",
                     rate = 0.01,
                     currencyCode = "USD",
-                ) shouldBe "3 USD"
+                ) shouldBe "3.00 USD"
             }
 
             it("계산식 결과가 Error이면 빈 문자열을 반환한다") {
@@ -95,6 +111,22 @@ class ConvertExchangeAmountUseCaseTest :
                 useCase.convertSingleAmount(
                     text = "",
                     rate = 0.01,
+                    currencyCode = "USD",
+                ) shouldBe ""
+            }
+
+            it("환산 결과가 유한하지 않으면 빈 문자열을 반환한다") {
+                useCase.convertSingleAmount(
+                    text = "100",
+                    rate = Double.POSITIVE_INFINITY,
+                    currencyCode = "USD",
+                ) shouldBe ""
+            }
+
+            it("입력 금액이 유한하지 않으면 빈 문자열을 반환한다") {
+                useCase.convertSingleAmount(
+                    text = "Infinity",
+                    rate = 1.0,
                     currencyCode = "USD",
                 ) shouldBe ""
             }

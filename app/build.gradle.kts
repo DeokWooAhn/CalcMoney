@@ -1,6 +1,20 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 private val ADMOB_TEST_APP_ID = "ca-app-pub-3940256099942544~3347511713"
+private val DEFAULT_VERSION_CODE = 2
+private val DEFAULT_VERSION_NAME = "1.0"
+
+fun releaseVersionCode(): Int {
+    val versionCode = providers.gradleProperty("versionCode").orNull
+        ?: return DEFAULT_VERSION_CODE
+
+    return versionCode.toIntOrNull()
+        ?: error("versionCode must be an integer.")
+}
+
+fun releaseVersionName(): String {
+    return providers.gradleProperty("versionName").orNull ?: DEFAULT_VERSION_NAME
+}
 
 private fun isReleaseBuildRequested(): Boolean =
     gradle.startParameter.taskNames.any { taskName ->
@@ -58,8 +72,8 @@ android {
         minSdk = 28
         //noinspection OldTargetApi
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0"
+        versionCode = releaseVersionCode()
+        versionName = releaseVersionName()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

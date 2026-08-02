@@ -272,7 +272,6 @@ private fun ColumnScope.FavoriteRateGrid(
                     onRemoveFavorite = { onRemoveFavorite(item.currency.code) },
                 )
             }
-
         }
 
         if (isRefreshing) {

@@ -137,7 +137,12 @@ jobs:
           printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
 
       - name: Build release bundle
-        run: ./gradlew --no-daemon :app:bundleRelease
+        run: |
+          VERSION_CODE=$((10000 + GITHUB_RUN_NUMBER))
+          VERSION_NAME="${GITHUB_REF_NAME#v}"
+          ./gradlew --no-daemon :app:bundleRelease \
+            -PversionCode="$VERSION_CODE" \
+            -PversionName="$VERSION_NAME"
         env:
           ADMOB_APP_ID: ${{ secrets.ADMOB_APP_ID }}
           ADMOB_EXCHANGE_BANNER_ID: ${{ secrets.ADMOB_EXCHANGE_BANNER_ID }}
@@ -155,6 +160,28 @@ jobs:
           path: app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
           retention-days: 7
+
+  google_play_internal:
+    name: Publish to Google Play internal testing
+    needs: release_bundle
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+
+    steps:
+      - name: Download release bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: release-bundle
+          path: artifacts
+
+      - name: Upload AAB to Google Play internal testing
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.ahn.calcmoney
+          releaseFiles: artifacts/*.aab
+          track: internal
+          status: completed
 
   firebase_app_distribution:
     name: Firebase App Distribution

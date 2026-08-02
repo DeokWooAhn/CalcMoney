@@ -1,8 +1,8 @@
 package com.ahn.domain.exchange.usecase
 
 import com.ahn.domain.calculator.usecase.CalculateExpressionUseCase
+import java.util.Locale
 import javax.inject.Inject
-import kotlin.math.roundToLong
 
 class ConvertExchangeAmountUseCase @Inject constructor(
     private val calculateExpressionUseCase: CalculateExpressionUseCase,
@@ -24,8 +24,8 @@ class ConvertExchangeAmountUseCase @Inject constructor(
         fun flushNumber() {
             if (number.isEmpty()) return
 
-            val converted = number.toString().toDoubleOrNull()?.let {
-                (it * rate).roundToLong()
+            val converted = number.toString().toDoubleOrNull()?.let { amount ->
+                formatConvertedAmount(amount * rate)
             }
 
             if (converted != null) {
@@ -65,6 +65,14 @@ class ConvertExchangeAmountUseCase @Inject constructor(
                 ?.toDoubleOrNull()
             ?: return ""
 
-        return "${(amount * rate).roundToLong()} $currencyCode"
+        return "${formatConvertedAmount(amount * rate)} $currencyCode"
+    }
+
+    /**
+     * 계산기 환산 결과는 정수로 반올림하지 않고 소수점 둘째 자리까지 표시합니다.
+     * 예를 들어 1,300 KRW를 1 USD = 1,441.10 KRW로 환산하면 0.90 USD가 됩니다.
+     */
+    private fun formatConvertedAmount(amount: Double): String {
+        return String.format(Locale.US, "%.2f", amount)
     }
 }

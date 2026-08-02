@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,8 +60,6 @@ import com.ahn.presentation.util.showSnackbarImmediately
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
-
-private const val FAVORITE_AD_INSERT_INDEX = 4
 
 @Composable
 fun FavoriteRoute(
@@ -126,12 +123,17 @@ fun FavoriteScreen(
     Scaffold(
         snackbarHost = { CustomSnackbarHost(snackbarHostState = snackbarHostState) },
         topBar = { FavoriteTopBar() },
+        bottomBar = {
+            AdMobBanner(
+                adUnitIdResId = R.string.admob_favorite_banner_id,
+                canRequestAds = canRequestAds,
+            )
+        },
         containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
         FavoriteContent(
             exchangeState = exchangeState,
             favoriteState = favoriteState,
-            canRequestAds = canRequestAds,
             onExchangeIntent = onExchangeIntent,
             modifier = Modifier.padding(paddingValues),
         )
@@ -160,7 +162,6 @@ private fun FavoriteTopBar() {
 private fun FavoriteContent(
     exchangeState: ExchangeContract.State,
     favoriteState: FavoriteContract.State,
-    canRequestAds: Boolean,
     onExchangeIntent: (ExchangeContract.Intent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -186,7 +187,6 @@ private fun FavoriteContent(
         FavoriteRateContent(
             exchangeState = exchangeState,
             favoriteState = favoriteState,
-            canRequestAds = canRequestAds,
             onExchangeIntent = onExchangeIntent,
         )
     }
@@ -196,14 +196,12 @@ private fun FavoriteContent(
 private fun ColumnScope.FavoriteRateContent(
     exchangeState: ExchangeContract.State,
     favoriteState: FavoriteContract.State,
-    canRequestAds: Boolean,
     onExchangeIntent: (ExchangeContract.Intent) -> Unit,
 ) {
     when {
         favoriteState.items.isNotEmpty() -> FavoriteRateGrid(
             items = favoriteState.items,
             isRefreshing = favoriteState.isLoading,
-            canRequestAds = canRequestAds,
             onRemoveFavorite = { currencyCode ->
                 onExchangeIntent(ExchangeContract.Intent.ToggleFavorite(currencyCode))
             },
@@ -249,11 +247,8 @@ private fun ColumnScope.FavoriteEmptyMessage(
 private fun ColumnScope.FavoriteRateGrid(
     items: List<FavoriteContract.Item>,
     isRefreshing: Boolean = false,
-    canRequestAds: Boolean,
     onRemoveFavorite: (String) -> Unit,
 ) {
-    val firstItems = items.take(FAVORITE_AD_INSERT_INDEX)
-    val remainingItems = items.drop(FAVORITE_AD_INSERT_INDEX)
     val refreshingExchangeRates = stringResource(R.string.refreshing_exchange_rates)
 
     Box(
@@ -269,7 +264,7 @@ private fun ColumnScope.FavoriteRateGrid(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(
-                items = firstItems,
+                items = items,
                 key = { it.currency.code },
             ) { item ->
                 FavoriteRateCard(
@@ -278,28 +273,6 @@ private fun ColumnScope.FavoriteRateGrid(
                 )
             }
 
-            if (items.size >= FAVORITE_AD_INSERT_INDEX && canRequestAds) {
-                item(
-                    key = "favorite_banner_ad",
-                    span = { GridItemSpan(maxLineSpan) },
-                ) {
-                    AdMobBanner(
-                        adUnitIdResId = R.string.admob_favorite_banner_id,
-                        canRequestAds = canRequestAds,
-                        modifier = Modifier.padding(vertical = 8.dp),
-                    )
-                }
-            }
-
-            items(
-                items = remainingItems,
-                key = { it.currency.code },
-            ) { item ->
-                FavoriteRateCard(
-                    item = item,
-                    onRemoveFavorite = { onRemoveFavorite(item.currency.code) },
-                )
-            }
         }
 
         if (isRefreshing) {

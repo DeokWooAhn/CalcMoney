@@ -24,8 +24,8 @@ class ConvertExchangeAmountUseCase @Inject constructor(
         fun flushNumber() {
             if (number.isEmpty()) return
 
-            val converted = number.toString().toDoubleOrNull()?.let { amount ->
-                formatConvertedAmount(amount * rate)
+            val converted = number.toString().toDoubleOrNull()?.takeIf { it.isFinite() }?.let { amount ->
+                (amount * rate).takeIf { it.isFinite() }?.let(::formatConvertedAmount)
             }
 
             if (converted != null) {
@@ -65,7 +65,13 @@ class ConvertExchangeAmountUseCase @Inject constructor(
                 ?.toDoubleOrNull()
             ?: return ""
 
-        return "${formatConvertedAmount(amount * rate)} $currencyCode"
+        val convertedAmount = amount
+            .takeIf { it.isFinite() }
+            ?.times(rate)
+            ?.takeIf { it.isFinite() }
+            ?: return ""
+
+        return "${formatConvertedAmount(convertedAmount)} $currencyCode"
     }
 
     /**

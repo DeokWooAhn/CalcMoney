@@ -1,0 +1,41 @@
+# SwiftFormat 설정 — ios/ 하위 전체에 적용된다.
+# 검사: cd ios && swiftformat --lint .
+# 적용: cd ios && swiftformat .
+
+--swiftversion 6.2
+
+# SwiftPM 산출물과 Xcode 파생 데이터는 대상이 아니다.
+--exclude Packages/Data/.build
+--exclude Packages/Domain/.build
+--exclude Packages/Presentation/.build
+--exclude **/DerivedData
+
+--indent 4
+--maxwidth 120
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--closingparen balanced
+--commas always
+--trimwhitespace always
+--stripunusedargs closure-only
+--self remove
+--importgrouping testable-bottom
+
+# 기존 코드가 startPos..<pos 처럼 붙여 쓴다.
+--ranges no-space
+
+# 테스트 이름은 한국어 + 언더스코어가 프로젝트 컨벤션이다 (CLAUDE.md).
+# 기본값(raw-identifiers)은 `숫자 변환 연산자 유지`() 처럼 백틱 식별자로 바꿔버린다.
+--test-case-name-format preserve
+
+# SwiftLint 가 이미 담당하는 영역이라 중복으로 잡지 않는다.
+--disable redundantType
+
+# 재귀 하강 파서에서 `if eat("+") { return try parseFactor() }` 같은
+# 한 줄 본문을 의도적으로 쓴다. 포매터가 강제로 펼치지 않도록 둔다.
+--disable wrapIfStatementBodies
+--disable wrapLoopBodies
+
+# `var id: String { rawValue }` 같은 한 줄 계산 프로퍼티는 Swift 관용 표기다.
+--disable wrapPropertyBodies

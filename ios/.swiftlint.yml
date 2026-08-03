@@ -1,0 +1,58 @@
+# SwiftLint 설정 — ios/ 하위 전체에 적용된다.
+# 실행: cd ios && swiftlint lint --strict
+
+included:
+  - CalcMoney/CalcMoney
+  - CalcMoney/CalcMoneyTests
+  - CalcMoney/CalcMoneyUITests
+  - Packages/Data
+  - Packages/Domain
+  - Packages/Presentation
+
+excluded:
+  # SwiftPM 이 생성하는 산출물. runner.swift 같은 파생 파일이 대량으로 걸린다.
+  - Packages/Data/.build
+  - Packages/Domain/.build
+  - Packages/Presentation/.build
+
+disabled_rules:
+  # 코드베이스가 Swift 6 의 trailing comma 를 의도적으로 쓴다 (Package.swift 포함).
+  - trailing_comma
+
+opt_in_rules:
+  - empty_count
+  - explicit_init
+  - first_where
+  - last_where
+  - redundant_nil_coalescing
+  - toggle_bool
+  - unneeded_parentheses_in_closure_argument
+
+# 테스트 이름은 한국어로 쓴다 (CLAUDE.md 컨벤션). 한국어에는 대소문자가 없어서
+# 소문자 시작 검사를 그대로 두면 모든 테스트 함수가 위반으로 잡힌다.
+identifier_name:
+  validates_start_with_lowercase: off
+  allowed_symbols: ["_"]
+  min_length:
+    warning: 2
+    error: 1
+  excluded:
+    - id
+    - to
+    # 재귀 하강 파서의 누산기 변수. 해당 알고리즘의 관용 표기다.
+    - x
+
+type_name:
+  validates_start_with_lowercase: off
+
+line_length:
+  warning: 120
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+
+file_length:
+  warning: 400
+  error: 800
+
+reporter: xcode

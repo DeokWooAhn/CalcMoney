@@ -22,3 +22,10 @@ functions/.env.*
 firebase-debug.log
 firebase-debug.*.log
 .claude/settings.local.json
+
+# iOS / Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+.swiftpm/xcode/
+ios/**/.build/

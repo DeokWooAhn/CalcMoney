@@ -1,0 +1,102 @@
+name: iOS CI
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-ci.yml'
+  push:
+    branches:
+      - master
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-ci.yml'
+  workflow_dispatch:
+
+# Packages/*/Package.swift 가 swift-tools-version 6.2 와 .defaultIsolation(MainActor.self) 를
+# 쓰기 때문에 Xcode 26 이상이 필요하다. macos-15 이미지(Xcode 16.x)에서는 빌드가 깨진다.
+# macos-latest 는 이미지 전환기에 조용히 바뀔 수 있어 버전을 고정한다.
+env:
+  DESTINATION: platform=iOS Simulator,name=iPhone 17 Pro,OS=latest
+  # 러너 이미지에 SwiftLint 는 없다. 버전을 고정하지 않으면 새 규칙이 추가될 때
+  # 코드 변경 없이 CI 가 깨진다.
+  SWIFTLINT_VERSION: 0.65.0
+
+jobs:
+  lint:
+    name: SwiftLint and SwiftFormat
+    runs-on: macos-26
+    defaults:
+      run:
+        working-directory: ios
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/swiftlint.zip" \
+            "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_VERSION}/portable_swiftlint.zip"
+          unzip -q -o "$RUNNER_TEMP/swiftlint.zip" -d "$RUNNER_TEMP/swiftlint"
+          echo "$RUNNER_TEMP/swiftlint" >> "$GITHUB_PATH"
+
+      # SwiftFormat 은 러너 이미지에 이미 들어 있다.
+      - name: Run SwiftFormat
+        run: |
+          swiftformat --version
+          swiftformat --lint .
+
+      - name: Run SwiftLint
+        run: |
+          swiftlint version
+          swiftlint lint --strict
+
+  test:
+    name: Analyze and test
+    runs-on: macos-26
+    defaults:
+      run:
+        working-directory: ios
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      # 순수 Swift 코드에서 clang 정적 분석기가 잡아내는 건 거의 없다.
+      # 실질적인 게이트는 경고를 오류로 승격시키는 쪽이라 둘을 같이 건다.
+      - name: Analyze
+        run: |
+          xcodebuild analyze \
+            -workspace CalcMoney.xcworkspace \
+            -scheme CalcMoney \
+            -destination "$DESTINATION" \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES \
+            GCC_TREAT_WARNINGS_AS_ERRORS=YES
+
+      # CalcMoney.xctestplan 하나가 앱 타깃 2개 + 패키지 테스트 3개를 모두 포함한다.
+      # 워크스페이스로 실행해야 패키지 테스트 타깃이 플랜에서 해석된다.
+      - name: Test
+        run: |
+          xcodebuild test \
+            -workspace CalcMoney.xcworkspace \
+            -scheme CalcMoney \
+            -testPlan CalcMoney \
+            -destination "$DESTINATION" \
+            -resultBundlePath "$RUNNER_TEMP/CalcMoney.xcresult"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-results
+          path: ${{ runner.temp }}/CalcMoney.xcresult
+          if-no-files-found: ignore
+          retention-days: 7

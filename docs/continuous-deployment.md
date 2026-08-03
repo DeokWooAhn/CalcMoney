@@ -37,11 +37,36 @@ The app must be created once in Play Console and its package name must remain `c
 
 ## iOS continuous integration
 
-`ios-ci.yml` runs the `Domain`, `Data`, and `Presentation` package tests plus the app target's tests on an iPhone 17 Pro simulator. No secrets or signing are required — everything builds for the simulator.
+Open `ios/CalcMoney.xcworkspace`, **not** `ios/CalcMoney/CalcMoney.xcodeproj`. The workspace bundles the app project with the three local packages. Opening the project alone still builds and runs the app, but the package test targets are invisible to the test plan.
+
+`ios-ci.yml` has two jobs, both on `macos-26`. Neither needs secrets or signing — everything targets the simulator.
+
+### `lint`
+
+| Tool | Version | Config | Command |
+| --- | --- | --- | --- |
+| SwiftFormat | preinstalled on the runner | `ios/.swiftformat` | `swiftformat --lint .` |
+| SwiftLint | pinned to `SWIFTLINT_VERSION` in the workflow | `ios/.swiftlint.yml` | `swiftlint lint --strict` |
+
+SwiftLint is not on the runner image, so the workflow downloads `portable_swiftlint.zip` at a pinned version. Without the pin, a SwiftLint release that adds a rule would break CI with no code change. SwiftFormat is preinstalled and therefore *not* pinned — a runner image bump can change its behaviour, so pin it the same way if that ever bites.
+
+`--strict` promotes warnings to errors, so the tree has to stay clean. Two exceptions are recorded inline rather than by weakening a rule globally: `static_over_final_class` on an `XCTestCase` class-var override, and `function_body_length` on the recursive-descent parser in `CalculateExpressionUseCase`.
+
+Run both locally before pushing:
+
+```bash
+cd ios && swiftformat --lint . && swiftlint lint --strict
+```
+
+### `test`
+
+Analyze runs first with `SWIFT_TREAT_WARNINGS_AS_ERRORS=YES` and `GCC_TREAT_WARNINGS_AS_ERRORS=YES`. Xcode's static analyzer is a clang analyzer and finds essentially nothing in pure Swift; the warnings-as-errors flags are what actually gate the step.
+
+Tests run once through `ios/CalcMoney/CalcMoney.xctestplan`, which covers all five test targets — `CalcMoneyTests`, `CalcMoneyUITests`, `DomainTests`, `DataTests`, `PresentationTests`. The plan must be run through the workspace; via the project alone, the three package targets are silently dropped from the plan.
+
+`CalcMoneyUITests/testLaunchPerformance` is skipped in the test plan. It is a `measure` block that relaunches the app five times, which is slow and noisy on a shared runner.
 
 The runner is pinned to `macos-26` rather than `macos-latest`. The local packages declare `swift-tools-version: 6.2` and use `.defaultIsolation(MainActor.self)`, both of which need Xcode 26 or newer; the `macos-15` image ships Xcode 16.x and cannot build them.
-
-`CalcMoneyUITests/testLaunchPerformance` is skipped in CI. It is a `measure` block that relaunches the app five times, which is slow and noisy on a shared runner.
 
 There is no iOS release pipeline yet. When one is added it should trigger on `ios-v*` tags and will need App Store Connect signing secrets.
 

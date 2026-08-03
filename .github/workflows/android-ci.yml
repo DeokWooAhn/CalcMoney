@@ -21,6 +21,11 @@ on:
         required: true
         type: boolean
         default: false
+      version_name:
+        description: 'versionName for a manual release build, e.g. 1.0.2 (required when build_release_bundle is checked)'
+        required: false
+        type: string
+        default: ''
       distribute_debug:
         description: Upload the debug APK to Firebase App Distribution
         required: true
@@ -141,10 +146,30 @@ jobs:
           fi
           printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
 
+      # 태그 릴리스면 태그 이름에서, 수동 실행이면 입력값에서 versionName 을 뽑는다.
+      # workflow_dispatch 때 GITHUB_REF_NAME 은 브랜치명(master)이라 그대로 쓰면 안 된다.
+      - name: Resolve versionName
+        env:
+          INPUT_VERSION_NAME: ${{ inputs.version_name }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION_NAME="$INPUT_VERSION_NAME"
+            if [ -z "$VERSION_NAME" ]; then
+              echo "::error::수동 릴리스에는 version_name 입력이 필요합니다"
+              exit 1
+            fi
+          else
+            VERSION_NAME="${GITHUB_REF_NAME#android-v}"
+          fi
+          if ! printf '%s' "$VERSION_NAME" | grep -Eq '^[0-9]+(\.[0-9]+)*$'; then
+            echo "::error::versionName 형식이 올바르지 않습니다: $VERSION_NAME"
+            exit 1
+          fi
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+
       - name: Build release bundle
         run: |
           VERSION_CODE=$((10000 + GITHUB_RUN_NUMBER))
-          VERSION_NAME="${GITHUB_REF_NAME#android-v}"
           ./gradlew --no-daemon :app:bundleRelease \
             -PversionCode="$VERSION_CODE" \
             -PversionName="$VERSION_NAME"

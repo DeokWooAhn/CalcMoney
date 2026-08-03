@@ -1,0 +1,59 @@
+{
+  "configurations" : [
+    {
+      "id" : "5A1C7E10-3F42-4B88-9E6D-2C0A7B4D1E33",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:CalcMoney.xcodeproj",
+      "identifier" : "D4E052AC301F21EF001231E2",
+      "name" : "CalcMoney"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:CalcMoney.xcodeproj",
+        "identifier" : "D4E052B9301F21F0001231E2",
+        "name" : "CalcMoneyTests"
+      }
+    },
+    {
+      "skippedTests" : [
+        "CalcMoneyUITests\/testLaunchPerformance()"
+      ],
+      "target" : {
+        "containerPath" : "container:CalcMoney.xcodeproj",
+        "identifier" : "D4E052C3301F21F0001231E2",
+        "name" : "CalcMoneyUITests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:..\/Packages\/Domain",
+        "identifier" : "DomainTests",
+        "name" : "DomainTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:..\/Packages\/Data",
+        "identifier" : "DataTests",
+        "name" : "DataTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:..\/Packages\/Presentation",
+        "identifier" : "PresentationTests",
+        "name" : "PresentationTests"
+      }
+    }
+  ],
+  "version" : 1
+}

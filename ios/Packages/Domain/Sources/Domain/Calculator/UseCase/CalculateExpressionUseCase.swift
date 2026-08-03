@@ -57,7 +57,12 @@ public struct CalculateExpressionUseCase: Sendable {
 
     private struct ParseError: Error {}
 
+    // swiftlint:disable function_body_length
     /// 재귀 하강 파서로 수식을 평가한다. 문법 오류가 있으면 nil을 반환한다.
+    ///
+    /// 본문이 긴 이유는 파서 단계(expression/term/factor)를 중첩 함수로 두고
+    /// pos·ch 커서를 클로저로 공유하기 때문이다. 밖으로 빼면 커서를 인자로
+    /// 들고 다녀야 해서 오히려 읽기 어려워진다.
     private static func evaluate(_ expression: String) -> Double? {
         let chars = Array(expression)
         var pos = -1
@@ -132,4 +137,5 @@ public struct CalculateExpressionUseCase: Sendable {
             return nil
         }
     }
+    // swiftlint:enable function_body_length
 }

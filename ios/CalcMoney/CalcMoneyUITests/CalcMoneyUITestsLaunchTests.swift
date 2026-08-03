@@ -8,7 +8,8 @@
 import XCTest
 
 final class CalcMoneyUITestsLaunchTests: XCTestCase {
-
+    // XCTestCase 의 class var 를 재정의하는 자리라 static 으로 바꿀 수 없다.
+    // swiftlint:disable:next static_over_final_class
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
     }
@@ -18,7 +19,7 @@ final class CalcMoneyUITestsLaunchTests: XCTestCase {
     }
 
     @MainActor
-    func testLaunch() throws {
+    func testLaunch() {
         let app = XCUIApplication()
         app.launch()
 

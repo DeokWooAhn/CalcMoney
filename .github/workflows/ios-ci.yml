@@ -1,0 +1,81 @@
+name: iOS CI
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-ci.yml'
+  push:
+    branches:
+      - master
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-ci.yml'
+  workflow_dispatch:
+
+# Packages/*/Package.swift 가 swift-tools-version 6.2 와 .defaultIsolation(MainActor.self) 를
+# 쓰기 때문에 Xcode 26 이상이 필요하다. macos-15 이미지(Xcode 16.x)에서는 빌드가 깨진다.
+# macos-latest 는 이미지 전환기에 조용히 바뀔 수 있어 버전을 고정한다.
+env:
+  DESTINATION: platform=iOS Simulator,name=iPhone 17 Pro,OS=latest
+
+jobs:
+  test:
+    name: Test packages and app
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Test Domain package
+        working-directory: ios/Packages/Domain
+        run: |
+          xcodebuild test \
+            -scheme Domain \
+            -destination "$DESTINATION" \
+            -resultBundlePath "$RUNNER_TEMP/Domain.xcresult"
+
+      - name: Test Data package
+        working-directory: ios/Packages/Data
+        run: |
+          xcodebuild test \
+            -scheme Data \
+            -destination "$DESTINATION" \
+            -resultBundlePath "$RUNNER_TEMP/Data.xcresult"
+
+      - name: Test Presentation package
+        working-directory: ios/Packages/Presentation
+        run: |
+          xcodebuild test \
+            -scheme Presentation \
+            -destination "$DESTINATION" \
+            -resultBundlePath "$RUNNER_TEMP/Presentation.xcresult"
+
+      # 앱 스킴은 CalcMoneyTests 와 UI 테스트만 포함한다. 패키지 테스트는 위에서 따로 돌린다.
+      # testLaunchPerformance 는 measure 블록이라 앱을 5회 실행해 CI 에서 느리고 편차가 크다.
+      - name: Test app target
+        working-directory: ios/CalcMoney
+        run: |
+          xcodebuild test \
+            -project CalcMoney.xcodeproj \
+            -scheme CalcMoney \
+            -destination "$DESTINATION" \
+            -skip-testing:CalcMoneyUITests/CalcMoneyUITests/testLaunchPerformance \
+            -resultBundlePath "$RUNNER_TEMP/CalcMoney.xcresult"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-results
+          path: ${{ runner.temp }}/*.xcresult
+          if-no-files-found: ignore
+          retention-days: 7

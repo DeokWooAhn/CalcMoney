@@ -1,14 +1,19 @@
 name: Android CI
 
 on:
+  # iOS 만 건드린 PR 에서 Gradle 파이프라인 전체가 도는 걸 막는다.
+  # push 쪽에는 필터를 걸지 않는다 — paths 필터는 태그 push 에도 적용돼서
+  # 릴리스 커밋이 마침 ios/** 만 건드린 경우 릴리스 job 이 통째로 skip 된다.
   pull_request:
     branches:
       - master
+    paths-ignore:
+      - 'ios/**'
   push:
     branches:
       - master
     tags:
-      - 'v*'
+      - 'android-v*'
   workflow_dispatch:
     inputs:
       build_release_bundle:
@@ -108,7 +113,7 @@ jobs:
     name: Build signed release bundle
     needs: build
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.build_release_bundle) }}
+    if: ${{ startsWith(github.ref, 'refs/tags/android-v') || (github.event_name == 'workflow_dispatch' && inputs.build_release_bundle) }}
 
     steps:
       - name: Checkout
@@ -139,7 +144,7 @@ jobs:
       - name: Build release bundle
         run: |
           VERSION_CODE=$((10000 + GITHUB_RUN_NUMBER))
-          VERSION_NAME="${GITHUB_REF_NAME#v}"
+          VERSION_NAME="${GITHUB_REF_NAME#android-v}"
           ./gradlew --no-daemon :app:bundleRelease \
             -PversionCode="$VERSION_CODE" \
             -PversionName="$VERSION_NAME"
@@ -165,7 +170,7 @@ jobs:
     name: Publish to Google Play internal testing
     needs: release_bundle
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    if: ${{ startsWith(github.ref, 'refs/tags/android-v') }}
 
     steps:
       - name: Download release bundle

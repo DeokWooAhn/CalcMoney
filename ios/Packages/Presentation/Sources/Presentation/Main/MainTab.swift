@@ -11,10 +11,10 @@ enum MainTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .calculator: "계산기"
-        case .exchange: "환율"
-        case .favorite: "즐겨찾기"
-        case .setting: "설정"
+        case .calculator: L("계산기")
+        case .exchange: L("환율")
+        case .favorite: L("즐겨찾기")
+        case .setting: L("설정")
         }
     }
 

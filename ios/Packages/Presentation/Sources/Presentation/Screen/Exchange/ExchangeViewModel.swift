@@ -40,10 +40,10 @@ public final class ExchangeViewModel {
 
     public func send(_ intent: ExchangeIntent) {
         switch intent {
-        case .updateFromAmount(let amount): handleUpdateFromAmount(amount)
-        case .selectFromCurrency(let currency): Task { await handleSelectFromCurrency(currency) }
-        case .selectToCurrency(let currency): Task { await handleSelectToCurrency(currency) }
-        case .toggleFavorite(let currencyCode): Task { await handleToggleFavorite(currencyCode) }
+        case let .updateFromAmount(amount): handleUpdateFromAmount(amount)
+        case let .selectFromCurrency(currency): Task { await handleSelectFromCurrency(currency) }
+        case let .selectToCurrency(currency): Task { await handleSelectToCurrency(currency) }
+        case let .toggleFavorite(currencyCode): Task { await handleToggleFavorite(currencyCode) }
         case .swapCurrencies: Task { await performSwapCurrencies() }
         case .loadCurrencies: Task { await performLoadCurrencies() }
         case .refreshExchangeRates: Task { await performRefreshExchangeRates() }
@@ -91,7 +91,7 @@ public final class ExchangeViewModel {
             for await codes in favoritesStream {
                 guard let self else { return }
 
-                self.state.favoriteCurrencyCodes = codes
+                state.favoriteCurrencyCodes = codes
             }
         }
     }

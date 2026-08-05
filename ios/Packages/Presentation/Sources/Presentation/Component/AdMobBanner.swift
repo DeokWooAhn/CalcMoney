@@ -19,7 +19,11 @@ struct AdMobBanner: View {
 
     /// iOS 26의 떠 있는 탭바는 safe area를 차지하지 않으므로 배너를 그 위로 올린다.
     private var tabBarClearance: CGFloat {
-        if #available(iOS 26.0, *) { 68 } else { 0 }
+        if #available(iOS 26.0, *) {
+            68
+        } else {
+            0
+        }
     }
 }
 

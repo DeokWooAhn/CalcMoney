@@ -10,7 +10,7 @@ struct ExchangeRateRepositoryImplTests {
         currencyUnit: "USD",
         currencyName: "미국 달러",
         baseRate: 1441.1,
-        fetchedAt: 1_000,
+        fetchedAt: 1000,
         rateDate: "2026-08-04",
     )
     private static let jpy = ExchangeRateData(
@@ -18,7 +18,7 @@ struct ExchangeRateRepositoryImplTests {
         currencyUnit: "JPY",
         currencyName: "일본 엔",
         baseRate: 9.65,
-        fetchedAt: 1_000,
+        fetchedAt: 1000,
         rateDate: "2026-08-04",
     )
 
@@ -48,7 +48,7 @@ struct ExchangeRateRepositoryImplTests {
         let (repository, remote) = try await makeRepository(
             remoteRates: [Self.usd],
             cachedRates: [Self.usd, Self.jpy],
-            nowMillis: 1_000 + 11 * 60 * 60 * 1000,
+            nowMillis: 1000 + 11 * 60 * 60 * 1000,
         )
 
         let rate = try await repository.exchangeRate(from: "USD", to: "KRW")
@@ -70,7 +70,7 @@ struct ExchangeRateRepositoryImplTests {
         let (repository, remote) = try await makeRepository(
             remoteRates: [fresh],
             cachedRates: [Self.usd],
-            nowMillis: 1_000 + 13 * 60 * 60 * 1000,
+            nowMillis: 1000 + 13 * 60 * 60 * 1000,
         )
 
         let rate = try await repository.exchangeRate(from: "USD", to: "KRW")
@@ -85,7 +85,7 @@ struct ExchangeRateRepositoryImplTests {
         let (repository, _) = try await makeRepository(
             remoteRates: nil,
             cachedRates: [Self.usd],
-            nowMillis: 1_000 + 13 * 60 * 60 * 1000,
+            nowMillis: 1000 + 13 * 60 * 60 * 1000,
         )
 
         let rate = try await repository.exchangeRate(from: "USD", to: "KRW")
@@ -116,7 +116,7 @@ struct ExchangeRateRepositoryImplTests {
     func 두_통화_간_환율은_기준_환율의_비율() async throws {
         let (repository, _) = try await makeRepository(
             cachedRates: [Self.usd, Self.jpy],
-            nowMillis: 1_000,
+            nowMillis: 1000,
         )
 
         let rate = try await repository.exchangeRate(from: "USD", to: "JPY")
@@ -128,14 +128,14 @@ struct ExchangeRateRepositoryImplTests {
     func 없는_통화는_rateNotFound() async throws {
         let (repository, _) = try await makeRepository(
             cachedRates: [Self.usd],
-            nowMillis: 1_000,
+            nowMillis: 1000,
         )
 
         do {
             _ = try await repository.exchangeRate(from: "USD", to: "VND")
             Issue.record("오류가 발생해야 한다")
         } catch let error as ExchangeRateError {
-            guard case .rateNotFound(let code, _) = error, code == "VND" else {
+            guard case let .rateNotFound(code, _) = error, code == "VND" else {
                 Issue.record("rateNotFound(VND)가 아닌 오류: \(error)")
                 return
             }
@@ -149,12 +149,12 @@ struct ExchangeRateRepositoryImplTests {
             currencyUnit: "KRW",
             currencyName: "대한민국 원",
             baseRate: 1.0,
-            fetchedAt: 1_000,
+            fetchedAt: 1000,
             rateDate: "2026-08-04",
         )
         let (repository, _) = try await makeRepository(
             cachedRates: [Self.usd, krwDuplicate, Self.jpy],
-            nowMillis: 1_000,
+            nowMillis: 1000,
         )
 
         let currencies = try await repository.supportedCurrencies()
@@ -170,13 +170,13 @@ struct ExchangeRateRepositoryImplTests {
         let (repository, remote) = try await makeRepository(
             remoteRates: [Self.usd],
             cachedRates: [Self.jpy],
-            nowMillis: 1_000,
+            nowMillis: 1000,
         )
 
         try await repository.refreshExchangeRates()
 
         #expect(await remote.fetchCallCount == 1)
-        #expect(try await repository.latestFetchedAt() == 1_000)
+        #expect(try await repository.latestFetchedAt() == 1000)
     }
 }
 

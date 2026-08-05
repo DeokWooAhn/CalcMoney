@@ -58,14 +58,18 @@ enum CalculatorFormatting {
         var attributed = AttributedString(formatted)
         let chars = Array(formatted)
 
-        for (index, char) in chars.enumerated()
-            where operators.contains(char) && !isUnaryMinus(chars, index: index) {
+        for index in chars.indices where isBinaryOperator(chars, index: index) {
             let start = attributed.index(attributed.startIndex, offsetByCharacters: index)
             let end = attributed.index(start, offsetByCharacters: 1)
             attributed[start..<end].foregroundColor = operatorColor
         }
 
         return attributed
+    }
+
+    /// 강조 대상인 이항 연산자인지 판별한다. 단항 마이너스는 제외한다.
+    private static func isBinaryOperator(_ chars: [Character], index: Int) -> Bool {
+        operators.contains(chars[index]) && !isUnaryMinus(chars, index: index)
     }
 
     private static func isUnaryMinus(_ chars: [Character], index: Int) -> Bool {

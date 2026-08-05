@@ -14,7 +14,7 @@ struct CalculatorHistoryDataSourceTests {
     }
 
     @Test("추가한 기록을 스트림 초기값으로 방출한다")
-    func 추가한_기록을_스트림_초기값으로_방출한다() async throws {
+    func 추가한_기록을_스트림_초기값으로_방출한다() async {
         let dataSource = makeDataSource()
         let history = CalculatorHistory(expression: "1+1", result: "2")
 
@@ -27,7 +27,7 @@ struct CalculatorHistoryDataSourceTests {
     }
 
     @Test("기록은 최대 20개까지만 보관한다")
-    func 기록은_최대_20개까지만_보관한다() async throws {
+    func 기록은_최대_20개까지만_보관한다() async {
         let dataSource = makeDataSource()
 
         for index in 1...25 {
@@ -43,7 +43,7 @@ struct CalculatorHistoryDataSourceTests {
     }
 
     @Test("기록 전체 삭제 후 빈 목록을 방출한다")
-    func 기록_전체_삭제_후_빈_목록을_방출한다() async throws {
+    func 기록_전체_삭제_후_빈_목록을_방출한다() async {
         let dataSource = makeDataSource()
         await dataSource.addHistory(CalculatorHistory(expression: "1+1", result: "2"))
 

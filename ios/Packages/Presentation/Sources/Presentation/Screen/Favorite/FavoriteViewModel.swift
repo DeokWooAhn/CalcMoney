@@ -68,7 +68,7 @@ public final class FavoriteViewModel {
         loadTask = Task { [weak self] in
             guard let self else { return }
 
-            self.state.isLoading = true
+            state.isLoading = true
 
             let currencyByCode = Dictionary(
                 availableCurrencies.map { ($0.code, $0) },
@@ -81,16 +81,16 @@ public final class FavoriteViewModel {
                 if code == base.code { continue }
                 if currencyByCode[code] == nil { continue }
 
-                if let rate = try? await self.exchangeUseCases.getExchangeRate(from: base.code, to: code) {
+                if let rate = try? await exchangeUseCases.getExchangeRate(from: base.code, to: code) {
                     nextRates[code] = rate
                 }
             }
 
             if Task.isCancelled { return }
 
-            self.cachedRates = nextRates
-            self.rebuildItems(finishLoading: true)
-            self.loadTask = nil
+            cachedRates = nextRates
+            rebuildItems(finishLoading: true)
+            loadTask = nil
         }
     }
 

@@ -66,7 +66,7 @@ struct ExchangeView: View {
         .task {
             for await sideEffect in viewModel.sideEffects() {
                 switch sideEffect {
-                case .showSnackbar(let message):
+                case let .showSnackbar(message):
                     snackbar.show(message)
                 }
             }

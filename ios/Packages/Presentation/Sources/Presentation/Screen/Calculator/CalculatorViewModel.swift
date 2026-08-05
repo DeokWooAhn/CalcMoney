@@ -52,27 +52,37 @@ public final class CalculatorViewModel {
 
     public func send(_ intent: CalculatorIntent) {
         switch intent {
-        case .input(let token):
-            switch token {
-            case .number(let value): handleNumberInput(value)
-            case .operator(let value): handleOperatorInput(value)
-            case .dot: handleDotInput()
-            case .parenthesis: handleParenthesisInput()
-            }
-
-        case .moveCursor(let position): handleMoveCursor(position)
+        case let .input(token): handleInput(token)
+        case let .moveCursor(position): handleMoveCursor(position)
         case .delete: handleDelete()
         case .clear: handleClear()
         case .calculate: Task { await handleCalculate() }
         case .clearHistory: Task { await handleClearHistory() }
-        case .selectMainExchangeCurrency(let currency): Task { await handleSelectMainExchangeCurrency(currency) }
-        case .selectExchangeCurrency(let currency): Task { await handleSelectExchangeCurrency(currency) }
-        case .toggleFavorite(let currencyCode): Task { await handleToggleFavorite(currencyCode) }
+        default: sendCurrencyIntent(intent)
+        }
+    }
+
+    /// 통화 선택·즐겨찾기 관련 의도 처리 (send의 분기 복잡도를 낮추기 위해 분리)
+    private func sendCurrencyIntent(_ intent: CalculatorIntent) {
+        switch intent {
+        case let .selectMainExchangeCurrency(currency): Task { await handleSelectMainExchangeCurrency(currency) }
+        case let .selectExchangeCurrency(currency): Task { await handleSelectExchangeCurrency(currency) }
+        case let .toggleFavorite(currencyCode): Task { await handleToggleFavorite(currencyCode) }
         case .swapExchangeCurrencies: Task { await performSwapExchangeCurrencies() }
+        default: break
         }
     }
 
     // MARK: - 수식 입력
+
+    private func handleInput(_ token: CalculatorToken) {
+        switch token {
+        case let .number(value): handleNumberInput(value)
+        case let .operator(value): handleOperatorInput(value)
+        case .dot: handleDotInput()
+        case .parenthesis: handleParenthesisInput()
+        }
+    }
 
     private func handleMoveCursor(_ newCursorPosition: Int) {
         state.cursorPosition = min(max(newCursorPosition, 0), state.expression.count)
@@ -85,7 +95,7 @@ public final class CalculatorViewModel {
                 .showSnackbar(message: L("숫자는 최대 \(CalculatorExpressionReducer.maxNumberLength) 자리까지 입력 가능합니다.")),
             )
 
-        case .updated(let newState):
+        case let .updated(newState):
             state = newState
         }
     }
@@ -197,7 +207,7 @@ public final class CalculatorViewModel {
             for await histories in historiesStream {
                 guard let self else { return }
 
-                self.state.histories = histories.map {
+                state.histories = histories.map {
                     CalculatorState.HistoryItem(expression: $0.expression, result: $0.result)
                 }
             }
@@ -208,13 +218,15 @@ public final class CalculatorViewModel {
             for await codes in favoritesStream {
                 guard let self else { return }
 
-                self.state.favoriteCurrencyCodes = codes
+                state.favoriteCurrencyCodes = codes
             }
         }
     }
+}
 
-    // MARK: - 통화 선택·환율
+// MARK: - 통화 선택·환율
 
+extension CalculatorViewModel {
     private func handleToggleFavorite(_ currencyCode: String) async {
         let wasFavorite = state.favoriteCurrencyCodes.contains(currencyCode)
 

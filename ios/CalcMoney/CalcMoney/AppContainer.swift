@@ -14,83 +14,108 @@ final class AppContainer {
     let adConsentManager = AdConsentManager()
 
     init() {
+        let repositories = Repositories()
+        let useCases = UseCases(repositories: repositories)
+
+        calculatorViewModel = CalculatorViewModel(
+            calculatorUseCases: useCases.calculator,
+            exchangeUseCases: useCases.exchange,
+            favoriteUseCases: useCases.favorite,
+            currencySelectionUseCases: useCases.currencySelection,
+        )
+        exchangeViewModel = ExchangeViewModel(
+            exchangeUseCases: useCases.exchange,
+            favoriteUseCases: useCases.favorite,
+            currencySelectionUseCases: useCases.currencySelection,
+        )
+        favoriteViewModel = FavoriteViewModel(
+            exchangeUseCases: useCases.exchange,
+            favoriteUseCases: useCases.favorite,
+        )
+        mainViewModel = MainViewModel(themeUseCases: useCases.theme)
+    }
+}
+
+/// Data 레이어 구현체 모음 (Android `RepositoryModule` 대응)
+private struct Repositories {
+    let exchangeRate: any ExchangeRateRepository
+    let currencySelection: any CurrencySelectionRepository
+    let favoriteCurrency: any FavoriteCurrencyRepository
+    let theme: any ThemeRepository
+    let calculatorHistory: any CalculatorHistoryRepository
+
+    init() {
         // GoogleService-Info.plist가 없으면 원격 환율은 "준비 안 됨" 상태로 동작한다.
         let isFirebaseConfigured = FirebaseBootstrap.configureIfAvailable()
-
         let remoteDataSource: any ExchangeRateRemoteDataSource = isFirebaseConfigured
             ? FirestoreExchangeRateDataSource()
             : UnavailableExchangeRateRemoteDataSource()
 
-        // 로컬 캐시 저장소를 못 만들면 앱이 정상 동작할 수 없으므로 즉시 종료한다 (Android Room과 동일).
-        let localDataSource = try! ExchangeRateLocalDataSource.make()
-
-        let exchangeRateRepository = ExchangeRateRepositoryImpl(
+        exchangeRate = ExchangeRateRepositoryImpl(
             remoteDataSource: remoteDataSource,
-            localDataSource: localDataSource,
+            localDataSource: Self.makeExchangeRateLocalDataSource(),
         )
-        let currencySelectionRepository = CurrencySelectionRepositoryImpl(
-            dataSource: CurrencySelectionDataSource(),
-        )
-        let favoriteCurrencyRepository = FavoriteCurrencyRepositoryImpl(
-            dataSource: FavoriteCurrencyDataSource(),
-        )
-        let themeRepository = ThemeRepositoryImpl(dataSource: ThemePreferenceDataSource())
-        let calculatorHistoryRepository = CalculatorHistoryRepositoryImpl(
-            dataSource: CalculatorHistoryDataSource(),
-        )
+        currencySelection = CurrencySelectionRepositoryImpl(dataSource: CurrencySelectionDataSource())
+        favoriteCurrency = FavoriteCurrencyRepositoryImpl(dataSource: FavoriteCurrencyDataSource())
+        theme = ThemeRepositoryImpl(dataSource: ThemePreferenceDataSource())
+        calculatorHistory = CalculatorHistoryRepositoryImpl(dataSource: CalculatorHistoryDataSource())
+    }
 
+    /// 로컬 캐시 저장소를 만들지 못하면 앱이 정상 동작할 수 없으므로 즉시 중단한다 (Android Room과 동일).
+    private static func makeExchangeRateLocalDataSource() -> ExchangeRateLocalDataSource {
+        do {
+            return try ExchangeRateLocalDataSource.make()
+        } catch {
+            fatalError("Failed to create the exchange rate cache store: \(error)")
+        }
+    }
+}
+
+/// Domain 유스케이스 묶음 모음 (Android의 UseCases 그룹 대응)
+private struct UseCases {
+    let calculator: CalculatorUseCases
+    let exchange: ExchangeUseCases
+    let favorite: FavoriteUseCases
+    let currencySelection: CurrencySelectionUseCases
+    let theme: ThemeUseCases
+
+    init(repositories: Repositories) {
         let calculateExpression = CalculateExpressionUseCase()
-        let calculatorUseCases = CalculatorUseCases(
-            addHistory: AddCalculatorHistoryUseCase(repository: calculatorHistoryRepository),
+
+        calculator = CalculatorUseCases(
+            addHistory: AddCalculatorHistoryUseCase(repository: repositories.calculatorHistory),
             calculateExpression: calculateExpression,
-            clearHistory: ClearCalculatorHistoriesUseCase(repository: calculatorHistoryRepository),
+            clearHistory: ClearCalculatorHistoriesUseCase(repository: repositories.calculatorHistory),
             extractRepeatOperation: ExtractRepeatOperationUseCase(),
-            getHistory: GetCalculatorHistoriesUseCase(repository: calculatorHistoryRepository),
+            getHistory: GetCalculatorHistoriesUseCase(repository: repositories.calculatorHistory),
         )
-        let exchangeUseCases = ExchangeUseCases(
+        exchange = ExchangeUseCases(
             exchangeAmount: CalculateExchangeAmountUseCase(),
             convertExchangeAmount: ConvertExchangeAmountUseCase(calculateExpression: calculateExpression),
-            getExchangeRate: GetExchangeRateUseCase(repository: exchangeRateRepository),
-            getLatestRateDate: GetLatestExchangeRateDateUseCase(repository: exchangeRateRepository),
-            getLatestFetchedAt: GetLatestExchangeRateFetchedAtUseCase(repository: exchangeRateRepository),
-            refreshExchangeRates: RefreshExchangeRatesUseCase(repository: exchangeRateRepository),
-            getSupportedCurrencies: GetSupportedCurrenciesUseCase(repository: exchangeRateRepository),
+            getExchangeRate: GetExchangeRateUseCase(repository: repositories.exchangeRate),
+            getLatestRateDate: GetLatestExchangeRateDateUseCase(repository: repositories.exchangeRate),
+            getLatestFetchedAt: GetLatestExchangeRateFetchedAtUseCase(repository: repositories.exchangeRate),
+            refreshExchangeRates: RefreshExchangeRatesUseCase(repository: repositories.exchangeRate),
+            getSupportedCurrencies: GetSupportedCurrenciesUseCase(repository: repositories.exchangeRate),
         )
-        let favoriteUseCases = FavoriteUseCases(
+        favorite = FavoriteUseCases(
             buildFavoriteRates: BuildFavoriteRatesUseCase(),
-            getFavoriteCurrencies: GetFavoriteCurrenciesUseCase(repository: favoriteCurrencyRepository),
-            toggleFavoriteCurrency: ToggleFavoriteCurrencyUseCase(repository: favoriteCurrencyRepository),
+            getFavoriteCurrencies: GetFavoriteCurrenciesUseCase(repository: repositories.favoriteCurrency),
+            toggleFavoriteCurrency: ToggleFavoriteCurrencyUseCase(repository: repositories.favoriteCurrency),
         )
-        let currencySelectionUseCases = CurrencySelectionUseCases(
-            getCalculatorSelection: GetCalculatorSelectionUseCase(repository: currencySelectionRepository),
-            saveCalculatorMainCurrency: SaveCalculatorMainCurrencyUseCase(repository: currencySelectionRepository),
-            saveCalculatorSubCurrency: SaveCalculatorSubCurrencyUseCase(repository: currencySelectionRepository),
-            saveCalculatorSelection: SaveCalculatorSelectionUseCase(repository: currencySelectionRepository),
-            getExchangeSelection: GetExchangeSelectionUseCase(repository: currencySelectionRepository),
-            saveExchangeFromCurrency: SaveExchangeFromCurrencyUseCase(repository: currencySelectionRepository),
-            saveExchangeToCurrency: SaveExchangeToCurrencyUseCase(repository: currencySelectionRepository),
-            saveExchangeSelection: SaveExchangeSelectionUseCase(repository: currencySelectionRepository),
+        currencySelection = CurrencySelectionUseCases(
+            getCalculatorSelection: GetCalculatorSelectionUseCase(repository: repositories.currencySelection),
+            saveCalculatorMainCurrency: SaveCalculatorMainCurrencyUseCase(repository: repositories.currencySelection),
+            saveCalculatorSubCurrency: SaveCalculatorSubCurrencyUseCase(repository: repositories.currencySelection),
+            saveCalculatorSelection: SaveCalculatorSelectionUseCase(repository: repositories.currencySelection),
+            getExchangeSelection: GetExchangeSelectionUseCase(repository: repositories.currencySelection),
+            saveExchangeFromCurrency: SaveExchangeFromCurrencyUseCase(repository: repositories.currencySelection),
+            saveExchangeToCurrency: SaveExchangeToCurrencyUseCase(repository: repositories.currencySelection),
+            saveExchangeSelection: SaveExchangeSelectionUseCase(repository: repositories.currencySelection),
         )
-        let themeUseCases = ThemeUseCases(
-            getThemeMode: GetThemeModeUseCase(repository: themeRepository),
-            saveThemeMode: SaveThemeModeUseCase(repository: themeRepository),
+        theme = ThemeUseCases(
+            getThemeMode: GetThemeModeUseCase(repository: repositories.theme),
+            saveThemeMode: SaveThemeModeUseCase(repository: repositories.theme),
         )
-
-        calculatorViewModel = CalculatorViewModel(
-            calculatorUseCases: calculatorUseCases,
-            exchangeUseCases: exchangeUseCases,
-            favoriteUseCases: favoriteUseCases,
-            currencySelectionUseCases: currencySelectionUseCases,
-        )
-        exchangeViewModel = ExchangeViewModel(
-            exchangeUseCases: exchangeUseCases,
-            favoriteUseCases: favoriteUseCases,
-            currencySelectionUseCases: currencySelectionUseCases,
-        )
-        favoriteViewModel = FavoriteViewModel(
-            exchangeUseCases: exchangeUseCases,
-            favoriteUseCases: favoriteUseCases,
-        )
-        mainViewModel = MainViewModel(themeUseCases: themeUseCases)
     }
 }

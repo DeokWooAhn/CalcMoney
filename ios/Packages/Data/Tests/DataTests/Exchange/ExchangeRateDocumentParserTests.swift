@@ -7,7 +7,7 @@ struct ExchangeRateDocumentParserTests {
     private func document(
         exists: Bool = true,
         rateDate: String? = "2026-08-04",
-        rateFetchedAt: Int? = 1_000,
+        rateFetchedAt: Int? = 1000,
         fetchedAt: Int? = nil,
         rates: Any? = nil,
         lastError: String? = nil,
@@ -37,7 +37,7 @@ struct ExchangeRateDocumentParserTests {
             currencyUnit: "USD",
             currencyName: "미국 달러",
             baseRate: 1441.1,
-            fetchedAt: 1_000,
+            fetchedAt: 1000,
             rateDate: "2026-08-04",
         ))
         #expect(result[1].currencyUnit == "JPY")
@@ -73,10 +73,10 @@ struct ExchangeRateDocumentParserTests {
         let rates: [Any] = [["code": "USD", "baseRate": 1441.1]]
 
         let result = try ExchangeRateDocumentParser.parse(
-            document(rateFetchedAt: nil, fetchedAt: 2_000, rates: rates),
+            document(rateFetchedAt: nil, fetchedAt: 2000, rates: rates),
         )
 
-        #expect(result[0].fetchedAt == 2_000)
+        #expect(result[0].fetchedAt == 2000)
     }
 
     @Test("문서가 없으면 notReady 오류를 던진다")

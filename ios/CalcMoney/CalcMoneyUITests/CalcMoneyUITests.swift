@@ -18,7 +18,7 @@ final class CalcMoneyUITests: XCTestCase {
     }
 
     @MainActor
-    func test계산기에서_기본_계산이_동작한다() throws {
+    func test계산기에서_기본_계산이_동작한다() {
         let app = launchApp()
 
         app.buttons["keypad.7"].tap()
@@ -33,7 +33,7 @@ final class CalcMoneyUITests: XCTestCase {
     }
 
     @MainActor
-    func test계산_기록_패널이_열린다() throws {
+    func test계산_기록_패널이_열린다() {
         let app = launchApp()
 
         app.buttons["계산 기록"].tap()
@@ -45,7 +45,7 @@ final class CalcMoneyUITests: XCTestCase {
     }
 
     @MainActor
-    func test환율_탭으로_전환하면_기준_금액_입력이_보인다() throws {
+    func test환율_탭으로_전환하면_기준_금액_입력이_보인다() {
         let app = launchApp()
 
         app.tabBars.buttons["환율"].tap()
@@ -61,7 +61,7 @@ final class CalcMoneyUITests: XCTestCase {
     }
 
     @MainActor
-    func test설정_탭에서_테마_카드가_보인다() throws {
+    func test설정_탭에서_테마_카드가_보인다() {
         let app = launchApp()
 
         app.tabBars.buttons["설정"].tap()

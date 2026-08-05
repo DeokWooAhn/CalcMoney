@@ -20,7 +20,7 @@ public final class MainViewModel {
             for await mode in themeModeStream {
                 guard let self else { return }
 
-                self.themeMode = mode
+                themeMode = mode
             }
         }
     }
@@ -36,9 +36,9 @@ public final class MainViewModel {
     }
 }
 
-extension ThemeMode {
+public extension ThemeMode {
     /// SwiftUI `preferredColorScheme` 값. 시스템 설정을 따를 때는 nil.
-    public var colorScheme: ColorScheme? {
+    var colorScheme: ColorScheme? {
         switch self {
         case .system: nil
         case .light: .light

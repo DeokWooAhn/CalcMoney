@@ -71,15 +71,16 @@ jobs:
           swift --version
 
       # 순수 Swift 코드에서 clang 정적 분석기가 잡아내는 건 거의 없다.
-      # 실질적인 게이트는 경고를 오류로 승격시키는 쪽이라 둘을 같이 건다.
+      # 실질적인 게이트는 경고를 오류로 승격시키는 쪽인데, 이 설정은 명령줄로 넘기지 않는다.
+      # 명령줄 인자는 Firebase·GoogleMobileAds 같은 SPM 의존성 타깃까지 전파되고,
+      # 그 패키지들이 쓰는 -suppress-warnings 와 충돌해 컴파일이 실패한다.
+      # 대신 CalcMoney.xcodeproj 의 프로젝트 레벨 빌드 설정에 넣어 우리 타깃에만 적용한다.
       - name: Analyze
         run: |
           xcodebuild analyze \
             -workspace CalcMoney.xcworkspace \
             -scheme CalcMoney \
-            -destination "$DESTINATION" \
-            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES \
-            GCC_TREAT_WARNINGS_AS_ERRORS=YES
+            -destination "$DESTINATION"
 
       # CalcMoney.xctestplan 하나가 앱 타깃 2개 + 패키지 테스트 3개를 모두 포함한다.
       # 워크스페이스로 실행해야 패키지 테스트 타깃이 플랜에서 해석된다.

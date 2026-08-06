@@ -5,7 +5,7 @@ public actor FavoriteCurrencyDataSource {
     private static let favoriteCodesKey = "favorite_codes"
 
     private let userDefaults: UserDefaults
-    private var continuations: [UUID: AsyncStream<[String]>.Continuation] = [:]
+    private var registry = ContinuationRegistry<[String]>()
 
     public init(userDefaults: UserDefaults = .suite(named: "favorite_currencies")) {
         self.userDefaults = userDefaults
@@ -49,19 +49,16 @@ public actor FavoriteCurrencyDataSource {
     }
 
     private func register(id: UUID, continuation: AsyncStream<[String]>.Continuation) {
-        continuations[id] = continuation
+        guard registry.register(id: id, continuation: continuation) else { return }
+
         continuation.yield(currentCodes())
     }
 
     private func unregister(id: UUID) {
-        continuations[id] = nil
+        registry.unregister(id: id)
     }
 
     private func broadcast() {
-        let codes = currentCodes()
-
-        for continuation in continuations.values {
-            continuation.yield(codes)
-        }
+        registry.yield(currentCodes())
     }
 }

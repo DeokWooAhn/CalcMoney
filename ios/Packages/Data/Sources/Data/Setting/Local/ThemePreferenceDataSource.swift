@@ -6,7 +6,7 @@ public actor ThemePreferenceDataSource {
     private static let themeModeKey = "theme_mode"
 
     private let userDefaults: UserDefaults
-    private var continuations: [UUID: AsyncStream<ThemeMode>.Continuation] = [:]
+    private var registry = ContinuationRegistry<ThemeMode>()
 
     public init(userDefaults: UserDefaults = .suite(named: "theme_preferences")) {
         self.userDefaults = userDefaults
@@ -35,19 +35,16 @@ public actor ThemePreferenceDataSource {
     }
 
     private func register(id: UUID, continuation: AsyncStream<ThemeMode>.Continuation) {
-        continuations[id] = continuation
+        guard registry.register(id: id, continuation: continuation) else { return }
+
         continuation.yield(currentThemeMode())
     }
 
     private func unregister(id: UUID) {
-        continuations[id] = nil
+        registry.unregister(id: id)
     }
 
     private func broadcast() {
-        let themeMode = currentThemeMode()
-
-        for continuation in continuations.values {
-            continuation.yield(themeMode)
-        }
+        registry.yield(currentThemeMode())
     }
 }

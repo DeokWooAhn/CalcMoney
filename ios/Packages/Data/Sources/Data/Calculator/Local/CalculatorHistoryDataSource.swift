@@ -11,7 +11,7 @@ public actor CalculatorHistoryDataSource {
     private static let maxHistoryCount = 20
 
     private let userDefaults: UserDefaults
-    private var continuations: [UUID: AsyncStream<[CalculatorHistory]>.Continuation] = [:]
+    private var registry = ContinuationRegistry<[CalculatorHistory]>()
 
     public init(userDefaults: UserDefaults = .suite(named: "calculator_history")) {
         self.userDefaults = userDefaults
@@ -62,19 +62,16 @@ public actor CalculatorHistoryDataSource {
     }
 
     private func register(id: UUID, continuation: AsyncStream<[CalculatorHistory]>.Continuation) {
-        continuations[id] = continuation
+        guard registry.register(id: id, continuation: continuation) else { return }
+
         continuation.yield(currentHistories())
     }
 
     private func unregister(id: UUID) {
-        continuations[id] = nil
+        registry.unregister(id: id)
     }
 
     private func broadcast() {
-        let histories = currentHistories()
-
-        for continuation in continuations.values {
-            continuation.yield(histories)
-        }
+        registry.yield(currentHistories())
     }
 }

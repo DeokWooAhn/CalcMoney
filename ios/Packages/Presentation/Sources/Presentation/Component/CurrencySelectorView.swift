@@ -41,6 +41,8 @@ struct CurrencySelectorView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
+            // 내용 높이가 20pt 안팎이라 패딩만으로는 최소 터치 영역에 못 미친다.
+            .frame(minHeight: 44)
             .background(AppColors.currencySelectorSurface)
             .clipShape(RoundedRectangle(cornerRadius: compact ? 14 : 12))
             .overlay(

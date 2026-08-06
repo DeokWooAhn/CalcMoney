@@ -88,6 +88,9 @@ private struct CurrencyPickerRow: View {
                 Image(systemName: isFavorite ? "heart.fill" : "heart")
                     .font(.system(size: 18))
                     .foregroundStyle(isFavorite ? .red : .secondary)
+                    // .plain 스타일은 여백을 더하지 않아 아이콘 크기가 그대로 탭 영역이 된다.
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isFavorite ? L("즐겨찾기 해제") : L("즐겨찾기 추가"))

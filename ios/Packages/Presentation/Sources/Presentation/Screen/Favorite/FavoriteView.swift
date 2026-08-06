@@ -164,6 +164,8 @@ private struct FavoriteRateCard: View {
             HStack(spacing: 8) {
                 Text(item.currency.flagEmoji)
                     .font(.system(size: 22))
+                    // 바로 옆 통화 코드·이름과 같은 정보라 스크린 리더가 이모지 이름까지 읽을 필요가 없다.
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 0) {
                     Text(item.currency.code)
@@ -181,6 +183,9 @@ private struct FavoriteRateCard: View {
                     Image(systemName: "heart.fill")
                         .font(.system(size: 18))
                         .foregroundStyle(.red)
+                        // Android 대응 구현은 requiredSize(48.dp). iOS HIG 최소치는 44pt다.
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(L("즐겨찾기 해제"))

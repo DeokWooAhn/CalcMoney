@@ -77,6 +77,14 @@ struct DeleteCalculatorButton: View {
                     .onEnded { _ in stopRepeating() },
             )
             .accessibilityLabel(L("지우기"))
+            // 다른 키와 달리 Button이 아니라 Text + DragGesture라 VoiceOver가 버튼으로 읽지 않는다.
+            // 게다가 VoiceOver 활성화(더블 탭)는 DragGesture를 전달하지 않아 삭제 자체가 불가능하다.
+            // 반복 삭제(길게 누르기)는 제스처에 그대로 두고, 활성화 시 한 글자 삭제를 별도로 연결한다.
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { onDeleteAction() }
+            // 손가락을 뗀 시점에만 반복을 멈추면, 누른 채로 화면이 사라질 때(예: 다른 손가락으로 탭 전환)
+            // onEnded가 오지 않아 반복 Task가 영원히 남는다. 화면이 사라질 때도 확실히 정리한다.
+            .onDisappear { stopRepeating() }
     }
 
     private func startRepeatingIfNeeded() {

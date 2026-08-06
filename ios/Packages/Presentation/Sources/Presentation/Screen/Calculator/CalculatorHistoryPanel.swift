@@ -20,10 +20,16 @@ struct CalculatorHistoryPanel: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(colors.preview)
+                        // 아이콘은 14pt라 그대로 두면 탭 영역이 최소치에 한참 못 미친다.
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
+                // 아이콘만 있어 VoiceOver가 읽을 이름이 없다.
+                .accessibilityLabel(L("계산 기록 닫기"))
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            // 닫기 버튼이 44pt를 차지하므로 세로 여백을 줄여 헤더 높이를 유지한다.
+            .padding(.vertical, 2)
 
             if histories.isEmpty {
                 Spacer()

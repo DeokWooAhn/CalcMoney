@@ -79,6 +79,9 @@ private struct CalculatorCurrencySelectorRow: View {
                     .frame(width: 36, height: 36)
                     .background(colors.keyBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 18))
+                    // 원의 지름은 36pt로 두고 터치 영역만 iOS HIG 최소치인 44pt로 넓힌다.
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .accessibilityLabel(L("환율 통화 교환"))
 

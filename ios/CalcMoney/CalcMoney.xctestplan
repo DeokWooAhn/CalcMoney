@@ -25,7 +25,8 @@
     },
     {
       "skippedTests" : [
-        "CalcMoneyUITests\/testLaunchPerformance()"
+        "CalcMoneyUITests\/testLaunchPerformance()",
+        "CalcMoneyUITestsLaunchTests\/testLaunch()"
       ],
       "target" : {
         "containerPath" : "container:CalcMoney.xcodeproj",

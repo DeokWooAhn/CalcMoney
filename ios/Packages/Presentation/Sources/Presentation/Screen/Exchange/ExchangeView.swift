@@ -48,7 +48,8 @@ struct ExchangeView: View {
         }
         .background(AppColors.background)
         .refreshable {
-            viewModel.send(.refreshExchangeRates)
+            // send(_:)는 Task만 띄우고 반환해서 새로고침 표시가 즉시 사라진다.
+            await viewModel.refreshExchangeRates()
         }
         .overlay(alignment: .topTrailing) {
             if viewModel.state.isLoading {

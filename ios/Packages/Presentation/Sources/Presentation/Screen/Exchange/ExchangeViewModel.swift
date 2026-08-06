@@ -16,6 +16,7 @@ public final class ExchangeViewModel {
     @ObservationIgnored private let currencySelectionUseCases: CurrencySelectionUseCases
     @ObservationIgnored private let sideEffectBus = SideEffectBus<ExchangeSideEffect>()
     @ObservationIgnored private var observeFavoritesTask: Task<Void, Never>?
+    @ObservationIgnored private var loadCurrenciesTask: Task<Void, Never>?
 
     public init(
         exchangeUseCases: ExchangeUseCases,
@@ -26,16 +27,25 @@ public final class ExchangeViewModel {
         self.favoriteUseCases = favoriteUseCases
         self.currencySelectionUseCases = currencySelectionUseCases
 
-        Task { await performLoadCurrencies() }
+        loadCurrenciesTask = Task { await performLoadCurrencies() }
         observeFavorites()
     }
 
     deinit {
         observeFavoritesTask?.cancel()
+        loadCurrenciesTask?.cancel()
     }
 
     public func sideEffects() -> AsyncStream<ExchangeSideEffect> {
         sideEffectBus.stream()
+    }
+
+    /// 완료를 기다려야 하는 호출자를 위한 진입점 (당겨서 새로고침 등).
+    ///
+    /// `send(.refreshExchangeRates)`는 내부에서 Task를 띄우고 즉시 반환하므로
+    /// `.refreshable`에 그대로 쓰면 새로고침 표시가 곧바로 사라진다.
+    public func refreshExchangeRates() async {
+        await performRefreshExchangeRates()
     }
 
     public func send(_ intent: ExchangeIntent) {
@@ -110,9 +120,10 @@ public final class ExchangeViewModel {
     }
 
     private func performLoadCurrencies() async {
-        do {
-            state.isLoading = true
+        state.isLoading = true
+        defer { state.isLoading = false }
 
+        do {
             let currencies = try await exchangeUseCases.getSupportedCurrencies()
             let savedSelection = try? await currencySelectionUseCases.getExchangeSelection()
             let selected = resolveExchangeCurrencies(
@@ -125,13 +136,11 @@ public final class ExchangeViewModel {
             state.availableCurrencies = currencies
             state.fromCurrency = selected.from
             state.toCurrency = selected.to
-            state.isLoading = false
 
             if selected.from != nil, selected.to != nil {
                 await performFetchExchangeRate()
             }
         } catch {
-            state.isLoading = false
             sideEffectBus.send(.showSnackbar(message: error.exchangeRateErrorMessage))
         }
     }
@@ -182,9 +191,12 @@ public final class ExchangeViewModel {
         let requestedFrom = fromCurrency.code
         let requestedTo = toCurrency.code
 
-        do {
-            state.isLoading = true
+        state.isLoading = true
+        // 아래 stale 응답 가드가 조기 반환하므로 해제를 각 경로에 흩어 두면 빠뜨리기 쉽다.
+        // 실제로 그 경로에서 스피너가 계속 도는 상태로 남을 수 있어 한 곳에 모은다.
+        defer { state.isLoading = false }
 
+        do {
             // 여기서 일시 중단(suspend)되어 응답을 기다림 (동시성 꼬임 방지)
             let rate = try await exchangeUseCases.getExchangeRate(from: requestedFrom, to: requestedTo)
             let rateDate = try await exchangeUseCases.getLatestRateDate()
@@ -198,18 +210,17 @@ public final class ExchangeViewModel {
             state.exchangeRate = rate
             state.exchangeRateDate = rateDate
             state.exchangeRateFetchedAt = fetchedAt
-            state.isLoading = false
             state.toAmount = exchangeUseCases.exchangeAmount(fromAmount: state.fromAmount, rate: rate)
         } catch {
-            state.isLoading = false
             sideEffectBus.send(.showSnackbar(message: error.exchangeRateErrorMessage))
         }
     }
 
     private func performRefreshExchangeRates() async {
-        do {
-            state.isLoading = true
+        state.isLoading = true
+        defer { state.isLoading = false }
 
+        do {
             try await exchangeUseCases.refreshExchangeRates()
 
             let currencies = try await exchangeUseCases.getSupportedCurrencies()
@@ -230,12 +241,10 @@ public final class ExchangeViewModel {
             state.exchangeRate = rate
             state.exchangeRateDate = rateDate
             state.exchangeRateFetchedAt = fetchedAt
-            state.isLoading = false
             state.toAmount = exchangeUseCases.exchangeAmount(fromAmount: state.fromAmount, rate: rate)
 
             sideEffectBus.send(.showSnackbar(message: L("환율 정보를 새로고침했습니다.")))
         } catch {
-            state.isLoading = false
             sideEffectBus.send(.showSnackbar(message: error.exchangeRateErrorMessage))
         }
     }

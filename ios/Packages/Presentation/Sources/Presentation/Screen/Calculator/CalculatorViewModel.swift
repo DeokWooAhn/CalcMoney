@@ -20,6 +20,7 @@ public final class CalculatorViewModel {
     @ObservationIgnored private let sideEffectBus = SideEffectBus<CalculatorSideEffect>()
     @ObservationIgnored private var observeHistoriesTask: Task<Void, Never>?
     @ObservationIgnored private var observeFavoritesTask: Task<Void, Never>?
+    @ObservationIgnored private var intentTask: Task<Void, Never>?
 
     public init(
         calculatorUseCases: CalculatorUseCases,
@@ -36,13 +37,16 @@ public final class CalculatorViewModel {
             convertExchangeAmount: exchangeUseCases.convertExchangeAmount,
         )
 
-        Task { await performLoadCurrencies() }
+        // Android도 Orbit container의 onCreate 블록에서 부르므로 초기 로드가 인텐트 큐에 들어간다.
+        // 로드가 끝나기 전에 사용자가 통화를 바꿔도 순서가 뒤집히지 않는다.
+        enqueue { await $0.performLoadCurrencies() }
         observeSavedData()
     }
 
     deinit {
         observeHistoriesTask?.cancel()
         observeFavoritesTask?.cancel()
+        intentTask?.cancel()
     }
 
     /// 화면이 구독하는 일회성 이벤트 스트림. 구독마다 새 스트림을 반환한다.
@@ -56,19 +60,50 @@ public final class CalculatorViewModel {
         case let .moveCursor(position): handleMoveCursor(position)
         case .delete: handleDelete()
         case .clear: handleClear()
-        case .calculate: Task { await handleCalculate() }
-        case .clearHistory: Task { await handleClearHistory() }
+        case .calculate: enqueue { await $0.handleCalculate() }
+        case .clearHistory: enqueue { await $0.handleClearHistory() }
         default: sendCurrencyIntent(intent)
+        }
+    }
+
+    /// 비동기 의도를 앞선 의도가 끝난 뒤에 하나씩 처리한다.
+    ///
+    /// 각 핸들러는 저장·환율 조회에서 중단되는데, 그 사이 MainActor가 풀려 다음 의도가
+    /// 아직 갱신되지 않은 state를 읽는다. 그대로 두면 이런 일이 생긴다.
+    /// - "=" 연타가 같은 수식을 두 번 저장하고 반복 연산(`repeatOperation`)을 건너뛴다
+    /// - 통화를 빠르게 두 번 바꾸면 저장이 끝나는 순서에 따라 탭 순서와 다른 통화가 남고,
+    ///   환율이 이전 통화쌍 기준으로 계산된 값으로 표시된다
+    ///
+    /// 연타를 버리지 않고 이어 붙이는 이유는 "=" 반복이 반복 연산이라는 정상 기능이기 때문이다
+    /// (1+2= → 3, = → 5, = → 7). Android는 Orbit의 intent 파이프라인이 이 직렬화를 대신해 준다.
+    ///
+    /// 큐 안에서 도는 핸들러는 `enqueue`를 다시 부르면 안 된다. 자기 완료를 기다려 교착된다.
+    /// (`performFetchExchangeRate`처럼 핸들러가 부르는 함수는 평범한 메서드로 남겨 둔다.)
+    private func enqueue(_ operation: @escaping (CalculatorViewModel) async -> Void) {
+        let previousTask = intentTask
+        intentTask = Task { [weak self] in
+            await previousTask?.value
+            guard let self else { return }
+
+            await operation(self)
         }
     }
 
     /// 통화 선택·즐겨찾기 관련 의도 처리 (send의 분기 복잡도를 낮추기 위해 분리)
     private func sendCurrencyIntent(_ intent: CalculatorIntent) {
         switch intent {
-        case let .selectMainExchangeCurrency(currency): Task { await handleSelectMainExchangeCurrency(currency) }
-        case let .selectExchangeCurrency(currency): Task { await handleSelectExchangeCurrency(currency) }
-        case let .toggleFavorite(currencyCode): Task { await handleToggleFavorite(currencyCode) }
-        case .swapExchangeCurrencies: Task { await performSwapExchangeCurrencies() }
+        case let .selectMainExchangeCurrency(currency):
+            enqueue { await $0.handleSelectMainExchangeCurrency(currency) }
+
+        case let .selectExchangeCurrency(currency):
+            enqueue { await $0.handleSelectExchangeCurrency(currency) }
+
+        case let .toggleFavorite(currencyCode):
+            enqueue { await $0.handleToggleFavorite(currencyCode) }
+
+        case .swapExchangeCurrencies:
+            enqueue { await $0.performSwapExchangeCurrencies() }
+
         default: break
         }
     }

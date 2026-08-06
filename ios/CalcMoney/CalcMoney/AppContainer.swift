@@ -1,5 +1,6 @@
 import Data
 import Domain
+import OSLog
 import Presentation
 
 /// 앱 전체 의존성을 조립하는 수동 DI 컨테이너 (Android의 Hilt 모듈 대응)
@@ -61,11 +62,24 @@ private struct Repositories {
         calculatorHistory = CalculatorHistoryRepositoryImpl(dataSource: CalculatorHistoryDataSource())
     }
 
-    /// 로컬 캐시 저장소를 만들지 못하면 앱이 정상 동작할 수 없으므로 즉시 중단한다 (Android Room과 동일).
+    /// 디스크 캐시를 만들지 못하면 메모리 캐시로 내려간다.
+    ///
+    /// 저장소 손상·용량 부족·마이그레이션 실패로 앱 전체를 못 쓰게 만드는 것보다,
+    /// 이번 실행 동안만 캐시가 유지되는 편이 낫다. 계산기 탭은 캐시와 무관하게 동작하고
+    /// 환율도 원격에서 다시 받아 오므로 기능은 그대로 살아 있다.
     private static func makeExchangeRateLocalDataSource() -> ExchangeRateLocalDataSource {
+        let logger = Logger(subsystem: "com.ahn.CalcMoney", category: "AppContainer")
+
         do {
             return try ExchangeRateLocalDataSource.make()
         } catch {
+            logger.error("Falling back to in-memory exchange rate cache: \(error.localizedDescription)")
+        }
+
+        do {
+            return try ExchangeRateLocalDataSource.make(inMemory: true)
+        } catch {
+            // 메모리 저장소마저 실패하면 SwiftData 스키마 자체가 깨졌다는 뜻이라 복구할 방법이 없다.
             fatalError("Failed to create the exchange rate cache store: \(error)")
         }
     }

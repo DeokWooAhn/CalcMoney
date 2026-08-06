@@ -12,6 +12,9 @@ final class CalcMoneyUITests: XCTestCase {
     private func launchApp() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments += ["-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
+        // UMP 동의 흐름을 끈다. AdConsentManager.uiTestingLaunchArgument와 값이 같아야 한다.
+        // 하이픈으로 시작하면 UserDefaults가 키-값으로 해석해 뒤 인자를 삼키므로 붙이지 않는다.
+        app.launchArguments.append("UI_TESTING")
         app.launch()
 
         return app
@@ -32,6 +35,38 @@ final class CalcMoneyUITests: XCTestCase {
         )
     }
 
+    /// 지우기 키는 반복 삭제 때문에 Button이 아니라 Text + DragGesture로 만들어져 있다.
+    /// 접근성 특성과 활성화 동작을 붙이지 않으면 VoiceOver 사용자가 삭제를 아예 할 수 없다.
+    @MainActor
+    func test지우기_키가_버튼으로_노출되고_활성화하면_한_글자를_지운다() {
+        let app = launchApp()
+
+        app.buttons["keypad.7"].tap()
+        app.buttons["keypad.8"].tap()
+
+        XCTAssertTrue(
+            app.staticTexts["78"].waitForExistence(timeout: 5),
+            "수식 78이 표시되어야 한다",
+        )
+
+        let deleteKey = app.buttons["지우기"]
+        XCTAssertTrue(
+            deleteKey.waitForExistence(timeout: 5),
+            "지우기 키가 접근성 트리에 버튼으로 노출되어야 한다",
+        )
+
+        deleteKey.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["7"].waitForExistence(timeout: 5),
+            "한 글자가 지워져 수식이 7이 되어야 한다",
+        )
+        XCTAssertFalse(
+            app.staticTexts["78"].exists,
+            "지우기 후에는 수식 78이 남아 있으면 안 된다",
+        )
+    }
+
     @MainActor
     func test계산_기록_패널이_열린다() {
         let app = launchApp()
@@ -41,6 +76,28 @@ final class CalcMoneyUITests: XCTestCase {
         XCTAssertTrue(
             app.staticTexts["계산 기록"].waitForExistence(timeout: 5),
             "계산 기록 패널이 표시되어야 한다",
+        )
+    }
+
+    /// 아이콘만 있던 닫기 버튼에 이름과 최소 터치 영역(44pt)을 붙였다.
+    /// 라벨이 없으면 VoiceOver가 읽지 못하고, 이 조회 자체도 실패한다.
+    @MainActor
+    func test계산_기록_패널을_닫기_버튼으로_닫는다() {
+        let app = launchApp()
+
+        app.buttons["계산 기록"].tap()
+
+        let panelTitle = app.staticTexts["계산 기록"]
+        XCTAssertTrue(panelTitle.waitForExistence(timeout: 5), "계산 기록 패널이 표시되어야 한다")
+
+        let closeButton = app.buttons["계산 기록 닫기"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 5), "닫기 버튼이 이름을 가진 버튼으로 노출되어야 한다")
+
+        closeButton.tap()
+
+        XCTAssertFalse(
+            panelTitle.waitForExistence(timeout: 2),
+            "닫기 버튼을 누르면 계산 기록 패널이 사라져야 한다",
         )
     }
 

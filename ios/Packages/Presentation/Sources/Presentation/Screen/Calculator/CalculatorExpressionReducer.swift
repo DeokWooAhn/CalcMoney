@@ -41,6 +41,16 @@ struct CalculatorExpressionReducer {
     }
 
     func inputOperator(_ currentState: CalculatorState, operatorSymbol: String) -> CalculatorState? {
+        // operatorSymbol 은 public 한 CalculatorToken.operator(String) 을 통해 들어오므로 임의 문자열일 수 있다.
+        // 아래 치환에서 쓰던 Character(operatorSymbol) 은 빈 문자열이거나 두 글자 이상이면 런타임 트랩이라
+        // 여기서 한 글자짜리 연산자인지 먼저 확인하고, 아니면 아무 일도 하지 않는다.
+        guard operatorSymbol.count == 1,
+              let operatorCharacter = operatorSymbol.first,
+              Self.operators.contains(operatorCharacter)
+        else {
+            return nil
+        }
+
         let chars = Array(currentState.expression)
         let cursorPosition = currentState.cursorPosition
 
@@ -57,7 +67,7 @@ struct CalculatorExpressionReducer {
 
         if let charBefore, Self.operators.contains(charBefore) {
             var newChars = chars
-            newChars[cursorPosition - 1] = Character(operatorSymbol)
+            newChars[cursorPosition - 1] = operatorCharacter
 
             return buildNewExpressionState(
                 currentState: currentState,

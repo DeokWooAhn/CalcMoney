@@ -15,6 +15,18 @@ struct SnackbarView: View {
     }
 }
 
+extension View {
+    func snackbarOverlay(_ presenter: SnackbarPresenter) -> some View {
+        overlay(alignment: .bottom) {
+            if let message = presenter.message {
+                SnackbarView(message: message)
+                    .padding(.bottom, 8)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+    }
+}
+
 /// 스낵바 표시 상태를 관리하는 헬퍼. 표시 후 2초 뒤 자동으로 사라진다.
 @MainActor
 @Observable

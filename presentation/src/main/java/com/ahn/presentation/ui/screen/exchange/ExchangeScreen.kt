@@ -27,10 +27,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -43,8 +41,7 @@ import com.ahn.presentation.ui.component.AdMobBanner
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.ExchangeInputContainer
 import com.ahn.presentation.util.formatExchangeRateDate
-import com.ahn.presentation.util.showSnackbarImmediately
-import kotlinx.coroutines.launch
+import com.ahn.presentation.util.rememberShowSnackbar
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import java.util.Locale
@@ -56,16 +53,11 @@ fun ExchangeRoute(
 ) {
     val state by viewModel.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    val showSnackbar = rememberShowSnackbar(snackbarHostState)
 
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
-            is ExchangeContract.SideEffect.ShowSnackBar -> {
-                scope.launch {
-                    snackbarHostState.showSnackbarImmediately(sideEffect.message.asString(context))
-                }
-            }
+            is ExchangeContract.SideEffect.ShowSnackBar -> showSnackbar(sideEffect.message)
         }
     }
 

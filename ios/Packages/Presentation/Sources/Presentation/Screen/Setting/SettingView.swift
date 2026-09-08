@@ -65,13 +65,7 @@ struct SettingView: View {
             .padding(.vertical, 12)
         }
         .background(AppColors.background)
-        .overlay(alignment: .bottom) {
-            if let message = snackbar.message {
-                SnackbarView(message: message)
-                    .padding(.bottom, 8)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
+        .snackbarOverlay(snackbar)
         .task {
             for await sideEffect in exchangeViewModel.sideEffects() {
                 switch sideEffect {

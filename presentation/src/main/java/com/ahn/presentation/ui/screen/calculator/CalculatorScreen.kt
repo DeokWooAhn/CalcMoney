@@ -42,7 +42,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -53,7 +52,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.InterceptPlatformTextInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
@@ -82,10 +80,9 @@ import com.ahn.presentation.ui.theme.currencySelectorBorder
 import com.ahn.presentation.ui.theme.currencySelectorSurface
 import com.ahn.presentation.util.ThousandSeparatorTransformation
 import com.ahn.presentation.util.formatNumberWithCommas
-import com.ahn.presentation.util.showSnackbarImmediately
+import com.ahn.presentation.util.rememberShowSnackbar
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 
@@ -95,16 +92,11 @@ fun CalculatorRoute(
 ) {
     val state by viewModel.collectAsState()
     val snackBarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    val showSnackbar = rememberShowSnackbar(snackBarHostState)
 
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
-            is CalculatorContract.SideEffect.ShowSnackBar -> {
-                scope.launch {
-                    snackBarHostState.showSnackbarImmediately(sideEffect.message.asString(context))
-                }
-            }
+            is CalculatorContract.SideEffect.ShowSnackBar -> showSnackbar(sideEffect.message)
         }
     }
 

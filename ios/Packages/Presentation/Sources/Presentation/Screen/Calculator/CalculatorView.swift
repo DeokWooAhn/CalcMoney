@@ -28,18 +28,19 @@ struct CalculatorView: View {
                 colors: colors,
                 showHistory: $showHistory,
                 histories: viewModel.state.histories,
-                onIntent: { viewModel.send($0) },
+                onClearHistory: { viewModel.send(.clearHistory) },
+                onKeyTap: { key in
+                    if key == .history {
+                        showHistory.toggle()
+                    } else if let intent = key.toIntent() {
+                        viewModel.send(intent)
+                    }
+                },
             )
         }
         .padding(.horizontal, 16)
         .background(colors.background.ignoresSafeArea())
-        .overlay(alignment: .bottom) {
-            if let message = snackbar.message {
-                SnackbarView(message: message)
-                    .padding(.bottom, 8)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
+        .snackbarOverlay(snackbar)
         .task {
             for await sideEffect in viewModel.sideEffects() {
                 switch sideEffect {
@@ -195,32 +196,13 @@ private struct CursorBar: View {
     }
 }
 
-/// 계산기 키 정의 (Android `CalculatorKey` 대응)
-private enum CalculatorKey: Hashable {
-    case history
-    case clear
-    case parenthesis
-    case dot
-    case delete
-    case calculate
-    case number(String)
-    case operatorKey(displayText: String, inputValue: String)
-}
-
-private let calculatorKeyRows: [[CalculatorKey]] = [
-    [.history, .clear, .parenthesis, .operatorKey(displayText: "÷", inputValue: "÷")],
-    [.number("7"), .number("8"), .number("9"), .operatorKey(displayText: "×", inputValue: "×")],
-    [.number("4"), .number("5"), .number("6"), .operatorKey(displayText: "−", inputValue: "-")],
-    [.number("1"), .number("2"), .number("3"), .operatorKey(displayText: "+", inputValue: "+")],
-    [.dot, .number("0"), .delete, .calculate],
-]
-
 /// 키패드 + 계산 기록 오버레이 (Android `CalculatorKeypadArea` 대응)
 private struct CalculatorKeypadView: View {
     let colors: CalculatorColors
     @Binding var showHistory: Bool
     let histories: [CalculatorState.HistoryItem]
-    let onIntent: (CalculatorIntent) -> Void
+    let onClearHistory: () -> Void
+    let onKeyTap: (CalculatorKey) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -230,8 +212,7 @@ private struct CalculatorKeypadView: View {
                         CalculatorKeyButton(
                             key: key,
                             colors: colors,
-                            onHistoryTap: { showHistory.toggle() },
-                            onIntent: onIntent,
+                            onTap: { onKeyTap(key) },
                         )
                     }
                 }
@@ -245,7 +226,8 @@ private struct CalculatorKeypadView: View {
                     CalculatorHistoryPanel(
                         histories: histories,
                         colors: colors,
-                        onClearHistory: { onIntent(.clearHistory) },
+                        onClearHistory: onClearHistory,
+
                         onDismiss: { showHistory = false },
                     )
                     .frame(width: buttonSize * 3.5, height: buttonSize * 4 - 12)
@@ -261,8 +243,7 @@ private struct CalculatorKeypadView: View {
 private struct CalculatorKeyButton: View {
     let key: CalculatorKey
     let colors: CalculatorColors
-    let onHistoryTap: () -> Void
-    let onIntent: (CalculatorIntent) -> Void
+    let onTap: () -> Void
 
     var body: some View {
         switch key {
@@ -273,7 +254,7 @@ private struct CalculatorKeyButton: View {
                 iconColor: colors.keyText,
                 hasShadow: colors.hasKeyShadow,
                 accessibilityLabel: L("계산 기록"),
-                action: onHistoryTap,
+                action: onTap,
             )
 
         case .clear:
@@ -282,7 +263,7 @@ private struct CalculatorKeyButton: View {
                 backgroundColor: colors.keyBackground,
                 textColor: colors.destructive,
                 hasShadow: colors.hasKeyShadow,
-                action: { onIntent(.clear) },
+                action: onTap,
             )
 
         case .parenthesis:
@@ -291,7 +272,7 @@ private struct CalculatorKeyButton: View {
                 backgroundColor: colors.keyBackground,
                 textColor: colors.keyText,
                 hasShadow: colors.hasKeyShadow,
-                action: { onIntent(.input(.parenthesis)) },
+                action: onTap,
             )
 
         case .dot:
@@ -300,7 +281,7 @@ private struct CalculatorKeyButton: View {
                 backgroundColor: colors.keyBackground,
                 textColor: colors.keyText,
                 hasShadow: colors.hasKeyShadow,
-                action: { onIntent(.input(.dot)) },
+                action: onTap,
             )
 
         case .delete:
@@ -308,7 +289,7 @@ private struct CalculatorKeyButton: View {
                 backgroundColor: colors.keyBackground,
                 textColor: colors.destructive,
                 hasShadow: colors.hasKeyShadow,
-                onDeleteAction: { onIntent(.delete) },
+                onDeleteAction: onTap,
             )
 
         case .calculate:
@@ -317,7 +298,7 @@ private struct CalculatorKeyButton: View {
                 backgroundColor: colors.equalsBackground,
                 textColor: .white,
                 hasShadow: colors.hasKeyShadow,
-                action: { onIntent(.calculate) },
+                action: onTap,
             )
 
         case let .number(value):
@@ -326,16 +307,16 @@ private struct CalculatorKeyButton: View {
                 backgroundColor: colors.keyBackground,
                 textColor: colors.keyText,
                 hasShadow: colors.hasKeyShadow,
-                action: { onIntent(.input(.number(value))) },
+                action: onTap,
             )
 
-        case let .operatorKey(displayText, inputValue):
+        case let .operatorKey(displayText, _):
             CalculatorButton(
                 text: displayText,
                 backgroundColor: colors.operatorKeyBackground,
                 textColor: colors.keyText,
                 hasShadow: colors.hasKeyShadow,
-                action: { onIntent(.input(.operator(inputValue))) },
+                action: onTap,
             )
         }
     }

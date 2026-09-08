@@ -1,16 +1,27 @@
 import Foundation
 
+private let sideEffectBufferSize = 64
+
 /// ViewModel의 일회성 이벤트를 여러 구독자에게 전달하는 버스 (Orbit `postSideEffect` 대응)
 ///
 /// 화면이 사라졌다 다시 나타나도 `stream()`으로 새로 구독할 수 있다.
+/// 구독자가 없는 동안 보낸 이벤트는 버퍼에 쌓아 두고 다음 구독자에게 전달한다
+/// (Android Orbit의 `Channel(Channel.BUFFERED)` 동작과 맞춘 것).
 @MainActor
 final class SideEffectBus<Effect: Sendable> {
     private var continuations: [UUID: AsyncStream<Effect>.Continuation] = [:]
+    private var pending: [Effect] = []
 
     func stream() -> AsyncStream<Effect> {
         AsyncStream { continuation in
             let id = UUID()
             continuations[id] = continuation
+
+            for effect in pending {
+                continuation.yield(effect)
+            }
+            pending.removeAll()
+
             continuation.onTermination = { [weak self] _ in
                 Task { @MainActor in
                     self?.continuations[id] = nil
@@ -20,6 +31,14 @@ final class SideEffectBus<Effect: Sendable> {
     }
 
     func send(_ effect: Effect) {
+        guard !continuations.isEmpty else {
+            if pending.count >= sideEffectBufferSize {
+                pending.removeFirst()
+            }
+            pending.append(effect)
+            return
+        }
+
         for continuation in continuations.values {
             continuation.yield(effect)
         }

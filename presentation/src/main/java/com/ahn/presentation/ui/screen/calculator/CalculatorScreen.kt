@@ -154,10 +154,15 @@ fun CalculatorScreen(
             CalculatorKeypadArea(
                 showHistory = showHistory,
                 histories = state.histories,
-                onHistoryClick = { showHistory = !showHistory },
                 onClearHistory = { onIntent(CalculatorContract.Intent.ClearHistory) },
                 onDismissHistory = { showHistory = false },
-                onIntent = onIntent,
+                onKeyClick = { key ->
+                    if (key == CalculatorKey.History) {
+                        showHistory = !showHistory
+                    } else {
+                        key.toIntent()?.let(onIntent)
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -327,10 +332,9 @@ private fun CalculatorDisplay(
 private fun CalculatorKeypadArea(
     showHistory: Boolean,
     histories: List<CalculatorContract.HistoryItem>,
-    onHistoryClick: () -> Unit,
     onClearHistory: () -> Unit,
     onDismissHistory: () -> Unit,
-    onIntent: (CalculatorContract.Intent) -> Unit,
+    onKeyClick: (CalculatorKey) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier = modifier) {
@@ -350,8 +354,7 @@ private fun CalculatorKeypadArea(
                 rowGap = rowGap,
                 keypadWidth = keypadWidth,
                 modifier = Modifier.fillMaxWidth(),
-                onHistoryClick = onHistoryClick,
-                onIntent = onIntent,
+                onKeyClick = onKeyClick,
             )
 
             CalculatorHistoryOverlay(
@@ -369,60 +372,6 @@ private fun CalculatorKeypadArea(
     }
 }
 
-private sealed interface CalculatorKey {
-    data object History : CalculatorKey
-
-    data object Clear : CalculatorKey
-
-    data object Parenthesis : CalculatorKey
-
-    data object Dot : CalculatorKey
-
-    data object Delete : CalculatorKey
-
-    data object Calculate : CalculatorKey
-
-    data class Number(val value: String) : CalculatorKey
-
-    data class Operator(
-        val displayText: String,
-        val inputValue: String,
-    ) : CalculatorKey
-}
-
-private val calculatorKeyRows = listOf(
-    listOf(
-        CalculatorKey.History,
-        CalculatorKey.Clear,
-        CalculatorKey.Parenthesis,
-        CalculatorKey.Operator(displayText = "÷", inputValue = "÷"),
-    ),
-    listOf(
-        CalculatorKey.Number("7"),
-        CalculatorKey.Number("8"),
-        CalculatorKey.Number("9"),
-        CalculatorKey.Operator(displayText = "×", inputValue = "×"),
-    ),
-    listOf(
-        CalculatorKey.Number("4"),
-        CalculatorKey.Number("5"),
-        CalculatorKey.Number("6"),
-        CalculatorKey.Operator(displayText = "−", inputValue = "-"),
-    ),
-    listOf(
-        CalculatorKey.Number("1"),
-        CalculatorKey.Number("2"),
-        CalculatorKey.Number("3"),
-        CalculatorKey.Operator(displayText = "+", inputValue = "+"),
-    ),
-    listOf(
-        CalculatorKey.Dot,
-        CalculatorKey.Number("0"),
-        CalculatorKey.Delete,
-        CalculatorKey.Calculate,
-    ),
-)
-
 @Composable
 private fun CalculatorKeypad(
     rows: List<List<CalculatorKey>>,
@@ -430,8 +379,7 @@ private fun CalculatorKeypad(
     buttonGap: Dp,
     rowGap: Dp,
     keypadWidth: Dp,
-    onHistoryClick: () -> Unit,
-    onIntent: (CalculatorContract.Intent) -> Unit,
+    onKeyClick: (CalculatorKey) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -448,8 +396,7 @@ private fun CalculatorKeypad(
                     CalculatorKeyButton(
                         key = key,
                         modifier = Modifier.size(buttonSize),
-                        onHistoryClick = onHistoryClick,
-                        onIntent = onIntent,
+                        onClick = { onKeyClick(key) },
                     )
                 }
             }
@@ -460,8 +407,7 @@ private fun CalculatorKeypad(
 @Composable
 private fun CalculatorKeyButton(
     key: CalculatorKey,
-    onHistoryClick: () -> Unit,
-    onIntent: (CalculatorContract.Intent) -> Unit,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (key) {
@@ -471,7 +417,7 @@ private fun CalculatorKeyButton(
             backgroundColor = MaterialTheme.colorScheme.buttonFunction,
             contentColor = MaterialTheme.colorScheme.buttonTextSecondary,
             contentDescription = stringResource(R.string.calculator_history),
-            onClick = onHistoryClick,
+            onClick = onClick,
         )
 
         CalculatorKey.Clear -> CalculatorButton(
@@ -479,7 +425,7 @@ private fun CalculatorKeyButton(
             modifier = modifier,
             backgroundColor = MaterialTheme.colorScheme.buttonFunction,
             textColor = MaterialTheme.colorScheme.buttonTextSecondary,
-            onClick = { onIntent(CalculatorContract.Intent.Clear) },
+            onClick = onClick,
         )
 
         CalculatorKey.Parenthesis -> CalculatorButton(
@@ -487,21 +433,13 @@ private fun CalculatorKeyButton(
             modifier = modifier,
             backgroundColor = MaterialTheme.colorScheme.buttonFunction,
             textColor = MaterialTheme.colorScheme.buttonTextSecondary,
-            onClick = {
-                onIntent(
-                    CalculatorContract.Intent.Input(CalculatorToken.Parenthesis),
-                )
-            },
+            onClick = onClick,
         )
 
         CalculatorKey.Dot -> CalculatorButton(
             text = ".",
             modifier = modifier,
-            onClick = {
-                onIntent(
-                    CalculatorContract.Intent.Input(CalculatorToken.Dot),
-                )
-            },
+            onClick = onClick,
         )
 
         CalculatorKey.Delete -> DeleteCalculatorButton(
@@ -509,35 +447,27 @@ private fun CalculatorKeyButton(
             modifier = modifier,
             backgroundColor = MaterialTheme.colorScheme.buttonFunction,
             textColor = MaterialTheme.colorScheme.buttonTextSecondary,
-            onDeleteAction = { onIntent(CalculatorContract.Intent.Delete) },
+            onDeleteAction = onClick,
         )
 
         CalculatorKey.Calculate -> CalculatorButton(
             text = "=",
             modifier = modifier,
             backgroundColor = MaterialTheme.colorScheme.buttonOperator,
-            onClick = { onIntent(CalculatorContract.Intent.Calculate) },
+            onClick = onClick,
         )
 
         is CalculatorKey.Number -> CalculatorButton(
             text = key.value,
             modifier = modifier,
-            onClick = {
-                onIntent(
-                    CalculatorContract.Intent.Input(CalculatorToken.Number(key.value)),
-                )
-            },
+            onClick = onClick,
         )
 
         is CalculatorKey.Operator -> CalculatorButton(
             text = key.operatorText(),
             modifier = modifier,
             backgroundColor = MaterialTheme.colorScheme.buttonOperator,
-            onClick = {
-                onIntent(
-                    CalculatorContract.Intent.Input(CalculatorToken.Operator(key.inputValue)),
-                )
-            },
+            onClick = onClick,
         )
     }
 }

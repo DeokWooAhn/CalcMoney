@@ -80,6 +80,7 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 
 | 작업 | 스킬 |
 |---|---|
+| 코드 리뷰, PR·diff 검토 | `.claude/skills/review/SKILL.md` |
 | Android 새 화면/ViewModel 추가, MVI 패턴 | `.claude/skills/mvi-screen/SKILL.md` |
 | Android 테스트 작성 | `.claude/skills/testing/SKILL.md` |
 | Android 릴리스·배포·CI | `.claude/skills/release-deploy/SKILL.md` |

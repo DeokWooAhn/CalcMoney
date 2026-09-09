@@ -6,6 +6,18 @@
 - 사용자가 "수정해줘", "만들어줘", "배포해줘"처럼 직접 변경을 요청한 경우에만 파일·Git·외부 시스템을 변경한다.
 - 관련 없는 사용자 변경은 보존하고, 커밋·푸시 범위에 포함하지 않는다.
 - 주석, KDoc, 테스트 설명, 커밋 메시지는 한국어로 작성한다. 코드 식별자와 로그 메시지는 영어로 작성한다.
+- 새 의존성을 `gradle/libs.versions.toml`이나 각 `Package.swift`에 임의로 추가하지 않는다.
+  목적과 대안, 앱 크기·빌드 시간 영향을 설명하고 승인을 받은 뒤 추가한다.
+- 여러 파일을 건드리는 작업은 변경할 파일과 설계를 먼저 요약해 보여주고 확인을 받는다.
+
+## 보안·프라이버시
+
+- API 키, 키스토어 비밀번호, 토큰을 코드나 저장소 파일에 두지 않는다. AdMob·서명 시크릿은 CI
+  환경 변수로, 수출입은행 키는 Cloud Functions의 Firebase secret으로만 관리한다.
+- 로그와 Crashlytics에 개인 식별 정보나 사용자 입력값을 남기지 않는다. 계산식·금액처럼 사용자가
+  입력한 값도 로그로 내보내지 않는다.
+- Firestore 규칙을 넓히지 않는다. `exchangeRates/latest` 공개 읽기 외에는 열지 않고 앱 쓰기도
+  허용하지 않는다.
 
 ## 프로젝트 구조
 
@@ -42,6 +54,17 @@ ios/Packages/Presentation   -> Domain                         # SwiftUI, Observa
 - `CalcMoney.xcworkspace` + `CalcMoney.xctestplan`으로 열어야 `Domain`/`Data`/`Presentation`
   패키지 테스트가 test plan에 잡힌다. `.xcodeproj`만 열면 빠진다.
 
+## Android에서 쓰지 않는 것
+
+아래는 현재 코드베이스에 위반이 없다. 새로 들이지 않는다.
+
+- 레거시 비동기: `AsyncTask`, 직접 만든 `Thread`·`java.util.Timer`·`Handler`. 코루틴을 쓴다.
+- 레이아웃 XML, `LayoutInflater`, `findViewById`. 화면은 Compose로만 만든다.
+  `res/drawable`, `res/values-*` 같은 리소스 XML은 해당하지 않는다.
+- `SharedPreferences`. 키-값 저장은 DataStore를 쓴다.
+- HTTP 클라이언트(Retrofit, Ktor, Volley, `HttpURLConnection`)와 JSON 파서(Gson, Moshi).
+  이 앱은 환율 API를 직접 호출하지 않고 Firestore가 네트워크 레이어다. 필요해 보이면 먼저 묻는다.
+
 ## Android 화면·MVI·데이터 작업
 
 - 새 화면은 `presentation/ui/screen/<feature>/`에 `Contract`, `ViewModel`, `Screen` 세 파일로 구성한다.
@@ -55,6 +78,16 @@ ios/Packages/Presentation   -> Domain                         # SwiftUI, Observa
 - Room 스키마를 바꾸면 DB 버전과 migration을 추가하고 `data/schemas/` JSON도 커밋한다.
 - 새 Repository·DataStore는 `data/di/`의 Module과 Qualifier까지 함께 배선한다.
 - 새 AdMob 배너를 추가하면 `presentation/build.gradle.kts`의 buildType별 리소스와 CI 환경 변수를 함께 수정한다.
+- 사용자에게 보이는 문자열은 `res/values/strings.xml`에 정의하고 `values-ko`를 함께 채운다.
+  Composable이나 ViewModel에 표시 문자열을 직접 쓰지 않는다.
+- 상호작용 요소는 최소 48dp 터치 영역을 확보한다. 아이콘·이미지에는 `contentDescription`을 주고
+  장식용이면 `null`을 명시한다.
+- `Screen` 컴포저블과 재사용 컴포넌트에는 `@Preview`를 최소 하나 둔다. ViewModel을 배선하는
+  `Route`에는 두지 않는다.
+- Composable 본문에서 상태를 바꾸거나 비즈니스 로직을 실행하지 않는다. `LaunchedEffect`,
+  `DisposableEffect` 같은 side-effect API를 쓴다.
+- `Context`를 ViewModel이나 깊은 컴포저블 계층으로 넘기지 않는다. 필요하면 그 자리에서
+  `LocalContext.current`로 얻는다.
 
 ## iOS 화면·레이어 작업
 

@@ -153,9 +153,9 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 ## Android 릴리스·배포
 
 - 기본 브랜치는 `master`다.
-- `versionCode`는 수동으로 변경하지 않는다. `v*` 태그 푸시 시 CI가
-  `10000 + GITHUB_RUN_NUMBER`로 정하고, 태그의 `v`를 뺀 값이 `versionName`이 된다.
-- 앱 릴리스는 `master` 병합 후 `v*` 태그를 푸시하면 signed AAB가 Google Play internal 트랙에 업로드된다.
+- `versionCode`는 수동으로 변경하지 않는다. `android-v*` 태그 푸시 시 CI가
+  `10000 + GITHUB_RUN_NUMBER`로 정하고, 태그의 `android-v`를 뺀 값이 `versionName`이 된다.
+- 앱 릴리스는 `master` 병합 후 `android-v*` 태그를 푸시하면 signed AAB가 Google Play internal 트랙에 업로드된다.
 - Firebase App Distribution은 workflow dispatch로만 실행한다.
 - `functions/**`, `firebase.json`, `firestore.rules`, `.firebaserc` 변경은 `master` 푸시 후 Firebase 배포를 유발한다.
   Firestore는 `exchangeRates/latest`만 공개 읽기를 허용하고 앱 쓰기는 허용하지 않는다.

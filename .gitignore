@@ -21,6 +21,10 @@ functions/.env
 functions/.env.*
 firebase-debug.log
 firebase-debug.*.log
+
+# Gradle 실행 로그
+/tests.log
+
 .claude/settings.local.json
 
 # 서명 (키는 CI 시크릿에만 둔다)

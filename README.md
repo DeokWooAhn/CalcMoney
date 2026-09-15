@@ -116,6 +116,7 @@ Firebase Functions와 Firestore 규칙은 `functions/**`, `firebase.json`, `fire
 - [에이전트 작업 지침](AGENTS.md)
 - [프로젝트 개요와 개발 메모](CLAUDE.md)
 - [지속적 배포 안내](docs/continuous-deployment.md)
+- [AGP 9 업그레이드 계획](docs/agp-9-upgrade-plan.md)
 
 ## 라이선스
 

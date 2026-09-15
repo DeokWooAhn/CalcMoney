@@ -32,7 +32,7 @@ Kotlin 2.2 / JVM 17 / compileSdk 36 · Compose(Material3) · Hilt+KSP(kapt 없�
 ### Android 주의사항 (Gotchas)
 
 - **`./gradlew build` 는 로컬에서 실패한다.** 태스크 이름에 Release/assemble/bundle/build가 들어가면 AdMob·키스토어 시크릿 8개를 강제 검증(`error()`)하기 때문. 항상 `assembleDebug` / `test` / `detekt`를 쓸 것.
-- **versionCode를 손으로 고치지 말 것.** 릴리스는 `v*` 태그 push → CI가 `10000 + GITHUB_RUN_NUMBER`로 계산. 로컬 기본값은 `app/build.gradle.kts`의 `DEFAULT_VERSION_CODE`.
+- **versionCode를 손으로 고치지 말 것.** 릴리스는 `android-v*` 태그 push → CI가 `10000 + GITHUB_RUN_NUMBER`로 계산. 로컬 기본값은 `app/build.gradle.kts`의 `DEFAULT_VERSION_CODE`.
 - detekt는 `dev.detekt` 2.0 알파 (구 `io.gitlab.arturbosch.detekt` 아님). 모듈별 `detekt-baseline.xml` 존재.
 - 테스트는 JUnit5 플랫폼(`useJUnitPlatform()`) 위의 Kotest — JUnit4 러너로 돌리면 안 됨.
 - 앱은 환율 API를 직접 호출하지 않는다. 수출입은행 키는 Cloud Functions의 Firebase secret `KOREA_EXIM_API_KEY` 하나뿐 (`local.properties`에는 `sdk.dir`만 있으면 됨).

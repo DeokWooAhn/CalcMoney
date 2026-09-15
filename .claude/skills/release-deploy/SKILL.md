@@ -10,10 +10,10 @@ description: 릴리스, 배포, 버전 관리, CI/CD 워크플로, Firebase Func
 ## 앱 릴리스 흐름 (자동)
 
 1. `master`에 머지
-2. `v*` 태그 push (예: `v1.2.0`)
+2. `android-v*` 태그 push (예: `android-v1.2.0`)
 3. `.github/workflows/android-ci.yml`이 서명된 AAB 빌드 → Play **internal** 트랙 자동 업로드
 
-- `versionCode = 10000 + GITHUB_RUN_NUMBER`, `versionName = 태그에서 v 제거` — **절대 손으로 versionCode를 올리지 말 것**
+- `versionCode = 10000 + GITHUB_RUN_NUMBER`, `versionName = 태그에서 android-v 제거` — **절대 손으로 versionCode를 올리지 말 것**
 - 패키지명은 `com.ahn.calcmoney` 고정 (Play Console 등록명)
 - Firebase App Distribution 배포는 `workflow_dispatch` 수동 트리거 (`distribute_debug` 입력)
 

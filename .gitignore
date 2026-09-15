@@ -23,9 +23,21 @@ firebase-debug.log
 firebase-debug.*.log
 .claude/settings.local.json
 
+# 서명 (키는 CI 시크릿에만 둔다)
+*.jks
+*.keystore
+keystore.properties
+
 # iOS / Xcode
 xcuserdata/
 *.xcuserstate
 DerivedData/
 .swiftpm/xcode/
 ios/**/.build/
+
+# iOS 서명 (키는 CI 시크릿에만 둔다)
+*.p12
+*.mobileprovision
+*.cer
+*.certSigningRequest
+AuthKey_*.p8

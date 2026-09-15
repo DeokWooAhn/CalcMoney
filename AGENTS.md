@@ -164,6 +164,7 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 
 ## 상세 참고 문서
 
+- 코드 리뷰: `.claude/skills/review/SKILL.md`
 - Android 화면/MVI/레이어 배선: `.claude/skills/mvi-screen/SKILL.md`
 - Android 테스트: `.claude/skills/testing/SKILL.md`
 - Android 릴리스·CI·Firebase 배포: `.claude/skills/release-deploy/SKILL.md`

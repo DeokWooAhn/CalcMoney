@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 -renamesourcefileattribute SourceFile
+
+# 클래스를 무명 패키지로 모아 패키지 접두사만큼 DEX를 줄인다.
+# AGP 9.1부터 기본 동작이므로 그때 제거한다.
+-repackageclasses

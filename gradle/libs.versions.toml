@@ -50,6 +50,9 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
+# App Check — 버전은 firebase-bom이 정한다. provider는 빌드 타입별로 갈린다.
+firebase-appcheck-debug = { module = "com.google.firebase:firebase-appcheck-debug" }
+firebase-appcheck-playintegrity = { module = "com.google.firebase:firebase-appcheck-playintegrity" }
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

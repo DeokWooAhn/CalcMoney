@@ -16,6 +16,7 @@ let package = Package(
             name: "Data",
             dependencies: [
                 .product(name: "Domain", package: "Domain"),
+                .product(name: "FirebaseAppCheck", package: "firebase-ios-sdk"),
                 .product(name: "FirebaseFirestore", package: "firebase-ios-sdk"),
                 .product(name: "FirebaseAnalytics", package: "firebase-ios-sdk"),
                 .product(name: "FirebaseCrashlytics", package: "firebase-ios-sdk"),

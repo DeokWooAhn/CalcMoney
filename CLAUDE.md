@@ -75,6 +75,8 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 
 - 기본 브랜치는 `main`이 아니라 **`master`**.
 - 주석·KDoc·테스트 설명·커밋 메시지는 **한국어**, 코드 식별자·로그는 영어.
+- **App Check는 provider가 빌드 타입별로 갈린다.** 디버그는 debug provider, 릴리스는 Play Integrity(Android) / App Attest(iOS). Android는 `app/src/debug`·`app/src/release`의 `AppCheckInstaller.kt` 두 파일로, iOS는 `FirebaseBootstrap.swift`의 `#if DEBUG`로 분기한다. iOS는 반드시 `FirebaseApp.configure()` **이전에** factory를 지정해야 한다.
+- **로컬에서 Firestore를 읽으려면 디버그 토큰 등록이 필요하다.** 앱을 처음 디버그로 띄우면 Logcat/Xcode 콘솔에 App Check 디버그 토큰이 찍히는데, 이걸 Firebase 콘솔 App Check에 등록해야 한다. 등록 전에는 enforce가 켜진 뒤부터 읽기가 거부된다.
 
 ## 세부 규칙 (필요할 때 해당 스킬 참조)
 

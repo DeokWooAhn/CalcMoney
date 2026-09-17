@@ -140,6 +140,11 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.bundles.firebase)
 
+    // App Check — provider 구현은 src/debug, src/release에 각각 둔다.
+    // 디버그 provider가 릴리스 APK에 들어가지 않도록 빌드 타입별로 분리한다.
+    debugImplementation(libs.firebase.appcheck.debug)
+    releaseImplementation(libs.firebase.appcheck.playintegrity)
+
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.core)

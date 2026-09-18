@@ -1,0 +1,81 @@
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    width:1024px; height:500px; overflow:hidden; position:relative;
+    background:#FEFBF7;
+    font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .blob1 { position:absolute; width:620px; height:620px; border-radius:50%;
+           right:-210px; top:-170px; background:#FDF0DC; }
+  .blob2 { position:absolute; width:460px; height:460px; border-radius:50%;
+           right:-140px; bottom:-220px; background:#FBE6CB; }
+  .blob3 { position:absolute; width:300px; height:300px; border-radius:50%;
+           right:270px; bottom:-190px; background:#FDF3E4; }
+
+  .left { position:absolute; left:72px; top:98px; width:470px; }
+  h1 { font-size:50px; line-height:1.14; font-weight:700;
+       color:#26262B; letter-spacing:-1.2px; }
+  .sub { margin-top:15px; font-size:23px; font-weight:600; color:#6E6E77;
+         letter-spacing:-0.3px; }
+  .chips { margin-top:36px; display:flex; gap:20px; }
+  .chip { width:176px; height:62px; border-radius:31px; background:#fff;
+          box-shadow:0 5px 16px rgba(120,95,60,.13);
+          display:flex; align-items:center; justify-content:center;
+          font-size:27px; font-weight:700; color:#26262B; letter-spacing:.5px; }
+  .swap { margin-top:18px; margin-left:88px; width:176px; height:52px;
+          border-radius:26px; background:#F59A00;
+          box-shadow:0 5px 16px rgba(245,154,0,.34);
+          display:flex; align-items:center; justify-content:center;
+          color:#fff; font-size:25px; font-weight:700; }
+  .caption { margin-top:24px; font-size:16px; font-weight:600; color:#94949C; }
+
+  .card { position:absolute; right:74px; top:71px; width:352px; height:358px;
+          background:#fff; border-radius:30px;
+          box-shadow:0 14px 40px rgba(120,95,60,.15); padding:24px; }
+  .cardtop { display:flex; align-items:flex-start; justify-content:space-between; }
+  .bars { padding-top:10px; }
+  .bars div { height:13px; border-radius:7px; }
+  .bars div:first-child { width:70px; background:#F59A00; }
+  .bars div:last-child { width:92px; background:#FBD79A; margin-top:11px; }
+  .icon { width:110px; height:110px; border-radius:25px; overflow:hidden;
+          position:relative; display:block; }
+  .icon img { position:absolute; left:50%; top:50%; width:110px; height:110px;
+              transform:translate(-50%,-50%) scale(1.20); }
+
+  .rows { margin-top:18px; display:flex; flex-direction:column; gap:10px; }
+  .row { height:46px; border-radius:23px; background:#F2F2F4;
+         display:flex; align-items:center; justify-content:space-between;
+         padding:0 20px; font-size:18px; font-weight:600; }
+  .k { color:#84848D; }
+  .v { color:#26262B; font-weight:700; }
+  .v.accent { color:#F59A00; }
+
+  .foot { margin-top:16px; display:flex; gap:12px; justify-content:flex-end; }
+  .foot div { height:14px; border-radius:7px; }
+  .foot div:first-child { width:58px; background:#FBD79A; }
+  .foot div:last-child { width:74px; background:#F59A00; }
+</style>
+
+<div class="blob1"></div><div class="blob2"></div><div class="blob3"></div>
+
+<div class="left">
+  <h1>Simple Currency<br>Calculator</h1>
+  <div class="sub">Fast, simple currency conversion</div>
+  <div class="chips"><div class="chip">KRW</div><div class="chip">USD</div></div>
+  <div class="swap">&#8596;</div>
+  <div class="caption">Rate date and favorite currencies at a glance</div>
+</div>
+
+<div class="card">
+  <div class="cardtop">
+    <div class="bars"><div></div><div></div></div>
+    <div class="icon"><img src="_icon.png"></div>
+  </div>
+  <div class="rows">
+    <div class="row"><span class="k">1 KRW</span><span class="v accent">0.0007 USD</span></div>
+    <div class="row"><span class="k">100 USD</span><span class="v">136,830 KRW</span></div>
+    <div class="row"><span class="k">Favorites</span><span class="v">JPY &middot; EUR</span></div>
+  </div>
+  <div class="foot"><div></div><div></div></div>
+</div>

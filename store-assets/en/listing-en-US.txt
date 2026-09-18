@@ -1,0 +1,35 @@
+=== APP NAME (max 30) ===
+Simple Currency Calculator
+
+=== SHORT DESCRIPTION (max 80) ===
+Type a calculation, see it converted instantly. 23 currencies, works offline.
+
+=== FULL DESCRIPTION (max 4000) ===
+Simple Currency Calculator does one thing well: it converts while you calculate.
+
+CALCULATE AND CONVERT AT ONCE
+Type an expression like 1,500 + 3,500 and watch both the running total and its converted value update as you go. No switching apps, no copying numbers between them. Tap the two currency chips at the top to flip the direction instantly.
+
+A DEDICATED CONVERTER
+Enter an amount, pick your two currencies, and read the result together with the exact rate used and the date it was published.
+
+FAVORITES AT A GLANCE
+Star the currencies you check often and see them all against a single base amount in one grid.
+
+WORKS WITHOUT A CONNECTION
+Rates are cached on your device, so the app keeps working on a plane or in a dead zone. It always shows the date of the rates you are looking at, so you know how fresh they are.
+
+LIGHT AND DARK
+Follows your system theme, or pick one yourself in Settings.
+
+WHERE THE RATES COME FROM
+Exchange rates are published by the Export-Import Bank of Korea (Korea Eximbank) and are quoted against the Korean won. They are updated once per Korean business day, so they do not change on Korean weekends or holidays. Conversions between two non-KRW currencies are calculated through the won.
+
+This is a good fit if your currency pairs involve the Korean won. If you need intraday rates or a currency outside the list below, this may not be the right tool for you.
+
+SUPPORTED CURRENCIES (23)
+KRW, USD, JPY, EUR, CNH, GBP, AUD, CAD, CHF, HKD, AED, BHD, BND, DKK, IDR, KWD, MYR, NOK, NZD, SAR, SEK, SGD, THB
+
+Rates are provided for reference only and will differ from the rate your bank or card issuer applies.
+
+Available in English and Korean.

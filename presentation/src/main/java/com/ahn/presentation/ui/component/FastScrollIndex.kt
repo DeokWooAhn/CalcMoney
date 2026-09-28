@@ -176,20 +176,24 @@ internal fun FastScrollIndex(
                         val down = awaitFirstDown()
                         isTouching = true
                         currentOnTouchingChange(true)
-                        down.consume()
-                        track(down.position.y, isFirstTouch = true)
+                        try {
+                            down.consume()
+                            track(down.position.y, isFirstTouch = true)
 
-                        do {
-                            val event = awaitPointerEvent()
-                            val change = event.changes.firstOrNull { it.id == down.id }
-                            if (change?.pressed == true) {
-                                change.consume()
-                                track(change.position.y, isFirstTouch = false)
-                            }
-                        } while (change?.pressed == true)
-
-                        isTouching = false
-                        currentOnTouchingChange(false)
+                            do {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == down.id }
+                                if (change?.pressed == true) {
+                                    change.consume()
+                                    track(change.position.y, isFirstTouch = false)
+                                }
+                            } while (change?.pressed == true)
+                        } finally {
+                            // 키(labels, labelHeightPx)가 바뀌어 끄는 도중 이 코루틴이 취소돼도 누름 상태를 푼다.
+                            // 풀지 않으면 인덱스와 가운데 미리보기가 계속 떠 있게 된다.
+                            isTouching = false
+                            currentOnTouchingChange(false)
+                        }
                     }
                 },
         ) {

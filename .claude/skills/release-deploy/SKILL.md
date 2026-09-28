@@ -39,4 +39,6 @@ description: 릴리스, 배포, 버전 관리, CI/CD 워크플로, Firebase Func
 - Functions는 plain JS(Node 22, CommonJS), lint는 `node --check`뿐 — 문법 외 검증 없음
 - 스케줄 함수 2개(`syncExchangeRates` 11:10 KST, `retrySyncExchangeRates` 12:30 KST)가 ExchangeRate-API(`/latest/KRW`)를 호출해 `exchangeRates/latest` 한 문서에 씀. 변환 로직은 Firebase 없이 검증할 수 있게 `functions/exchangeRates.js`로 분리돼 있음. `status` 필드: `FRESH`/`STALE`/`ERROR`
 - API 키는 Firebase secret: `firebase functions:secrets:set EXCHANGE_RATE_API_KEY` — **이 secret이 없으면 배포가 실패한다.** 새 환경에서는 머지 전에 먼저 등록할 것
+- **자동 배포가 403으로 실패하면** 배포 계정 권한부터 볼 것. `FIREBASE_SERVICE_ACCOUNT`는 `github-firebase-deploy` 계정의 키여야 하고(`firebase-adminsdk-…` 키 아님), 필요한 IAM 역할 4개와 Cloud Billing API 사용 설정은 `docs/continuous-deployment.md`의 "배포용 서비스 계정" 참조
+- `EXCHANGE_RATE_API_KEY` 값을 바꾸면 함수가 이전 버전에 고정돼 있으므로 `firebase deploy --only functions`로 다시 배포해야 반영됨
 - `firestore.rules`: `exchangeRates/latest`만 읽기 공개, 쓰기는 전부 거부 — 앱에서 Firestore 쓰기 코드를 추가하면 동작하지 않음

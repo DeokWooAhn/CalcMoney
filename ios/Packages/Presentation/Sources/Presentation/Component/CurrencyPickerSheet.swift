@@ -17,6 +17,8 @@ struct CurrencyPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isScrolling = false
     @State private var isTouchingIndex = false
+    /// 미리보기가 사라지는 동안에도 마지막 라벨을 보여주도록 손을 떼도 지우지 않는다.
+    @State private var previewLabel: String?
     @State private var isIndexVisible = false
 
     /// 스크롤과 인덱스 조작이 멈춘 뒤 인덱스를 숨기기까지 기다리는 시간
@@ -59,6 +61,7 @@ struct CurrencyPickerSheet: View {
                         FastScrollIndex(
                             labels: pickerList.indexEntries.map(\.label),
                             onLabelSelected: { label in
+                                previewLabel = label
                                 guard let entry = pickerList.indexEntries.first(where: { $0.label == label }) else {
                                     return
                                 }
@@ -71,6 +74,15 @@ struct CurrencyPickerSheet: View {
                     }
                 }
                 .animation(.easeInOut(duration: 0.2), value: isIndexVisible)
+                // 인덱스 라벨은 손가락에 가려지므로, 누르는 동안 현재 라벨을 목록 가운데에 크게 띄운다.
+                .overlay {
+                    if isTouchingIndex, let previewLabel {
+                        FastScrollIndexPreview(label: previewLabel)
+                            .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                            .allowsHitTesting(false)
+                    }
+                }
+                .animation(.easeOut(duration: 0.15), value: isTouchingIndex)
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)

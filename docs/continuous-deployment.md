@@ -78,4 +78,41 @@ iOS 릴리스 파이프라인은 아직 없습니다. 추가할 때는 `ios-v*` 
 
 - `FIREBASE_SERVICE_ACCOUNT`: `calculator-money-6ebb9` Firebase 프로젝트에 배포할 권한을 가진 서비스 계정의 JSON 키입니다.
 
-워크플로는 잠금 파일 기준으로 Functions 의존성을 설치하고, `functions/index.js`를 검사한 뒤 Firebase CLI로 배포합니다. Actions 탭에서 수동으로 실행할 수도 있습니다.
+워크플로는 잠금 파일 기준으로 Functions 의존성을 설치하고, `functions/index.js`와 `functions/exchangeRates.js`를 검사한 뒤 Firebase CLI로 배포합니다. Actions 탭에서 수동으로 실행할 수도 있습니다.
+
+### 배포용 서비스 계정
+
+배포 전용 서비스 계정 `github-firebase-deploy@calculator-money-6ebb9.iam.gserviceaccount.com`을 씁니다. 이 계정에 [IAM](https://console.cloud.google.com/iam-admin/iam?project=calculator-money-6ebb9)에서 아래 역할을 줍니다.
+
+| 역할 | 필요한 이유 |
+| --- | --- |
+| Firebase Develop Admin (`roles/firebase.developAdmin`) | Firebase 프로젝트 정보(`adminSdkConfig`) 조회, 함수·Firestore 규칙 배포 |
+| Service Account User (`roles/iam.serviceAccountUser`) | 함수를 실행 계정(`881712070348-compute@developer.gserviceaccount.com`)으로 배포 |
+| Secret Manager Admin (`roles/secretmanager.admin`) | 함수에 `EXCHANGE_RATE_API_KEY` 접근 권한 연결 |
+| Cloud Scheduler Admin (`roles/cloudscheduler.admin`) | 11:10·12:30 예약 작업 생성·수정 |
+
+프로젝트에서 **Cloud Billing API**(`cloudbilling.googleapis.com`)가 켜져 있어야 합니다. Firebase CLI가 배포 전에 결제 상태를 확인하는데, 꺼져 있으면 직접 켜려다가 `Permissions denied enabling cloudbilling.googleapis.com`으로 실패합니다. 배포 계정에 API를 켜는 권한을 주는 대신 [콘솔](https://console.cloud.google.com/apis/library/cloudbilling.googleapis.com?project=calculator-money-6ebb9)에서 한 번 켜 둡니다.
+
+키를 새로 발급하거나 교체할 때 주의할 점:
+
+- **반드시 위 배포 계정의 키**를 씁니다. Firebase 콘솔의 "새 비공개 키 생성"으로 받는 `firebase-adminsdk-…` 계정의 키는 앱 서버용 권한만 있어서, 배포하면 `adminSdkConfig`에서 403으로 실패합니다.
+- 키는 콘솔의 서비스 계정 → 키 → 키 추가 → JSON으로 만들고, 아래처럼 시크릿을 바꾼 뒤 내려받은 파일은 지웁니다.
+
+  ```bash
+  gh secret set FIREBASE_SERVICE_ACCOUNT --repo DeokWooAhn/CalcMoney < ~/Downloads/<키-파일>.json
+  ```
+
+- 교체한 뒤 쓰지 않는 예전 키는 서비스 계정의 키 탭에서 지웁니다.
+
+### 함수에서 쓰는 Firebase secret
+
+환율 API 키는 GitHub이 아니라 Firebase(Secret Manager)의 `EXCHANGE_RATE_API_KEY`에 둡니다.
+
+- 배포된 함수는 배포 시점의 secret **버전에 고정**됩니다. 값을 바꾼 뒤에는 `firebase deploy --only functions`로 다시 배포해야 반영됩니다.
+- 값을 입력할 때 프롬프트에 붙여넣으면 터미널에 따라 두 번 들어가거나 줄바꿈이 섞일 수 있습니다. 키를 클립보드에 복사한 뒤 아래 명령을 **복사하지 말고 직접 실행**합니다. 명령을 복사하면 클립보드의 키가 명령어로 덮어써집니다.
+
+  ```bash
+  pbpaste | tr -d '[:space:]' | firebase functions:secrets:set EXCHANGE_RATE_API_KEY --project calculator-money-6ebb9 --data-file=-
+  ```
+
+- 키가 틀리면 함수는 실패해도 이전 환율을 유지하고 정상 종료하므로, Cloud Scheduler에는 "성공"으로 보입니다. 실제 결과는 Firestore `exchangeRates/latest`의 `status`(`FRESH`/`STALE`/`ERROR`)와 `lastError`로 확인합니다.

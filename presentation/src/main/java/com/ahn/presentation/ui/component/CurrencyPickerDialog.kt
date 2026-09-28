@@ -3,6 +3,7 @@ package com.ahn.presentation.ui.component
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -112,6 +113,8 @@ private fun CurrencyPickerListWithIndex(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var isTouchingIndex by remember { mutableStateOf(false) }
+    // 미리보기가 사라지는 동안에도 마지막 라벨을 보여주도록 손을 떼도 지우지 않는다.
+    var previewLabel by remember { mutableStateOf<String?>(null) }
     val isIndexVisible = rememberIndexVisibility(listState = listState, isTouchingIndex = isTouchingIndex)
     val indexLabels = remember(pickerList) { pickerList.indexPositions.keys.toList() }
 
@@ -139,12 +142,23 @@ private fun CurrencyPickerListWithIndex(
             FastScrollIndex(
                 labels = indexLabels,
                 onLabelSelected = { label ->
+                    previewLabel = label
                     val position = pickerList.indexPositions[label] ?: return@FastScrollIndex
                     coroutineScope.launch { listState.scrollToItem(position) }
                 },
                 onTouchingChange = { isTouchingIndex = it },
                 modifier = Modifier.fillMaxHeight(),
             )
+        }
+
+        // 인덱스 라벨은 손가락에 가려지므로, 누르는 동안 현재 라벨을 목록 가운데에 크게 띄운다.
+        AnimatedVisibility(
+            visible = isTouchingIndex && previewLabel != null,
+            enter = fadeIn() + scaleIn(initialScale = 0.92f),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.Center),
+        ) {
+            previewLabel?.let { FastScrollIndexPreview(label = it) }
         }
     }
 }

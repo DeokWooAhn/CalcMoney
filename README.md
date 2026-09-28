@@ -1,6 +1,6 @@
 # CalcMoney (심플 환율 계산기)
 
-한국수출입은행 환율을 바탕으로 금액을 빠르게 환산하는 모바일 앱입니다. 계산기 수식 환산, 통화 변환, 즐겨찾기 통화 비교를 지원합니다.
+160여 개 통화의 환율을 바탕으로 금액을 빠르게 환산하는 모바일 앱입니다. 계산기 수식 환산, 통화 변환, 즐겨찾기 통화 비교를 지원합니다.
 
 **Android**와 **iOS** 두 클라이언트가 하나의 저장소에 있으며 같은 백엔드(Firebase)를 공유합니다. 두 앱은 화면 구성과 아키텍처 레이어를 동일하게 맞춰 두었습니다.
 
@@ -26,10 +26,10 @@
 
 ### 데이터 흐름
 
-앱은 외부 환율 API를 직접 호출하지 않습니다. Cloud Functions가 매일 한국수출입은행 API에서 환율을 받아 Firestore의 `exchangeRates/latest` 문서 하나를 갱신하고, 두 앱은 그 문서만 읽어 로컬에 12시간 TTL로 캐시합니다.
+앱은 외부 환율 API를 직접 호출하지 않습니다. Cloud Functions가 매일 [ExchangeRate-API](https://www.exchangerate-api.com/)에서 원화 기준 환율을 받아 Firestore의 `exchangeRates/latest` 문서 하나를 갱신하고, 두 앱은 그 문서만 읽어 로컬에 12시간 TTL로 캐시합니다.
 
 ```text
-한국수출입은행 Open API
+ExchangeRate-API (KRW 기준, 165개 통화)
         │  (Cloud Functions: 매일 11:10 KST, 실패 시 12:30 재시도)
         ▼
 Firestore  exchangeRates/latest
@@ -38,7 +38,7 @@ Firestore  exchangeRates/latest
         └──────────────► iOS 앱     ── SwiftData 캐시 (12h TTL)
 ```
 
-수출입은행 API 키는 Cloud Functions의 Firebase secret `KOREA_EXIM_API_KEY` 하나뿐이며, 클라이언트에는 들어가지 않습니다. 자세한 문서 스키마와 스케줄은 [functions/README.md](functions/README.md)를 참고하세요.
+환율 API 키는 Cloud Functions의 Firebase secret `EXCHANGE_RATE_API_KEY` 하나뿐이며, 클라이언트에는 들어가지 않습니다. 자세한 문서 스키마와 스케줄은 [functions/README.md](functions/README.md)를 참고하세요.
 
 ### Android 모듈 구성
 

@@ -15,35 +15,63 @@ struct CurrencyPickerSheet: View {
     let onToggleFavorite: (String) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @State private var isScrolling = false
+    @State private var isTouchingIndex = false
+    @State private var isIndexVisible = false
 
-    private var sortedCurrencies: [CurrencyInfo] {
-        let orderByCode = Dictionary(
-            favoriteCurrencyCodesForSort.enumerated().map { ($0.element, $0.offset) },
-            uniquingKeysWith: { first, _ in first },
-        )
-        let favorites = currencies
-            .filter { orderByCode[$0.code] != nil }
-            .sorted { (orderByCode[$0.code] ?? .max) < (orderByCode[$1.code] ?? .max) }
-        let others = currencies.filter { orderByCode[$0.code] == nil }
+    /// 스크롤과 인덱스 조작이 멈춘 뒤 인덱스를 숨기기까지 기다리는 시간
+    private static let indexHideDelay: Duration = .milliseconds(1500)
 
-        return favorites + others
+    /// iOS 17은 스크롤 상태를 알 수 없어 인덱스를 항상 보여준다.
+    private static var detectsScrolling: Bool {
+        if #available(iOS 18.0, *) {
+            true
+        } else {
+            false
+        }
+    }
+
+    private var pickerList: CurrencyPickerList {
+        CurrencyPickerList(currencies: currencies, favoriteCodesForSort: favoriteCurrencyCodesForSort)
     }
 
     var body: some View {
+        let pickerList = pickerList
+
         NavigationStack {
-            List(sortedCurrencies, id: \.code) { currency in
-                CurrencyPickerRow(
-                    currency: currency,
-                    isSelected: currency == selectedCurrency,
-                    isFavorite: favoriteCurrencyCodesForIcon.contains(currency.code),
-                    onSelect: {
-                        onCurrencySelected(currency)
-                        dismiss()
-                    },
-                    onToggleFavorite: { onToggleFavorite(currency.code) },
-                )
+            ScrollViewReader { proxy in
+                List(pickerList.currencies, id: \.code) { currency in
+                    CurrencyPickerRow(
+                        currency: currency,
+                        isSelected: currency == selectedCurrency,
+                        isFavorite: favoriteCurrencyCodesForIcon.contains(currency.code),
+                        onSelect: {
+                            onCurrencySelected(currency)
+                            dismiss()
+                        },
+                        onToggleFavorite: { onToggleFavorite(currency.code) },
+                    )
+                }
+                .listStyle(.plain)
+                .modifier(ScrollActivityModifier(isScrolling: $isScrolling))
+                .overlay(alignment: .trailing) {
+                    if isIndexVisible || !Self.detectsScrolling {
+                        FastScrollIndex(
+                            labels: pickerList.indexEntries.map(\.label),
+                            onLabelSelected: { label in
+                                guard let entry = pickerList.indexEntries.first(where: { $0.label == label }) else {
+                                    return
+                                }
+                                proxy.scrollTo(entry.firstCode, anchor: .top)
+                            },
+                            onTouchingChange: { isTouchingIndex = $0 },
+                        )
+                        .padding(.vertical, 8)
+                        .transition(.opacity)
+                    }
+                }
+                .animation(.easeInOut(duration: 0.2), value: isIndexVisible)
             }
-            .listStyle(.plain)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -57,6 +85,43 @@ struct CurrencyPickerSheet: View {
                     .accessibilityLabel(L("닫기"))
                 }
             }
+        }
+        // 인덱스를 끄는 동안 시트가 아래로 끌려 닫히지 않게 한다.
+        .interactiveDismissDisabled(isTouchingIndex)
+        .task(id: isScrolling || isTouchingIndex) {
+            await updateIndexVisibility(isActive: isScrolling || isTouchingIndex)
+        }
+    }
+
+    /// 목록을 스크롤하거나 인덱스를 누르는 동안 인덱스를 보여주고, 둘 다 멈추면 잠시 뒤 숨긴다.
+    ///
+    /// 다시 스크롤이 시작되면 `task(id:)`가 이 대기를 취소한다.
+    private func updateIndexVisibility(isActive: Bool) async {
+        if isActive {
+            isIndexVisible = true
+            return
+        }
+
+        do {
+            try await Task.sleep(for: Self.indexHideDelay)
+        } catch {
+            return
+        }
+        isIndexVisible = false
+    }
+}
+
+/// iOS 18부터 제공되는 스크롤 단계로 스크롤 중인지 알린다. iOS 17에서는 아무것도 하지 않는다.
+private struct ScrollActivityModifier: ViewModifier {
+    @Binding var isScrolling: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.onScrollPhaseChange { _, newPhase in
+                isScrolling = newPhase.isScrolling
+            }
+        } else {
+            content
         }
     }
 }
@@ -95,6 +160,8 @@ private struct CurrencyPickerRow: View {
             .buttonStyle(.plain)
             .accessibilityLabel(isFavorite ? L("즐겨찾기 해제") : L("즐겨찾기 추가"))
         }
+        // 행 기본 여백에 더해 빠른 이동 인덱스 폭만큼 비워, 스크롤 직후에도 하트 버튼이 가려지지 않게 한다.
+        .padding(.trailing, fastScrollIndexWidth - 16)
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
         .listRowBackground(isSelected ? AppColors.surface : Color.clear)

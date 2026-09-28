@@ -1,6 +1,9 @@
 import Domain
+import Foundation
 
 /// 통화 코드별 이름의 지역화 키 (Android `CurrencyNameFormatter` 대응)
+///
+/// 직접 다듬은 번역이 있는 통화만 둔다. 나머지는 플랫폼의 현지화 이름을 쓴다.
 ///
 /// 값은 한국어 소스 문자열이자 String Catalog의 키다.
 private let currencyNameKeys: [String: String] = [
@@ -29,11 +32,27 @@ private let currencyNameKeys: [String: String] = [
     "THB": "태국 바트",
 ]
 
-extension CurrencyInfo {
-    /// 지역화된 통화 이름. 매핑에 없으면 서버가 준 이름을 그대로 쓴다.
-    var localizedName: String {
-        guard let key = currencyNameKeys[code.uppercased()] else { return name }
+/// String Catalog가 고른 화면 언어와 같은 로케일. 플랫폼 통화 이름도 이 언어로 맞춘다.
+private let displayLocale = Locale(identifier: Bundle.module.preferredLocalizations.first ?? "ko")
 
-        return LDynamic(key)
+extension CurrencyInfo {
+    /// 지역화된 통화 이름.
+    ///
+    /// 직접 다듬은 번역 → 플랫폼 현지화 이름 → 서버가 준 이름 순으로 쓴다.
+    var localizedName: String {
+        if let key = currencyNameKeys[code.uppercased()] {
+            return LDynamic(key)
+        }
+
+        return platformCurrencyName(code, locale: displayLocale) ?? name
     }
+}
+
+/// 플랫폼에서 통화 이름을 찾는다. 모르는 통화(ISO 4217에 없는 지역 통화 등)면 `nil`.
+///
+/// 플랫폼은 모르는 통화에 코드를 그대로 돌려주기도 하므로 그 경우도 `nil`로 본다.
+func platformCurrencyName(_ code: String, locale: Locale) -> String? {
+    guard let name = locale.localizedString(forCurrencyCode: code.uppercased()), !name.isEmpty else { return nil }
+
+    return name.caseInsensitiveCompare(code) == .orderedSame ? nil : name
 }

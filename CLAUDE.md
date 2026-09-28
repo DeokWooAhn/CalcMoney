@@ -1,6 +1,6 @@
 # CalcMoney (심플 환율 계산기)
 
-한국수출입은행 환율을 보여주는 앱. **Android(Kotlin, 루트 Gradle 모듈)와 iOS(Swift, `ios/`) 두 클라이언트**가 같은 백엔드를 공유한다. Cloud Functions가 매일 환율을 받아 Firestore `exchangeRates/latest` 문서 하나에 쓰고, 두 앱 모두 그 문서를 읽어 로컬에 캐시(12h TTL)한다. Retrofit도 URLSession 직접 호출도 없음 — Firestore가 곧 네트워크 레이어.
+ExchangeRate-API의 원화 기준 환율(160여 개 통화)을 보여주는 앱. **Android(Kotlin, 루트 Gradle 모듈)와 iOS(Swift, `ios/`) 두 클라이언트**가 같은 백엔드를 공유한다. Cloud Functions가 매일 환율을 받아 Firestore `exchangeRates/latest` 문서 하나에 쓰고, 두 앱 모두 그 문서를 읽어 로컬에 캐시(12h TTL)한다. Retrofit도 URLSession 직접 호출도 없음 — Firestore가 곧 네트워크 레이어.
 
 **이 문서는 두 플랫폼 공통 배경만 다룬다.** 플랫폼별 세부 규칙은 각 스킬을 참조.
 
@@ -35,7 +35,7 @@ Kotlin 2.2 / JVM 17 / compileSdk 36 · Compose(Material3) · Hilt+KSP(kapt 없�
 - **versionCode를 손으로 고치지 말 것.** 릴리스는 `android-v*` 태그 push → CI가 `10000 + GITHUB_RUN_NUMBER`로 계산. 로컬 기본값은 `app/build.gradle.kts`의 `DEFAULT_VERSION_CODE`.
 - detekt는 `dev.detekt` 2.0 알파 (구 `io.gitlab.arturbosch.detekt` 아님). 모듈별 `detekt-baseline.xml` 존재.
 - 테스트는 JUnit5 플랫폼(`useJUnitPlatform()`) 위의 Kotest — JUnit4 러너로 돌리면 안 됨.
-- 앱은 환율 API를 직접 호출하지 않는다. 수출입은행 키는 Cloud Functions의 Firebase secret `KOREA_EXIM_API_KEY` 하나뿐 (`local.properties`에는 `sdk.dir`만 있으면 됨).
+- 앱은 환율 API를 직접 호출하지 않는다. 환율 API 키는 Cloud Functions의 Firebase secret `EXCHANGE_RATE_API_KEY` 하나뿐 (`local.properties`에는 `sdk.dir`만 있으면 됨).
 
 ## iOS — 패키지 구조 (SPM 로컬 패키지, Android와 같은 레이어 방향)
 
@@ -74,6 +74,8 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 ## 공통 주의사항
 
 - 기본 브랜치는 `main`이 아니라 **`master`**.
+- **통화 목록을 앱에 하드코딩하지 말 것.** 통화 목록은 서버가 정하고, 통화 선택 화면은 즐겨찾기를 맨 위에 둔 뒤 나머지를 통화 코드 알파벳순으로 앱에서 직접 정렬한다(오른쪽 ★·A~Z 빠른 이동 인덱스가 이 순서에 의존). 서버도 구버전 앱을 위해 알파벳순으로 저장한다. 정렬 로직은 Android `CurrencyPickerList.kt`, iOS `CurrencyPickerList.swift`. 앱은 국기를 통화 코드 앞 두 글자로 만들고(예외는 `EUR`, `ANG`·`XCG`→퀴라소, 여러 나라 공용인 `X`로 시작하는 통화는 🌐), 이름은 직접 다듬은 22개 번역 → 플랫폼 현지화 이름 → 서버 이름 순으로 쓴다. Android는 `ExchangeRateMapper.kt`·`CurrencyNameFormatter.kt`, iOS는 `CurrencyInfoMapper.swift`·`CurrencyName.swift`.
+- 환율 값은 **외화 1단위당 원**(`baseRate`)이다. API는 1원당 외화로 주므로 서버가 역수로 저장한다. 앱 쪽에서 다시 뒤집지 말 것.
 - 주석·KDoc·테스트 설명·커밋 메시지는 **한국어**, 코드 식별자·로그는 영어.
 - **App Check는 provider가 빌드 타입별로 갈린다.** 디버그는 debug provider, 릴리스는 Play Integrity(Android) / App Attest(iOS). Android는 `app/src/debug`·`app/src/release`의 `AppCheckInstaller.kt` 두 파일로, iOS는 `FirebaseBootstrap.swift`의 `#if DEBUG`로 분기한다. iOS는 반드시 `FirebaseApp.configure()` **이전에** factory를 지정해야 한다.
 - **로컬에서 Firestore를 읽으려면 디버그 토큰 등록이 필요하다.** 앱을 처음 디버그로 띄우면 Logcat/Xcode 콘솔에 App Check 디버그 토큰이 찍히는데, 이걸 Firebase 콘솔 App Check에 등록해야 한다. 등록 전에는 enforce가 켜진 뒤부터 읽기가 거부된다.

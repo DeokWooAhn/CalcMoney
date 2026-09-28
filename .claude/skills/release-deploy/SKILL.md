@@ -37,6 +37,6 @@ description: 릴리스, 배포, 버전 관리, CI/CD 워크플로, Firebase Func
 
 - `master`에 push 시 `functions/**`, `firebase.json`, `firestore.rules`, `.firebaserc` 변경이 있으면 `.github/workflows/firebase-deploy.yml`이 자동 배포 (프로젝트 `calculator-money-6ebb9`)
 - Functions는 plain JS(Node 22, CommonJS), lint는 `node --check`뿐 — 문법 외 검증 없음
-- 스케줄 함수 2개(`syncExchangeRates` 11:10 KST, `retrySyncExchangeRates` 12:30 KST)가 수출입은행 API를 호출해 `exchangeRates/latest` 한 문서에 씀. `status` 필드: `FRESH`/`STALE`/`ERROR`
-- API 키는 Firebase secret: `firebase functions:secrets:set KOREA_EXIM_API_KEY`
+- 스케줄 함수 2개(`syncExchangeRates` 11:10 KST, `retrySyncExchangeRates` 12:30 KST)가 ExchangeRate-API(`/latest/KRW`)를 호출해 `exchangeRates/latest` 한 문서에 씀. 변환 로직은 Firebase 없이 검증할 수 있게 `functions/exchangeRates.js`로 분리돼 있음. `status` 필드: `FRESH`/`STALE`/`ERROR`
+- API 키는 Firebase secret: `firebase functions:secrets:set EXCHANGE_RATE_API_KEY` — **이 secret이 없으면 배포가 실패한다.** 새 환경에서는 머지 전에 먼저 등록할 것
 - `firestore.rules`: `exchangeRates/latest`만 읽기 공개, 쓰기는 전부 거부 — 앱에서 Firestore 쓰기 코드를 추가하면 동작하지 않음

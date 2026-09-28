@@ -5,7 +5,7 @@ extension Error {
     var exchangeRateErrorMessage: String {
         switch self as? ExchangeRateError {
         case .notReady:
-            L("오늘 환율 정보가 아직 고시되지 않았습니다. 영업일 11시 이후 다시 확인해 주세요.")
+            L("환율 정보가 아직 준비되지 않았습니다. 잠시 후 다시 확인해 주세요.")
 
         case .networkUnavailable:
             L("인터넷 연결이 없어 환율 정보를 불러올 수 없습니다. 연결 상태를 확인해 주세요.")

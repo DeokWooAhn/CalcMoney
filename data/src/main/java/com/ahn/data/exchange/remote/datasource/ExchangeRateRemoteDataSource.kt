@@ -14,7 +14,7 @@ class ExchangeRateRemoteDataSource @Inject constructor(private val firestore: Fi
     /**
      * Firebase 서버 캐시에 저장된 최신 환율 목록을 가져옵니다.
      *
-     * 앱은 한국수출입은행 API를 직접 호출하지 않고, Cloud Functions가 갱신한 Firestore 문서를 읽습니다.
+     * 앱은 환율 API(ExchangeRate-API)를 직접 호출하지 않고, Cloud Functions가 갱신한 Firestore 문서를 읽습니다.
      *
      * @return 서버 캐시에 저장된 환율 엔티티 목록입니다.
      */

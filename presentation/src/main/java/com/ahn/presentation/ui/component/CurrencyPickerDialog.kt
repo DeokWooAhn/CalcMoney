@@ -1,16 +1,23 @@
 package com.ahn.presentation.ui.component
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -22,7 +29,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,6 +46,11 @@ import androidx.compose.ui.window.Dialog
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.R
 import com.ahn.presentation.util.localizedName
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+/** 스크롤과 인덱스 조작이 멈춘 뒤 인덱스를 숨기기까지 기다리는 시간입니다. */
+private const val INDEX_HIDE_DELAY_MS = 1_500L
 
 @Composable
 fun CurrencyPickerDialog(
@@ -46,18 +63,8 @@ fun CurrencyPickerDialog(
     onCurrencySelected: (CurrencyInfo) -> Unit,
     onToggleFavorite: (String) -> Unit,
 ) {
-    val orderMap = remember(favoriteCurrencyCodesForSort) {
-        favoriteCurrencyCodesForSort.withIndex().associate { it.value to it.index }
-    }
-
-    val sortedCurrencies = remember(currencies, orderMap) {
-        val favorites = currencies
-            .filter { it.code in orderMap }
-            .sortedBy { orderMap[it.code] }
-
-        val others = currencies.filter { it.code !in orderMap }
-
-        favorites + others
+    val pickerList = remember(currencies, favoriteCurrencyCodesForSort) {
+        buildCurrencyPickerList(currencies, favoriteCurrencyCodesForSort)
     }
     val favoriteCurrencyCodeSet = remember(favoriteCurrencyCodesForIcon) {
         favoriteCurrencyCodesForIcon.toSet()
@@ -82,20 +89,85 @@ fun CurrencyPickerDialog(
 
                 HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
 
-                LazyColumn {
-                    items(sortedCurrencies, key = { it.code }) { currency ->
-                        CurrencyPickerItem(
-                            currency = currency,
-                            isSelected = currency == selectedCurrency,
-                            isFavorite = currency.code in favoriteCurrencyCodeSet,
-                            onClick = { onCurrencySelected(currency) },
-                            onToggleFavorite = { onToggleFavorite(currency.code) },
-                        )
-                    }
-                }
+                CurrencyPickerListWithIndex(
+                    pickerList = pickerList,
+                    selectedCurrency = selectedCurrency,
+                    favoriteCurrencyCodeSet = favoriteCurrencyCodeSet,
+                    onCurrencySelected = onCurrencySelected,
+                    onToggleFavorite = onToggleFavorite,
+                )
             }
         }
     }
+}
+
+@Composable
+private fun CurrencyPickerListWithIndex(
+    pickerList: CurrencyPickerList,
+    selectedCurrency: CurrencyInfo?,
+    favoriteCurrencyCodeSet: Set<String>,
+    onCurrencySelected: (CurrencyInfo) -> Unit,
+    onToggleFavorite: (String) -> Unit,
+) {
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    var isTouchingIndex by remember { mutableStateOf(false) }
+    val isIndexVisible = rememberIndexVisibility(listState = listState, isTouchingIndex = isTouchingIndex)
+    val indexLabels = remember(pickerList) { pickerList.indexPositions.keys.toList() }
+
+    Box {
+        LazyColumn(state = listState) {
+            items(pickerList.currencies, key = { it.code }) { currency ->
+                CurrencyPickerItem(
+                    currency = currency,
+                    isSelected = currency == selectedCurrency,
+                    isFavorite = currency.code in favoriteCurrencyCodeSet,
+                    onClick = { onCurrencySelected(currency) },
+                    onToggleFavorite = { onToggleFavorite(currency.code) },
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = isIndexVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .matchParentSize()
+                .padding(vertical = 8.dp),
+        ) {
+            FastScrollIndex(
+                labels = indexLabels,
+                onLabelSelected = { label ->
+                    val position = pickerList.indexPositions[label] ?: return@FastScrollIndex
+                    coroutineScope.launch { listState.scrollToItem(position) }
+                },
+                onTouchingChange = { isTouchingIndex = it },
+                modifier = Modifier.fillMaxHeight(),
+            )
+        }
+    }
+}
+
+/**
+ * 목록을 스크롤하거나 인덱스를 누르는 동안 인덱스를 보여주고, 둘 다 멈추면 잠시 뒤 숨깁니다.
+ */
+@Composable
+private fun rememberIndexVisibility(listState: LazyListState, isTouchingIndex: Boolean): Boolean {
+    var isVisible by remember { mutableStateOf(false) }
+    val isActive = listState.isScrollInProgress || isTouchingIndex
+
+    LaunchedEffect(isActive) {
+        if (isActive) {
+            isVisible = true
+        } else {
+            // 다시 스크롤이 시작되면 isActive가 바뀌며 이 대기는 취소된다.
+            delay(INDEX_HIDE_DELAY_MS)
+            isVisible = false
+        }
+    }
+
+    return isVisible
 }
 
 @Composable
@@ -127,7 +199,8 @@ private fun CurrencyPickerItem(
                     Color.Transparent
                 },
             )
-            .padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+            // 오른쪽은 빠른 이동 인덱스 폭만큼 비워 두어 스크롤 직후에도 하트 버튼이 가려지지 않게 한다.
+            .padding(start = 20.dp, end = FastScrollIndexWidth, top = 12.dp, bottom = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

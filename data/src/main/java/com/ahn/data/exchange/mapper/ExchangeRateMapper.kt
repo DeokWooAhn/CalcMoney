@@ -2,32 +2,32 @@ package com.ahn.data.exchange.mapper
 
 import com.ahn.data.exchange.local.entity.ExchangeRateEntity
 import com.ahn.domain.currency.model.CurrencyInfo
+import java.util.Locale
 
-private val currencyCountryCodes = mapOf(
-    "KRW" to "KR",
-    "USD" to "US",
-    "JPY" to "JP",
+/**
+ * 통화 코드 앞 두 글자가 국가 코드가 아닌 예외.
+ *
+ * ISO 4217 통화 코드는 대부분 앞 두 글자가 ISO 3166 국가 코드라서 규칙으로 국기를 만들고,
+ * 규칙이 맞지 않는 코드만 여기에 둔다. 여러 나라가 함께 쓰는 `X`로 시작하는 통화(XAF, XOF, XDR 등)는
+ * 국기 하나를 고를 수 없어 [NO_COUNTRY_FLAG]를 쓴다.
+ */
+private val flagCountryCodeOverrides = mapOf(
+    // EU는 ISO 3166 국가 코드가 아니지만 유럽연합 국기 이모지가 있다.
     "EUR" to "EU",
-    "CNH" to "CN",
-    "GBP" to "GB",
-    "AUD" to "AU",
-    "CAD" to "CA",
-    "CHF" to "CH",
-    "HKD" to "HK",
-    "AED" to "AE",
-    "BHD" to "BH",
-    "BND" to "BN",
-    "DKK" to "DK",
-    "IDR" to "ID",
-    "KWD" to "KW",
-    "MYR" to "MY",
-    "NOK" to "NO",
-    "NZD" to "NZ",
-    "SAR" to "SA",
-    "SEK" to "SE",
-    "SGD" to "SG",
-    "THB" to "TH",
+    // 네덜란드령 안틸레스(AN)는 해체돼 국기 이모지가 없다. 현재 통용되는 퀴라소를 쓴다.
+    "ANG" to "CW",
+    // 카리브 길더는 2025년에 ANG를 대체한 후속 통화로 발행처가 같다.
+    "XCG" to "CW",
 )
+
+/**
+ * 국가를 특정할 수 없는 통화에 쓰는 중립 아이콘.
+ *
+ * 빈 문자열이면 목록에서 국기 자리가 비어 통화 코드와 이름이 다른 줄보다 왼쪽으로 밀린다.
+ */
+internal const val NO_COUNTRY_FLAG = "🌐"
+
+private val isoCountryCodes: Set<String> by lazy { Locale.getISOCountries().toSet() }
 
 /**
  * 환율 목록에서 지정한 통화 코드의 기준 환율을 찾습니다.
@@ -64,11 +64,21 @@ internal fun krwCurrencyInfo(): CurrencyInfo {
  * 세 글자 통화 코드를 해당 국가의 국기 이모지로 변환합니다.
  *
  * @param currencyCode ISO 4217 형식에 가까운 세 글자 통화 코드입니다.
- * @return 지원하는 통화이면 국기 이모지를, 지원하지 않으면 빈 문자열을 반환합니다.
+ * @return 국가를 특정할 수 있으면 국기 이모지를, 없으면 [NO_COUNTRY_FLAG]를 반환합니다.
  */
-private fun getFlagEmoji(currencyCode: String): String {
-    return currencyCountryCodes[currencyCode]?.let(::countryFlag).orEmpty()
+internal fun getFlagEmoji(currencyCode: String): String {
+    return flagCountryCode(currencyCode.uppercase())?.let(::countryFlag) ?: NO_COUNTRY_FLAG
 }
+
+private fun flagCountryCode(currencyCode: String): String? {
+    flagCountryCodeOverrides[currencyCode]?.let { return it }
+    if (currencyCode.length != CURRENCY_CODE_LENGTH || currencyCode.startsWith("X")) return null
+
+    return currencyCode.take(COUNTRY_CODE_LENGTH).takeIf { it in isoCountryCodes }
+}
+
+private const val CURRENCY_CODE_LENGTH = 3
+private const val COUNTRY_CODE_LENGTH = 2
 
 /**
  * 국가 코드를 지역 표시 기호 조합의 국기 이모지로 변환합니다.

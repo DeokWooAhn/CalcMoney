@@ -37,7 +37,7 @@ function parseExchangeRateApiResponse(body) {
   }
 
   if (body.base_code !== BASE_CURRENCY) {
-    throw new Error(`ExchangeRate-API returned unexpected base: ${body.base_code}`);
+    throw new Error(`ExchangeRate-API returned unexpected base: ${safeProviderToken(body.base_code)}`);
   }
 
   const rates = buildRates(body.conversion_rates);
@@ -96,6 +96,12 @@ function sortByCode(rates) {
   return [...rates].sort((left, right) => (left.code < right.code ? -1 : Number(left.code > right.code)));
 }
 
+// 오류 메시지는 공개 읽기 문서인 lastError 에 그대로 저장된다.
+// API 가 준 값은 우리가 통제할 수 없으므로, 짧은 코드 형식일 때만 남기고 나머지는 고정 문구로 바꾼다.
+function safeProviderToken(value) {
+  return typeof value === "string" && /^[A-Za-z-]{1,40}$/.test(value) ? value : "unrecognized";
+}
+
 function apiErrorMessage(errorType) {
   switch (errorType) {
     case "invalid-key":
@@ -109,7 +115,7 @@ function apiErrorMessage(errorType) {
     case "malformed-request":
       return "Malformed ExchangeRate-API request. (malformed-request)";
     default:
-      return `ExchangeRate-API request failed. (${errorType ?? "unknown"})`;
+      return `ExchangeRate-API request failed. (${safeProviderToken(errorType)})`;
   }
 }
 

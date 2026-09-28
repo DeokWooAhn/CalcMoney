@@ -16,4 +16,9 @@ struct CurrencyNameTests {
     func 플랫폼이_모르는_통화는_nil() {
         #expect(platformCurrencyName("GGP", locale: Locale(identifier: "ko")) == nil)
     }
+
+    @Test("빈 통화 코드는 nil을 반환한다")
+    func 빈_통화_코드는_nil() {
+        #expect(platformCurrencyName("", locale: Locale(identifier: "ko")) == nil)
+    }
 }

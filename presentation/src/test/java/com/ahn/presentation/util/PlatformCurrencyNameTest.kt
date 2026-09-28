@@ -43,4 +43,12 @@ class PlatformCurrencyNameTest :
                 }
             }
         }
+
+        Given("통화 코드가 비어 있을 때") {
+            When("이름을 찾으면") {
+                Then("예외 없이 null을 반환해야 한다") {
+                    platformCurrencyName("", Locale.KOREAN).shouldBeNull()
+                }
+            }
+        }
     })

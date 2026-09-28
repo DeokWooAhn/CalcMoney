@@ -2,7 +2,7 @@
 Simple Currency Calculator
 
 === SHORT DESCRIPTION (max 80) ===
-Type a calculation, see it converted instantly. 23 currencies, works offline.
+Type a calculation, see it converted instantly. 160+ currencies, works offline.
 
 === FULL DESCRIPTION (max 4000) ===
 Simple Currency Calculator does one thing well: it converts while you calculate.
@@ -23,12 +23,12 @@ LIGHT AND DARK
 Follows your system theme, or pick one yourself in Settings.
 
 WHERE THE RATES COME FROM
-Exchange rates are published by the Export-Import Bank of Korea (Korea Eximbank) and are quoted against the Korean won. They are updated once per Korean business day, so they do not change on Korean weekends or holidays. Conversions between two non-KRW currencies are calculated through the won.
+Exchange rates come from ExchangeRate-API and are quoted against the Korean won. They are market rates updated once a day, so they barely change on weekends when currency markets are closed. Conversions between two non-KRW currencies are calculated through the won.
 
-This is a good fit if your currency pairs involve the Korean won. If you need intraday rates or a currency outside the list below, this may not be the right tool for you.
+This is a good fit if your currency pairs involve the Korean won. If you need intraday rates, this may not be the right tool for you.
 
-SUPPORTED CURRENCIES (23)
-KRW, USD, JPY, EUR, CNH, GBP, AUD, CAD, CHF, HKD, AED, BHD, BND, DKK, IDR, KWD, MYR, NOK, NZD, SAR, SEK, SGD, THB
+SUPPORTED CURRENCIES (160+)
+Major currencies such as KRW, USD, JPY, EUR, CNY, GBP, HKD, TWD, VND, THB, SGD, PHP, AUD, CAD, CHF and NZD, plus more than 140 others. Scroll the list and jump straight to any letter with the A–Z index.
 
 Rates are provided for reference only and will differ from the rate your bank or card issuer applies.
 

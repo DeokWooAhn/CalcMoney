@@ -379,7 +379,7 @@ reviews:
           안드로이드 `:data` 모듈도 함께 봐야 한다고 지적할 것
         - 캐시 TTL·오프라인 동작이 안드로이드 구현(12h TTL)과 어긋나면 지적
         - 네트워크·디스크 접근은 async/await 로, 호출자를 블로킹하지 말 것
-        - 앱은 수출입은행 API 를 직접 호출하지 않는다. API 키가 클라이언트 코드에
+        - 앱은 환율 API(ExchangeRate-API) 를 직접 호출하지 않는다. API 키가 클라이언트 코드에
           등장하면 심각한 문제로 지적
     - path: "ios/**/{Tests,CalcMoneyTests,CalcMoneyUITests}/**/*.swift"
       instructions: |-

@@ -431,16 +431,6 @@
         }
       }
     },
-    "오늘 환율 정보가 아직 고시되지 않았습니다. 영업일 11시 이후 다시 확인해 주세요.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Today's exchange rates have not been published yet. Please check again after 11:00 KST on a business day."
-          }
-        }
-      }
-    },
     "유로": {
       "localizations": {
         "en": {
@@ -651,16 +641,6 @@
         }
       }
     },
-    "한국수출입은행 Open API": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Korea Eximbank Open API"
-          }
-        }
-      }
-    },
     "호주 달러": {
       "localizations": {
         "en": {
@@ -721,12 +701,22 @@
         }
       }
     },
-    "환율 정보는 영업일 11시 전후 고시되는 기준 환율을 사용합니다.\n주말·공휴일에는 새 환율이 제공되지 않을 수 있으며, 이 경우 직전 영업일 환율을 사용합니다.": {
+    "환율 정보가 아직 준비되지 않았습니다. 잠시 후 다시 확인해 주세요.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Exchange rates use reference rates published around 11:00 KST on business days.\nNew rates may not be provided on weekends or holidays. In that case, the previous business day's rates are used."
+            "value": "Exchange rates are not ready yet. Please check again later."
+          }
+        }
+      }
+    },
+    "환율 정보는 하루 한 번 갱신되는 국제 시장 환율을 사용합니다.\n외환시장이 쉬는 주말에는 환율이 거의 바뀌지 않습니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exchange rates are international market rates updated once a day.\nOn weekends, when currency markets are closed, rates barely change."
           }
         }
       }

@@ -2,25 +2,30 @@ const admin = require("firebase-admin");
 const { logger } = require("firebase-functions");
 const { defineSecret } = require("firebase-functions/params");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const {
+  KOREA_TIME_ZONE,
+  exchangeRateApiUrl,
+  parseExchangeRateApiResponse,
+} = require("./exchangeRates");
 
 admin.initializeApp();
 
-const koreaEximApiKey = defineSecret("KOREA_EXIM_API_KEY");
+const exchangeRateApiKey = defineSecret("EXCHANGE_RATE_API_KEY");
 
 const db = admin.firestore();
 const latestExchangeRateRef = db.collection("exchangeRates").doc("latest");
 
-const KOREA_EXIM_EXCHANGE_URL =
-  "https://oapi.koreaexim.go.kr/site/program/financial/exchangeJSON";
-const KOREA_TIME_ZONE = "Asia/Seoul";
-const MAX_FALLBACK_DAYS = 7;
+const SOURCE = "EXCHANGE_RATE_API";
+const SOURCE_NAME = "ExchangeRate-API";
 
+// ExchangeRate-API 무료 플랜은 하루 한 번(00:00 UTC = 09:00 KST 전후) 갱신된다.
+// 갱신 직후를 피해 11:10 에 받고, 실패하면 12:30 에 한 번 더 시도한다.
 exports.syncExchangeRates = onSchedule(
   {
     region: "asia-northeast3",
     schedule: "10 11 * * *",
     timeZone: KOREA_TIME_ZONE,
-    secrets: [koreaEximApiKey],
+    secrets: [exchangeRateApiKey],
   },
   syncExchangeRates,
 );
@@ -30,7 +35,7 @@ exports.retrySyncExchangeRates = onSchedule(
     region: "asia-northeast3",
     schedule: "30 12 * * *",
     timeZone: KOREA_TIME_ZONE,
-    secrets: [koreaEximApiKey],
+    secrets: [exchangeRateApiKey],
   },
   syncExchangeRates,
 );
@@ -39,17 +44,18 @@ async function syncExchangeRates() {
   const checkedAt = Date.now();
 
   try {
-    const { rateDate, rates } = await fetchValidExchangeRates(koreaEximApiKey.value());
+    const { rateDate, rates } = await fetchExchangeRates(exchangeRateApiKey.value());
 
     await latestExchangeRateRef.set({
       rateDate,
       fetchedAt: checkedAt,
       rateFetchedAt: checkedAt,
       lastCheckedAt: checkedAt,
-      source: "KOREA_EXIM",
-      sourceName: "한국수출입은행 환율 정보 Open API",
+      source: SOURCE,
+      sourceName: SOURCE_NAME,
       status: "FRESH",
       message: null,
+      lastError: null,
       rates,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
@@ -63,69 +69,30 @@ async function syncExchangeRates() {
   }
 }
 
-async function fetchValidExchangeRates(authKey) {
-  for (const searchDate of exchangeRateSearchDates()) {
-    const rows = await fetchExchangeRates(authKey, searchDate);
-    const resultCode = rows[0]?.result;
-
-    if ([2, 3, 4].includes(resultCode)) {
-      throw new Error(apiErrorMessage(resultCode));
-    }
-
-    const rates = rows.map(normalizeExchangeRate).filter(Boolean);
-    if (rates.length > 0) {
-      return {
-        rateDate: searchDate || todayInKorea(),
-        rates,
-      };
-    }
+async function fetchExchangeRates(apiKey) {
+  let response;
+  try {
+    response = await fetch(exchangeRateApiUrl(apiKey));
+  } catch (error) {
+    // 요청 URL 경로에 API 키가 들어 있다. 원본 오류를 그대로 남기면 키가
+    // 공개 읽기 문서인 lastError 로 새어 나갈 수 있어 메시지를 새로 만든다.
+    throw new Error(`ExchangeRate-API network error: ${error.name}`);
   }
 
-  throw new Error("오늘 환율이 아직 고시되지 않았습니다.");
-}
-
-async function fetchExchangeRates(authKey, searchDate) {
-  const params = new URLSearchParams({
-    authkey: authKey,
-    searchdate: searchDate,
-    data: "AP01",
-  });
-
-  const response = await fetch(`${KOREA_EXIM_EXCHANGE_URL}?${params}`);
-  if (!response.ok) {
-    throw new Error(`Korea Exim API request failed: ${response.status}`);
+  // 키가 틀리거나 한도를 넘으면 4xx 와 함께 error-type 이 담긴 JSON 을 준다.
+  // 그 사유를 살리기 위해 상태 코드보다 본문을 먼저 해석한다.
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error(`ExchangeRate-API request failed: ${response.status}`);
   }
 
-  const body = await response.json();
-  if (!Array.isArray(body)) {
-    throw new Error("Korea Exim API returned malformed data.");
-  }
-
-  return body;
-}
-
-function normalizeExchangeRate(row) {
-  if (row.result !== 1 || !row.cur_unit || !row.deal_bas_r) {
-    return null;
-  }
-
-  const currencyUnit = row.cur_unit.trim();
-  const code = currencyUnit.replace("(100)", "").trim();
-  const baseRate = Number(row.deal_bas_r.replace(/,/g, ""));
-  if (!code || Number.isNaN(baseRate)) {
-    return null;
-  }
-
-  return {
-    code,
-    currencyUnit,
-    currencyName: row.cur_nm || "Unknown",
-    baseRate: currencyUnit.includes("(100)") ? baseRate / 100 : baseRate,
-  };
+  return parseExchangeRateApiResponse(body);
 }
 
 async function keepPreviousRatesAsStale(checkedAt, error) {
-  logger.error("Exchange rate sync failed", error);
+  logger.error("Exchange rate sync failed", { message: error.message });
 
   const latest = await latestExchangeRateRef.get();
   const previousRates = latest.get("rates");
@@ -149,8 +116,8 @@ async function keepPreviousRatesAsStale(checkedAt, error) {
       fetchedAt: 0,
       rateFetchedAt: 0,
       lastCheckedAt: checkedAt,
-      source: "KOREA_EXIM",
-      sourceName: "한국수출입은행 환율 정보 Open API",
+      source: SOURCE,
+      sourceName: SOURCE_NAME,
       status: "ERROR",
       message: "환율 정보를 준비하지 못했습니다.",
       lastError: error.message,
@@ -161,60 +128,4 @@ async function keepPreviousRatesAsStale(checkedAt, error) {
   );
 
   throw error;
-}
-
-function apiErrorMessage(resultCode) {
-  switch (resultCode) {
-    case 2:
-      return "Invalid exchange rate API request. (result=2)";
-    case 3:
-      return "Invalid exchange rate API authKey. (result=3)";
-    case 4:
-      return "Exchange rate API daily request limit exceeded. (result=4)";
-    default:
-      return "Exchange rate API returned no data.";
-  }
-}
-
-function exchangeRateSearchDates() {
-  const previousBusinessDates = [];
-  const cursor = koreaLocalDate();
-  cursor.setUTCDate(cursor.getUTCDate() - 1);
-
-  while (previousBusinessDates.length < MAX_FALLBACK_DAYS) {
-    const day = cursor.getUTCDay();
-    if (day !== 0 && day !== 6) {
-      previousBusinessDates.push(formatBasicDate(cursor));
-    }
-    cursor.setUTCDate(cursor.getUTCDate() - 1);
-  }
-
-  return ["", ...previousBusinessDates];
-}
-
-function todayInKorea() {
-  return formatBasicDate(koreaLocalDate());
-}
-
-function koreaLocalDate() {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: KOREA_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
-
-  const year = Number(parts.find((part) => part.type === "year").value);
-  const month = Number(parts.find((part) => part.type === "month").value);
-  const day = Number(parts.find((part) => part.type === "day").value);
-
-  return new Date(Date.UTC(year, month - 1, day));
-}
-
-function formatBasicDate(date) {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(date.getUTCDate()).padStart(2, "0");
-
-  return `${year}${month}${day}`;
 }

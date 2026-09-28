@@ -4,7 +4,7 @@ import Foundation
 
 /// Firestore에서 최신 환율 문서를 읽는 원격 데이터소스 (Android `ExchangeRateRemoteDataSource` 대응)
 ///
-/// 앱은 한국수출입은행 API를 직접 호출하지 않고, Cloud Functions가 갱신한
+/// 앱은 환율 API(ExchangeRate-API)를 직접 호출하지 않고, Cloud Functions가 갱신한
 /// `exchangeRates/latest` 문서를 읽는다.
 public final class FirestoreExchangeRateDataSource: ExchangeRateRemoteDataSource {
     private static let exchangeRatesCollection = "exchangeRates"

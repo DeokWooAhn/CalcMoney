@@ -13,7 +13,8 @@
 ## 보안·프라이버시
 
 - API 키, 키스토어 비밀번호, 토큰을 코드나 저장소 파일에 두지 않는다. AdMob·서명 시크릿은 CI
-  환경 변수로, 수출입은행 키는 Cloud Functions의 Firebase secret으로만 관리한다.
+  환경 변수로, 환율 API(ExchangeRate-API) 키는 Cloud Functions의 Firebase secret으로만 관리한다.
+  이 키는 요청 URL 경로에 들어가므로 URL이나 원본 네트워크 오류를 로그·`lastError`(공개 읽기 문서)에 남기지 않는다.
 - 로그와 Crashlytics에 개인 식별 정보나 사용자 입력값을 남기지 않는다. 계산식·금액처럼 사용자가
   입력한 값도 로그로 내보내지 않는다.
 - Firestore 규칙을 넓히지 않는다. `exchangeRates/latest` 공개 읽기 외에는 열지 않고 앱 쓰기도
@@ -21,7 +22,7 @@
 
 ## 프로젝트 구조
 
-한국수출입은행 환율을 보여주는 앱이다. **Android(루트 Gradle 모듈)와 iOS(`ios/`) 두 클라이언트**가
+ExchangeRate-API의 원화 기준 환율(160여 개 통화)을 보여주는 앱이다. **Android(루트 Gradle 모듈)와 iOS(`ios/`) 두 클라이언트**가
 같은 백엔드를 공유한다. Cloud Functions가 Firestore의 `exchangeRates/latest` 문서를 갱신하고,
 두 앱 모두 이를 로컬에 12시간 TTL로 캐시한다. 앱은 환율 API를 직접 호출하지 않는다.
 

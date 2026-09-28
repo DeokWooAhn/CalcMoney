@@ -200,10 +200,11 @@ private struct ExchangeRateInfoCard: View {
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 LabeledInfoRow(label: L("기준일"), value: rateDate)
-                LabeledInfoRow(label: L("데이터 출처"), value: L("한국수출입은행 Open API"))
+                // 서비스 이름이라 번역하지 않는다.
+                LabeledInfoRow(label: L("데이터 출처"), value: "ExchangeRate-API")
                 LabeledInfoRow(label: L("마지막 갱신"), value: lastUpdated)
 
-                Text(L("환율 정보는 영업일 11시 전후 고시되는 기준 환율을 사용합니다.\n주말·공휴일에는 새 환율이 제공되지 않을 수 있으며, 이 경우 직전 영업일 환율을 사용합니다."))
+                Text(L("환율 정보는 하루 한 번 갱신되는 국제 시장 환율을 사용합니다.\n외환시장이 쉬는 주말에는 환율이 거의 바뀌지 않습니다."))
                     .font(.system(size: 12))
                     .foregroundStyle(Color.secondary)
                     .padding(.top, 4)

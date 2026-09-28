@@ -31,7 +31,7 @@
     <string name="calculator_history_save_failed">Could not save calculation history.</string>
     <string name="load_currency_list_failed">Could not load the currency list: %1$s</string>
     <string name="load_exchange_rate_failed">Could not get exchange rates. %1$s</string>
-    <string name="exchange_rate_not_ready">Today\'s exchange rates have not been published yet. Please check again after 11:00 KST on a business day.</string>
+    <string name="exchange_rate_not_ready">Exchange rates are not ready yet. Please check again later.</string>
     <string name="exchange_rate_network_unavailable">No internet connection. Check your connection and try again.</string>
     <string name="exchange_rate_temporarily_unavailable">Exchange rates are temporarily unavailable. Please try again later.</string>
     <string name="exchange_rate_not_found">No exchange rate was found for the selected currency.</string>
@@ -79,9 +79,9 @@
     <string name="setting_exchange_rate_detail">Exchange rate details</string>
     <string name="setting_exchange_rate_date_label">Rate date</string>
     <string name="setting_exchange_rate_source_label">Data source</string>
-    <string name="setting_exchange_rate_source_value">Korea Eximbank Open API</string>
+    <string name="setting_exchange_rate_source_value">ExchangeRate-API</string>
     <string name="setting_exchange_rate_last_updated_label">Last updated</string>
-    <string name="setting_exchange_rate_notice_value">Exchange rates use reference rates published around 11:00 KST on business days.\nNew rates may not be provided on weekends or holidays. In that case, the previous business day\'s rates are used.</string>
+    <string name="setting_exchange_rate_notice_value">Exchange rates are international market rates updated once a day.\nOn weekends, when currency markets are closed, rates barely change.</string>
     <string name="setting_exchange_rate_disclaimer_value">Rates are for reference only and may differ from actual transaction rates.</string>
     <string name="setting_exchange_rate_date_empty">No information</string>
     <string name="setting_loading">Loading</string>

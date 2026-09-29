@@ -35,6 +35,9 @@ reviews:
     - "!ios/**/*.xcodeproj/**"
     - "!ios/**/*.xcworkspace/**"
     - "!ios/**/xcuserdata/**"
+    # --- CI / E2E ---
+    - ".github/workflows/**"
+    - ".maestro/**"
 
   path_instructions:
     - path: "**/*.kt"
@@ -407,7 +410,56 @@ reviews:
         - `swiftSettings` 변경(특히 `.defaultIsolation`)은 동시성 동작을 바꾸므로
           영향 범위를 설명하도록 요구
 
+    # ---------------------------------------------------------------
+    # CI / E2E
+    # ---------------------------------------------------------------
+    - path: ".github/workflows/**"
+      instructions: |-
+        GitHub Actions 워크플로 리뷰 기준.
+
+        보안:
+        - `${{ github.event.* }}`(PR 제목, 브랜치명, 커밋 메시지 등 외부 입력)를 `run:` 스크립트에 직접
+          넣으면 명령 주입이 된다. `env:`로 받아 쉘 변수로 쓰도록 지적
+        - 시크릿을 echo 하거나 파일로 남기고 artifact 로 올리는 코드 지적. 디코딩한 키스토어는
+          `$RUNNER_TEMP` 에만 둔다
+        - 새 job 에 필요 이상의 `permissions` 가 붙었는지 확인
+        - 새 서드파티 Action 이 들어오면 출처와 필요성을 묻는다
+
+        재현성:
+        - 러너 이미지에 없는 도구(SwiftLint, Maestro 등)는 버전을 고정해 설치해야 한다.
+          고정하지 않으면 새 릴리스가 나올 때 코드 변경 없이 CI 가 깨진다
+        - iOS job 은 `macos-26` 고정이 맞다(swift-tools 6.2 + `.defaultIsolation(MainActor.self)` 가
+          Xcode 26 을 요구). `macos-latest`/`macos-15` 로 바꾸면 지적
+
+        이 저장소의 함정:
+        - Android 에서 `./gradlew build` 나 태스크 이름에 Release/bundle/build 가 들어간 명령은
+          AdMob·서명 시크릿이 없으면 실패한다. PR job 은 `detekt`/`test`/`assembleDebug` 를 써야 한다
+        - `versionCode` 는 `10000 + GITHUB_RUN_NUMBER` 로 CI 가 정한다. 하드코딩하거나 규칙을 바꾸면 지적
+        - `push` 트리거에 `paths` 필터를 걸면 태그 push 에도 적용돼 릴리스 job 이 통째로 건너뛰어질 수 있다
+        - 경고를 오류로 올리는 설정을 `xcodebuild` 인자로 넘기면 Firebase·GoogleMobileAds SPM 타깃까지
+          전파돼 컴파일이 깨진다. Xcode 프로젝트 설정에 둬야 한다
+        - `e2e_changes` 의 제외 목록에 앱 동작에 영향을 주는 경로가 들어가면 E2E 가 조용히 빠진다.
+          목록에 없는 경로는 E2E 를 돌리는 쪽이 기본이어야 한다
+    - path: ".maestro/**"
+      instructions: |-
+        Maestro E2E Flow 리뷰 기준. 상세 규칙은 `.claude/skills/maestro/SKILL.md`.
+
+        - Flow 하나로 Android 와 iOS 를 함께 돌린다. 새로 쓰는 `id:` 가 두 플랫폼 코드에 모두
+          붙어 있는지(Android `testTag`, iOS `accessibilityIdentifier`) 확인할 것
+        - Maestro 는 `id:` 와 글자 단언을 정규식으로 해석한다. id 에 `+` `=` `(` `)` 같은 기호가 있거나
+          글자 단언의 `.` 이 이스케이프되지 않았으면 지적
+        - 화면 문구(한국어·영어)로 요소를 찾으면 지적. 기기 언어에 따라 깨진다.
+          통화 코드·숫자처럼 언어와 무관한 글자는 괜찮다
+        - 모든 Flow 는 `../subflows/launch_clean.yaml` 로 시작해야 한다(데이터 초기화 + 광고 끄기)
+        - 광고 배너를 누르거나 실제 광고가 노출되는 흐름은 반드시 지적(무효 트래픽)
+        - 태그는 `smoke`(네트워크 불필요, CI 에서 실행) 또는 `release`(Firestore 필요)만 쓴다.
+          `smoke` Flow 가 환율 로드를 기다리면 지적
+        - 좌표(`point:`)로 누르는 단계, 고정 `sleep` 성격의 대기는 지적. 요소 기준 대기를 쓴다
+        - 환율처럼 매일 바뀌는 값을 그대로 단언하면 지적. 형식만 확인한다
+
   tools:
+    actionlint:
+      enabled: true
     swiftlint:
       enabled: true
       # 설정 파일이 레포 루트가 아니라 ios/ 아래에 있어 경로를 명시한다.

@@ -42,8 +42,9 @@ GitHub Actions 실행 번호를 `10000 + 실행 번호` 규칙으로 변환해 A
 - **실행 범위**: PR이면 `e2e_changes` job이 바뀐 파일을 보고 정합니다. `docs/`, `functions/`, `store-assets/`, `ios/`, `.claude/`, `*.md`, Firebase 설정 파일만 바꾼 PR은 건너뜁니다. 그 밖의 파일이 하나라도 바뀌면 돌립니다. `master` 푸시와 태그, 수동 실행에서는 항상 돌립니다.
 - **돌리는 Flow**: `smoke`만 돌립니다. `release` Flow는 Firestore에서 환율을 받아야 해서 CI에서는 돌리지 않습니다.
 - **버전 고정**: Maestro는 job의 `MAESTRO_VERSION`으로 고정합니다. 설치 스크립트가 이 환경 변수를 읽습니다.
-- **에뮬레이터 캐시**: 처음 실행할 때 AVD와 부팅 스냅샷을 만들어 `actions/cache`에 저장하고, 다음 실행부터는 스냅샷에서 바로 띄웁니다. `API_LEVEL`을 바꾸면 캐시 키가 바뀌어 새로 만듭니다.
-- **실패했을 때**: `maestro-smoke-results` artifact에 JUnit 리포트(`report.xml`), 실패 시점 스크린샷, Maestro 로그가 들어 있습니다.
+- **에뮬레이터 캐시**: 처음 실행할 때 AVD와 부팅 스냅샷을 만들어 `actions/cache`에 저장하고, 다음 실행부터는 스냅샷에서 바로 띄웁니다. 스냅샷은 부팅 직후가 아니라 밀린 작업(dexopt 등)이 끝나고 부하가 내려간 뒤에 찍습니다(`.github/scripts/emulator-settle.sh`). `API_LEVEL`이나 `AVD_CACHE_VERSION`을 바꾸면 캐시 키가 바뀌어 새로 만듭니다. 코어 수·RAM(`EMULATOR_CORES`, `EMULATOR_RAM_SIZE`)이나 스냅샷 만드는 방법을 바꿀 때는 `AVD_CACHE_VERSION`을 올리세요.
+- **테스트 전 준비**: 스냅샷에서 뜬 뒤에도 패키지 매니저가 응답하고 부하가 내려갈 때까지 기다리고, APK를 설치한 뒤 앱을 한 번 띄워 첫 실행 비용을 미리 치릅니다(`.github/scripts/maestro-smoke.sh`).
+- **실패했을 때**: `maestro-smoke-results` artifact에 JUnit 리포트(`report.xml`), 실패 시점 스크린샷, Maestro 로그, 테스트 동안의 `logcat.txt`가 들어 있습니다.
 
 Flow 작성 규칙과 로컬 실행 방법은 `.claude/skills/maestro/SKILL.md`를 따릅니다.
 

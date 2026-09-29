@@ -166,6 +166,13 @@ jobs:
       # 버전을 고정하지 않으면 Maestro 새 릴리스의 동작 변화로 코드 변경 없이 CI가 깨진다.
       MAESTRO_VERSION: 2.1.0
       API_LEVEL: 34
+      # 기본값(2코어, RAM 2.5GB)에서는 google_apis 이미지가 부팅 후 작업만으로 여유가 없어 앱 첫 프레임이 15초를 넘기곤 했다.
+      # ubuntu-latest 러너는 4 vCPU / 16GB다. 바꾸면 스냅샷과 맞지 않으니 AVD_CACHE_VERSION도 올린다.
+      EMULATOR_CORES: 4
+      EMULATOR_RAM_SIZE: 4096M
+      # AVD 생성 옵션이나 스냅샷 만드는 방법을 바꾸면 올린다. 캐시 키에 들어가 스냅샷을 새로 만든다.
+      AVD_CACHE_VERSION: 2
+      APP_ID: com.ahn.calcmoney
       # smoke Flow는 네트워크가 필요 없다. release Flow(Firestore 필요)는 CI에서 돌리지 않는다.
       MAESTRO_TAGS: smoke
 
@@ -205,9 +212,11 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ env.API_LEVEL }}-google_apis-x86_64
+          key: avd-${{ env.API_LEVEL }}-google_apis-x86_64-v${{ env.AVD_CACHE_VERSION }}
 
       # 캐시가 없을 때만 AVD를 만들고 부팅 스냅샷을 남긴다. 다음 실행부터는 스냅샷에서 바로 뜬다.
+      # 부팅 직후 바로 찍으면 밀린 작업(GMS 초기화, dexopt)까지 스냅샷에 담겨 매 실행마다 되풀이되므로,
+      # 에뮬레이터가 조용해진 뒤에 종료해 스냅샷을 저장한다.
       - name: Create AVD and generate snapshot
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
@@ -215,10 +224,12 @@ jobs:
           api-level: ${{ env.API_LEVEL }}
           target: google_apis
           arch: x86_64
+          cores: ${{ env.EMULATOR_CORES }}
+          ram-size: ${{ env.EMULATOR_RAM_SIZE }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
-          script: echo "Generated AVD snapshot for caching."
+          script: .github/scripts/emulator-settle.sh 300
 
       - name: Run Maestro smoke flows
         uses: reactivecircus/android-emulator-runner@v2
@@ -226,12 +237,15 @@ jobs:
           api-level: ${{ env.API_LEVEL }}
           target: google_apis
           arch: x86_64
+          cores: ${{ env.EMULATOR_CORES }}
+          ram-size: ${{ env.EMULATOR_RAM_SIZE }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
+          # 스냅샷에서 뜬 직후에도 패키지 매니저가 준비되기 전이거나 밀린 작업이 남아 있을 수 있어 한 번 더 기다린다.
           script: |
-            adb install -r artifacts/app-debug.apk
-            maestro test .maestro --include-tags="$MAESTRO_TAGS" -e APP_ID=com.ahn.calcmoney --format=JUNIT --output=build/maestro/report.xml --test-output-dir=build/maestro/output --debug-output=build/maestro/debug --flatten-debug-output
+            .github/scripts/emulator-settle.sh 120
+            .github/scripts/maestro-smoke.sh
 
       - name: Upload Maestro results
         if: always()

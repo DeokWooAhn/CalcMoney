@@ -24,6 +24,8 @@ struct ExchangeView: View {
                     onCurrencySelected: { viewModel.send(.selectFromCurrency($0)) },
                     onToggleFavorite: { viewModel.send(.toggleFavorite($0)) },
                 )
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("exchange.from")
 
                 SwapCurrencyButton {
                     viewModel.send(.swapCurrencies)
@@ -40,6 +42,8 @@ struct ExchangeView: View {
                     onCurrencySelected: { viewModel.send(.selectToCurrency($0)) },
                     onToggleFavorite: { viewModel.send(.toggleFavorite($0)) },
                 )
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("exchange.to")
 
                 ExchangeRateInfoView(state: state)
             }

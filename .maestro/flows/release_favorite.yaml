@@ -1,0 +1,45 @@
+# 통화 선택 창에서 즐겨찾기를 추가하면 즐겨찾기 탭에 카드가 생긴다. Firestore가 필요하다.
+# launch_clean이 앱 데이터를 지우므로 매번 즐겨찾기가 빈 상태에서 시작한다.
+appId: ${APP_ID}
+name: 통화 선택 창에서 추가한 즐겨찾기가 즐겨찾기 탭에 보인다
+tags:
+  - release
+---
+- runFlow: ../subflows/launch_clean.yaml
+- tapOn:
+    id: "tab.exchange"
+# 통화 목록이 비어 있으면 선택 버튼이 비활성이라, 환율이 뜬 뒤에 연다.
+- extendedWaitUntil:
+    visible: "1 [A-Z]{3} = [0-9]+\\.[0-9]{4} [A-Z]{3}"
+    timeout: 20000
+- tapOn:
+    id: "currency.selector"
+    childOf:
+      id: "exchange.from"
+# 목록은 알파벳순이라 AUD는 맨 앞쪽에 있다. 뒤쪽 통화(EUR 등)를 고르면 스크롤이 기본 제한 시간
+# 20초 안에 닿지 못한다. 작은 화면에서 첫 화면에 안 보일 때를 대비해 스크롤은 남겨 둔다.
+- scrollUntilVisible:
+    element:
+      id: "favorite.toggle.AUD"
+    direction: DOWN
+- tapOn:
+    id: "favorite.toggle.AUD"
+# 행을 눌러 AUD를 기준 통화로 고르면 안 된다. 즐겨찾기 화면은 기준 통화와 같은 통화를 카드로 만들지 않는다.
+# 통화는 그대로 두고 창만 닫는다. Android 대화상자는 뒤로가기, iOS 시트는 닫기 버튼으로 닫는다.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: "currency.picker.close"
+- tapOn:
+    id: "tab.favorite"
+- extendedWaitUntil:
+    visible:
+      id: "favorite.card.AUD"
+    timeout: 15000

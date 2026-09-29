@@ -200,5 +200,7 @@ private struct FavoriteRateCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AppColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("favorite.card.\(item.currency.code)")
     }
 }

@@ -50,6 +50,7 @@ struct CurrencySelectorView: View {
                     .strokeBorder(AppColors.currencySelectorBorder, lineWidth: 1),
             )
         }
+        .accessibilityIdentifier("currency.selector")
         .disabled(availableCurrencies.isEmpty)
         .sheet(isPresented: $showPicker) {
             CurrencyPickerSheet(

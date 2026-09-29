@@ -1,0 +1,23 @@
+# 탭 전환만 확인한다. 환율·즐겨찾기 화면은 Firestore를 못 읽어도 화면 자체는 떠야 한다.
+appId: ${APP_ID}
+name: 하단 탭 4개를 오갈 수 있다
+tags:
+  - smoke
+---
+- runFlow: ../subflows/launch_clean.yaml
+- tapOn:
+    id: "tab.exchange"
+- assertVisible:
+    id: "screen.exchange"
+- tapOn:
+    id: "tab.favorite"
+- assertVisible:
+    id: "screen.favorite"
+- tapOn:
+    id: "tab.setting"
+- assertVisible:
+    id: "screen.setting"
+- tapOn:
+    id: "tab.calculator"
+- assertVisible:
+    id: "screen.calculator"

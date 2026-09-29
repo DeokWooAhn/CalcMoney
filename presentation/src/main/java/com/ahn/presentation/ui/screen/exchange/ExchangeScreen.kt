@@ -148,6 +148,7 @@ private fun ExchangeContent(
             onToggleFavorite = { onIntent(ExchangeContract.Intent.ToggleFavorite(it)) },
             isEditable = true,
             label = stringResource(R.string.base_amount),
+            modifier = Modifier.testTag("exchange.from"),
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -168,6 +169,7 @@ private fun ExchangeContent(
             onToggleFavorite = { onIntent(ExchangeContract.Intent.ToggleFavorite(it)) },
             isEditable = false,
             label = stringResource(R.string.target_amount),
+            modifier = Modifier.testTag("exchange.to"),
         )
 
         ExchangeRateInfo(

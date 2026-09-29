@@ -1,0 +1,12 @@
+# 앱 데이터를 지우고 UI 테스트 모드로 실행한 뒤 계산기 화면이 뜰 때까지 기다린다.
+# UI_TESTING은 광고 동의(UMP) 흐름과 광고 로드를 끈다 (Android MainActivity, iOS AdConsentManager).
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+    arguments:
+      UI_TESTING: true
+- extendedWaitUntil:
+    visible:
+      id: "screen.calculator"
+    timeout: 15000

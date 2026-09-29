@@ -1,0 +1,13 @@
+# Firestore에서 환율을 받아야 통과한다. 디버그 빌드는 App Check 디버그 토큰이 Firebase 콘솔에
+# 등록된 기기에서만 읽을 수 있다. 환율 값은 매일 바뀌므로 "1 USD = 1380.1234 KRW" 형식만 본다.
+appId: ${APP_ID}
+name: 환율 화면에 오늘 환율이 표시된다
+tags:
+  - release
+---
+- runFlow: ../subflows/launch_clean.yaml
+- tapOn:
+    id: "tab.exchange"
+- extendedWaitUntil:
+    visible: "1 [A-Z]{3} = [0-9]+\\.[0-9]{4} [A-Z]{3}"
+    timeout: 20000

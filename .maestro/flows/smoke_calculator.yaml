@@ -1,0 +1,64 @@
+# 네트워크와 무관하게 통과해야 한다. 결과는 화면 글자로 확인하는데, 키패드 글자(0~9 한 자리)와
+# 겹치지 않는 값만 단언한다. "7"을 단언하면 결과가 아니라 7 키가 잡힌다.
+appId: ${APP_ID}
+name: 계산기 사칙연산과 지우기
+tags:
+  - smoke
+---
+- runFlow: ../subflows/launch_clean.yaml
+
+# 덧셈
+- tapOn:
+    id: "keypad.7"
+- tapOn:
+    id: "keypad.plus"
+- tapOn:
+    id: "keypad.7"
+- tapOn:
+    id: "keypad.equals"
+- assertVisible: "14"
+
+# AC
+- tapOn:
+    id: "keypad.clear"
+- assertNotVisible: "14"
+
+# 곱셈과 뺄셈 우선순위
+- tapOn:
+    id: "keypad.9"
+- tapOn:
+    id: "keypad.multiply"
+- tapOn:
+    id: "keypad.8"
+- tapOn:
+    id: "keypad.minus"
+- tapOn:
+    id: "keypad.2"
+- tapOn:
+    id: "keypad.equals"
+- assertVisible: "70"
+
+# 나눗셈 소수 결과. Maestro 글자 단언은 정규식이라 소수점을 이스케이프한다.
+- tapOn:
+    id: "keypad.clear"
+- tapOn:
+    id: "keypad.1"
+- tapOn:
+    id: "keypad.divide"
+- tapOn:
+    id: "keypad.4"
+- tapOn:
+    id: "keypad.equals"
+- assertVisible: "0\\.25"
+
+# 지우기 키는 한 글자만 지운다
+- tapOn:
+    id: "keypad.clear"
+- tapOn:
+    id: "keypad.7"
+- tapOn:
+    id: "keypad.8"
+- assertVisible: "78"
+- tapOn:
+    id: "keypad.delete"
+- assertNotVisible: "78"

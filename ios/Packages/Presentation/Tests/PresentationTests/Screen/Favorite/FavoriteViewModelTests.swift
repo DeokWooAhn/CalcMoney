@@ -1,6 +1,5 @@
 import Domain
 import Foundation
-import Observation
 import Testing
 @testable import Presentation
 
@@ -86,19 +85,6 @@ struct FavoriteViewModelTests {
         )
     }
 
-    /// 상태가 조건을 만족할 때까지 기다린다. 상태가 바뀔 때마다 Observation 알림을 받아 다시 확인한다.
-    private static func waitUntil(_ viewModel: FavoriteViewModel, _ condition: (FavoriteState) -> Bool) async {
-        while !condition(viewModel.state) {
-            await withCheckedContinuation { continuation in
-                withObservationTracking {
-                    _ = viewModel.state
-                } onChange: {
-                    continuation.resume()
-                }
-            }
-        }
-    }
-
     /// 환율 조회 `count`개가 끝난 뒤 조회 Task가 로딩을 마칠 때까지 기다린다.
     /// 로딩 표시는 조회 전에 켜지므로, 마지막 조회가 끝난 뒤에는 꺼지는 변화만 남는다.
     private static func waitForLoad(
@@ -111,7 +97,7 @@ struct FavoriteViewModelTests {
             remaining -= 1
             if remaining == 0 { break }
         }
-        await waitUntil(viewModel) { !$0.isLoading }
+        await waitUntil { !viewModel.state.isLoading }
     }
 
     @Test("즐겨찾기가 기준 통화 하나뿐이면 로드 실패가 아니라 기준 통화만 즐겨찾기된 상태가 되고 환율을 조회하지 않는다")

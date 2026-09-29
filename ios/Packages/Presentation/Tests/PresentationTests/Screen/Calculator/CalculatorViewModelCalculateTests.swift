@@ -4,7 +4,7 @@ import Testing
 @testable import Presentation
 
 @MainActor
-@Suite("CalculatorViewModel — 계산 직렬화")
+@Suite("CalculatorViewModel — 계산 직렬화", .timeLimit(.minutes(1)))
 struct CalculatorViewModelCalculateTests {
     private static func makeViewModel(recorder: CalculatorTestRecorder) -> CalculatorViewModel {
         CalculatorTestEnvironment.makeViewModel(
@@ -14,8 +14,13 @@ struct CalculatorViewModelCalculateTests {
         )
     }
 
+    /// 계산이 성공할 때마다 기록이 한 건씩 늘어나므로, 기록 수로 "=" 두 번의 처리가 끝났는지 안다.
+    private static func waitForCalculations(_ viewModel: CalculatorViewModel, count: Int) async {
+        await waitUntil { viewModel.state.histories.count >= count }
+    }
+
     @Test("= 를 연타해도 같은 수식이 두 번 저장되지 않는다")
-    func 등호_연타는_기록을_중복_저장하지_않는다() async throws {
+    func 등호_연타는_기록을_중복_저장하지_않는다() async {
         let recorder = CalculatorTestRecorder()
         let viewModel = Self.makeViewModel(recorder: recorder)
 
@@ -27,14 +32,14 @@ struct CalculatorViewModelCalculateTests {
         viewModel.send(.calculate)
         viewModel.send(.calculate)
 
-        try await Task.sleep(for: .milliseconds(300))
+        await Self.waitForCalculations(viewModel, count: 2)
 
         let saved = await recorder.savedHistories
         #expect(saved.map(\.expression) == ["1+2", "3+2"])
     }
 
     @Test("= 연타는 반복 연산으로 이어진다")
-    func 등호_연타는_반복_연산으로_이어진다() async throws {
+    func 등호_연타는_반복_연산으로_이어진다() async {
         let recorder = CalculatorTestRecorder()
         let viewModel = Self.makeViewModel(recorder: recorder)
 
@@ -45,7 +50,7 @@ struct CalculatorViewModelCalculateTests {
         viewModel.send(.calculate)
         viewModel.send(.calculate)
 
-        try await Task.sleep(for: .milliseconds(300))
+        await Self.waitForCalculations(viewModel, count: 2)
 
         // 1+2=3, 이어서 반복 연산 +2 가 적용되어 5 가 된다.
         #expect(viewModel.state.expression == "5")

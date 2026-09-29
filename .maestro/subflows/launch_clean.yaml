@@ -19,6 +19,10 @@ appId: ${APP_ID}
           optional: true
 - launchApp:
     clearState: true
+    # 비워 두지 않으면 기본값이 `all: allow`다. Android에서는 권한 목록을 읽으려고 APK 전체(debug 약 89MB)를
+    # 매번 adb로 받는데, CI 에뮬레이터에서 이 전송이 가끔 수 분씩 멈췄다. 이 앱은 런타임 권한을 쓰지 않아
+    # 받을 필요가 없다. 권한이 필요한 화면이 생기면 `all` 대신 그 권한만 적는다(예: `notifications: allow`).
+    permissions: {}
     arguments:
       UI_TESTING: true
 # 보이는 순간 넘어가므로 실기기·시뮬레이터에서는 오래 걸리지 않는다. CI 에뮬레이터는 콜드 스타트가

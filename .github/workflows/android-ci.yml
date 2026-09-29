@@ -161,7 +161,7 @@ jobs:
     needs: [build, e2e_changes]
     if: ${{ needs.e2e_changes.outputs.run == 'true' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
     env:
       # 버전을 고정하지 않으면 Maestro 새 릴리스의 동작 변화로 코드 변경 없이 CI가 깨진다.
       MAESTRO_VERSION: 2.1.0
@@ -245,8 +245,6 @@ jobs:
           # 스냅샷에서 뜬 직후에도 패키지 매니저가 준비되기 전이거나 밀린 작업이 남아 있을 수 있어 한 번 더 기다린다.
           script: |
             .github/scripts/emulator-settle.sh 120
-            adb install -r artifacts/app-debug.apk
-            .github/scripts/diag-pm-clear.sh
             .github/scripts/maestro-smoke.sh
 
       - name: Upload Maestro results

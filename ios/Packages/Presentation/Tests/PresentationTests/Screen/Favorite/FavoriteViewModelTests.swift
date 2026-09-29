@@ -127,6 +127,22 @@ struct FavoriteViewModelTests {
         #expect(viewModel.state.items.first?.rateLabel == "1 USD = 1.5000 AUD")
     }
 
+    /// 조회 Task가 시작되기 전에 다음 입력이 와서 취소되면, 늦게 시작한 Task가 새 상태를 덮어쓰면 안 된다.
+    @Test("조회 Task가 시작 전에 취소되면 뒤이은 기준 통화 안내 상태를 덮어쓰지 않는다")
+    func 시작_전에_취소된_조회는_안내_상태를_덮어쓰지_않는다() async throws {
+        let recorder = CalculatorTestRecorder()
+        let viewModel = Self.makeViewModel(recorder: recorder, rates: ["AUD->KRW": 900])
+
+        // 두 호출 사이에 중단 지점이 없으므로 첫 조회 Task는 시작도 하기 전에 취소된다.
+        Self.change(viewModel, from: Self.aud, favorites: ["AUD", "KRW"])
+        Self.change(viewModel, from: Self.aud, favorites: ["AUD"])
+        try await Task.sleep(for: .milliseconds(100))
+
+        #expect(viewModel.state.baseOnlyFavoriteCode == "AUD")
+        #expect(viewModel.state.isLoading == false)
+        #expect(viewModel.state.items.isEmpty)
+    }
+
     @Test("즐겨찾기가 없으면 기준 통화만 즐겨찾기된 상태로 보지 않는다")
     func 즐겨찾기가_없으면_안내_상태가_아니다() async throws {
         let recorder = CalculatorTestRecorder()

@@ -72,6 +72,8 @@ public final class FavoriteViewModel {
 
         loadTask = Task { [weak self] in
             guard let self else { return }
+            // 시작하기 전에 다음 입력으로 취소됐다면 그 입력이 만든 상태를 덮어쓰지 않는다.
+            if Task.isCancelled { return }
 
             state.isLoading = true
             state.baseOnlyFavoriteCode = nil

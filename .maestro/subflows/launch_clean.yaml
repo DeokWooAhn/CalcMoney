@@ -6,7 +6,9 @@ appId: ${APP_ID}
     clearState: true
     arguments:
       UI_TESTING: true
+# 보이는 순간 넘어가므로 실기기·시뮬레이터에서는 오래 걸리지 않는다. CI 에뮬레이터(소프트웨어 렌더링)는
+# clearState 뒤 콜드 스타트가 15초를 넘길 때가 있어 넉넉히 둔다.
 - extendedWaitUntil:
     visible:
       id: "screen.calculator"
-    timeout: 15000
+    timeout: 30000

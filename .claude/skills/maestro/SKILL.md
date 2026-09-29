@@ -89,4 +89,8 @@ MCP로 한 번 성공한 시나리오와 매번 통과하는 시나리오는 다
 
 - debug 빌드는 App Check debug provider를 쓴다. Firestore가 App Check를 강제하면 기기의 디버그 토큰을
   Firebase 콘솔에 등록해야 `release` Flow가 통과한다(첫 실행 시 Logcat/Xcode 콘솔에 토큰이 찍힌다).
-- CI 연동은 아직 없다. 계획은 PR에 `smoke`, `android-v*` 태그에 `release`를 붙이는 것이다.
+- CI(`android-ci.yml`의 `e2e_smoke`)는 Android 에뮬레이터(API 34, 영어)에서 `smoke`만 돌린다. `release`는
+  CI에서 돌리지 않으니 릴리스 전에 실기기에서 직접 돌린다. iOS는 아직 CI에 없다.
+- CI 에뮬레이터는 실기기보다 느리다. 새 Flow의 대기 시간(`extendedWaitUntil`의 `timeout`)을 넉넉히 둔다.
+- CI 실행 여부는 `e2e_changes` job이 바뀐 파일로 정한다. 새 최상위 폴더를 만들었는데 앱과 무관하다면
+  그 job의 제외 목록에 추가한다.

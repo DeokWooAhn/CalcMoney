@@ -25,6 +25,10 @@ description: 릴리스, 배포, 버전 관리, CI/CD 워크플로, Firebase Func
 ./gradlew detekt test :app:assembleDebug
 ```
 
+`build` 다음에 `e2e_smoke` job이 debug APK를 에뮬레이터에 설치해 Maestro `smoke` Flow를 돌린다.
+문서·Functions·iOS만 바꾼 PR은 `e2e_changes` job이 건너뛰게 한다. 규칙은 `.claude/skills/maestro/SKILL.md`,
+상세는 `docs/continuous-deployment.md`의 "Android E2E 스모크 테스트".
+
 ## 릴리스 빌드에 필요한 시크릿 (GitHub Secrets)
 
 - 키스토어: `RELEASE_KEYSTORE_BASE64`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`

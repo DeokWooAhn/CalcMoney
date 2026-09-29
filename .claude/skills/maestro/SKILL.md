@@ -95,5 +95,8 @@ MCP로 한 번 성공한 시나리오와 매번 통과하는 시나리오는 다
 - Android에서 살아 있는 앱을 `clearState`로 지우고 1초 안에 다시 띄우면, 옛 태스크 정리가 새 프로세스까지
   죽여 빈 화면으로 남는다(느린 에뮬레이터에서만 드러난다). `launch_clean.yaml`이 먼저 `stopApp` 후 2초
   기다리는 이유다. 앱을 지우고 다시 띄우는 단계를 Flow 중간에 직접 넣지 말고 이 subflow를 쓴다.
+- `launchApp`에 `permissions`를 안 적으면 기본값 `all: allow`가 되어, Android에서 권한 목록을 읽으려고
+  APK 전체(debug 약 89MB)를 매번 adb로 받는다. CI에서는 이 전송이 가끔 수 분씩 멈췄다. 그래서
+  `launch_clean.yaml`은 `permissions: {}`를 쓴다. 권한이 필요하면 `all` 대신 그 권한만 적는다.
 - CI 실행 여부는 `e2e_changes` job이 바뀐 파일로 정한다. 새 최상위 폴더를 만들었는데 앱과 무관하다면
   그 job의 제외 목록에 추가한다.

@@ -35,6 +35,18 @@ GitHub Actions 실행 번호를 `10000 + 실행 번호` 규칙으로 변환해 A
 
 앱은 Play Console에 한 번 생성해 두어야 하며, 패키지명은 `com.ahn.calcmoney`로 고정입니다.
 
+## Android E2E 스모크 테스트 (Maestro)
+
+`android-ci.yml`의 `e2e_smoke` job이 `build`가 만든 debug APK를 에뮬레이터(API 34, `google_apis`, x86_64)에 설치하고 `.maestro/`에서 `smoke` 태그가 붙은 Flow를 돌립니다. 시크릿은 필요 없습니다.
+
+- **실행 범위**: PR이면 `e2e_changes` job이 바뀐 파일을 보고 정합니다. `docs/`, `functions/`, `store-assets/`, `ios/`, `.claude/`, `*.md`, Firebase 설정 파일만 바꾼 PR은 건너뜁니다. 그 밖의 파일이 하나라도 바뀌면 돌립니다. `master` 푸시와 태그, 수동 실행에서는 항상 돌립니다.
+- **돌리는 Flow**: `smoke`만 돌립니다. `release` Flow는 Firestore에서 환율을 받아야 해서 CI에서는 돌리지 않습니다.
+- **버전 고정**: Maestro는 job의 `MAESTRO_VERSION`으로 고정합니다. 설치 스크립트가 이 환경 변수를 읽습니다.
+- **에뮬레이터 캐시**: 처음 실행할 때 AVD와 부팅 스냅샷을 만들어 `actions/cache`에 저장하고, 다음 실행부터는 스냅샷에서 바로 띄웁니다. `API_LEVEL`을 바꾸면 캐시 키가 바뀌어 새로 만듭니다.
+- **실패했을 때**: `maestro-smoke-results` artifact에 JUnit 리포트(`report.xml`), 실패 시점 스크린샷, Maestro 로그가 들어 있습니다.
+
+Flow 작성 규칙과 로컬 실행 방법은 `.claude/skills/maestro/SKILL.md`를 따릅니다.
+
 ## iOS 지속적 통합
 
 `ios/CalcMoney/CalcMoney.xcodeproj`가 **아니라** `ios/CalcMoney.xcworkspace`를 열어야 합니다. 워크스페이스가 앱 프로젝트와 로컬 패키지 3개를 함께 묶습니다. 프로젝트만 열어도 앱 빌드와 실행은 되지만, 패키지 테스트 타깃이 테스트 플랜에서 보이지 않습니다.

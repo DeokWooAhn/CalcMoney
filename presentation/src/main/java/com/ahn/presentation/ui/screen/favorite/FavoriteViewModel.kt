@@ -64,14 +64,21 @@ class FavoriteViewModel @Inject constructor(
         loadJob?.cancel()
 
         val base = fromCurrency
-        if (base == null || favoriteCurrencyCodes.isEmpty() || availableCurrencies.isEmpty()) {
+        // 기준 통화는 카드로 만들지 않으므로, 즐겨찾기가 비었거나 기준 통화뿐이면 조회할 환율이 없다.
+        if (base == null || availableCurrencies.isEmpty() || favoriteCurrencyCodes.all { it == base.code }) {
             cachedRates = emptyMap()
-            _state.update { it.copy(isLoading = false, items = emptyList()) }
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    items = emptyList(),
+                    baseOnlyFavoriteCode = baseOnlyFavoriteCode(base, favoriteCurrencyCodes),
+                )
+            }
             return
         }
 
         loadJob = viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            _state.update { it.copy(isLoading = true, baseOnlyFavoriteCode = null) }
 
             val byCode = availableCurrencies.associateBy { it.code }
             val nextRates = mutableMapOf<String, Double>()
@@ -100,6 +107,14 @@ class FavoriteViewModel @Inject constructor(
     fun onBaseAmountChanged(fromAmount: String) {
         currentBaseAmount = fromAmount
         rebuildItems(finishLoading = false)
+    }
+
+    private fun baseOnlyFavoriteCode(
+        base: CurrencyInfo?,
+        favoriteCurrencyCodes: List<String>,
+    ): String? {
+        if (base == null || favoriteCurrencyCodes.isEmpty()) return null
+        return base.code.takeIf { favoriteCurrencyCodes.all { it == base.code } }
     }
 
     private fun rebuildItems(finishLoading: Boolean = false) {

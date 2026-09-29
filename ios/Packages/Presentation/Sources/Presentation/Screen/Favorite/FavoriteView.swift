@@ -101,6 +101,12 @@ private struct FavoriteRateContent: View {
             CenteredMessage { ProgressView() }
         } else if exchangeState.favoriteCurrencyCodes.isEmpty {
             CenteredMessage { Text(L("즐겨찾기한 통화가 없습니다.")).foregroundStyle(.secondary) }
+        } else if let baseCode = favoriteState.baseOnlyFavoriteCode {
+            CenteredMessage {
+                Text(L("현재 기준 통화가 \(baseCode)입니다.\n다른 통화를 즐겨찾기에 추가해 주세요."))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
         } else {
             CenteredMessage { Text(L("환율 정보를 불러올 수 없습니다.")).foregroundStyle(.secondary) }
         }

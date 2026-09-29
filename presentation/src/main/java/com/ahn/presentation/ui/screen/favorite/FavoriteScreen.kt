@@ -1,6 +1,5 @@
 package com.ahn.presentation.ui.screen.favorite
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -201,8 +201,13 @@ private fun ColumnScope.FavoriteRateContent(
             },
         )
         favoriteState.isLoading -> FavoriteLoading()
-        exchangeState.favoriteCurrencyCodes.isEmpty() -> FavoriteEmptyMessage(R.string.empty_favorite_currency)
-        favoriteState.items.isEmpty() -> FavoriteEmptyMessage(R.string.favorite_rate_load_failed)
+        exchangeState.favoriteCurrencyCodes.isEmpty() -> FavoriteEmptyMessage(
+            stringResource(R.string.empty_favorite_currency),
+        )
+        favoriteState.baseOnlyFavoriteCode != null -> FavoriteEmptyMessage(
+            stringResource(R.string.favorite_only_base_currency, favoriteState.baseOnlyFavoriteCode),
+        )
+        else -> FavoriteEmptyMessage(stringResource(R.string.favorite_rate_load_failed))
     }
 }
 
@@ -219,10 +224,7 @@ private fun ColumnScope.FavoriteLoading() {
 }
 
 @Composable
-private fun ColumnScope.FavoriteEmptyMessage(
-    @StringRes
-    messageResId: Int,
-) {
+private fun ColumnScope.FavoriteEmptyMessage(message: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -231,8 +233,9 @@ private fun ColumnScope.FavoriteEmptyMessage(
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = stringResource(messageResId),
+            text = message,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
         )
     }
 }

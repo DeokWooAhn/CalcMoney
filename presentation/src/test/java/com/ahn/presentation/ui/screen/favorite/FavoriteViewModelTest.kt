@@ -192,6 +192,79 @@ class FavoriteViewModelTest : BehaviorSpec({
             }
         }
 
+        When("즐겨찾기가 기준 통화 하나뿐이면") {
+            Then("로드 실패가 아니라 기준 통화만 즐겨찾기된 상태로 표시하고 환율을 조회하지 않아야 한다") {
+                runTest(testDispatcher) {
+                    val viewModel = createViewModel()
+
+                    viewModel.onExchangeStateChanged(
+                        fromCurrency = usd,
+                        favoriteCurrencyCodes = listOf("USD"),
+                        availableCurrencies = currencies,
+                    )
+                    advanceUntilIdle()
+                    viewModel.onBaseAmountChanged("10")
+
+                    viewModel.state.value shouldBe FavoriteContract.State(
+                        isLoading = false,
+                        items = emptyList(),
+                        baseOnlyFavoriteCode = "USD",
+                    )
+                    coVerify(exactly = 0) { getExchangeRateUseCase(any(), any()) }
+                }
+            }
+        }
+
+        When("기준 통화 외의 즐겨찾기가 있지만 환율 조회가 모두 실패하면") {
+            Then("기준 통화만 즐겨찾기된 상태로 표시하지 않아야 한다") {
+                runTest(testDispatcher) {
+                    coEvery { getExchangeRateUseCase("USD", "KRW") } throws IllegalStateException("rate not found")
+
+                    val viewModel = createViewModel()
+
+                    viewModel.onExchangeStateChanged(
+                        fromCurrency = usd,
+                        favoriteCurrencyCodes = listOf("USD", "KRW"),
+                        availableCurrencies = currencies,
+                    )
+                    advanceUntilIdle()
+
+                    viewModel.state.value shouldBe FavoriteContract.State(
+                        isLoading = false,
+                        items = emptyList(),
+                        baseOnlyFavoriteCode = null,
+                    )
+                }
+            }
+        }
+
+        When("기준 통화만 즐겨찾기된 상태에서 기준 통화를 바꾸면") {
+            Then("기존 기준 통화의 카드를 보여 주고 안내 상태를 해제해야 한다") {
+                runTest(testDispatcher) {
+                    coEvery { getExchangeRateUseCase("KRW", "USD") } returns 0.00067
+
+                    val viewModel = createViewModel()
+
+                    viewModel.onExchangeStateChanged(
+                        fromCurrency = usd,
+                        favoriteCurrencyCodes = listOf("USD"),
+                        availableCurrencies = currencies,
+                    )
+                    advanceUntilIdle()
+                    viewModel.onExchangeStateChanged(
+                        fromCurrency = krw,
+                        favoriteCurrencyCodes = listOf("USD"),
+                        availableCurrencies = currencies,
+                    )
+                    advanceUntilIdle()
+
+                    val state = viewModel.state.value
+                    state.baseOnlyFavoriteCode shouldBe null
+                    state.items.map { it.currency.code } shouldContainExactly listOf("USD")
+                }
+            }
+        }
+
         When("즐겨찾기 조건이 사라지면") {
             Then("이전 목록과 캐시를 비워야 한다") {
                 runTest(testDispatcher) {

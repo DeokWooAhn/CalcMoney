@@ -1,0 +1,7 @@
+# [임시 진단] launch_clean을 반복해 clearState가 멈추는 순간을 잡는다.
+appId: ${APP_ID}
+---
+- repeat:
+    times: 30
+    commands:
+      - runFlow: ../subflows/launch_clean.yaml

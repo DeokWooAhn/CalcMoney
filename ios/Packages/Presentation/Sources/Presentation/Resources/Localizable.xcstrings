@@ -641,6 +641,16 @@
         }
       }
     },
+    "현재 기준 통화가 %@입니다.\n다른 통화를 즐겨찾기에 추가해 주세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is your base currency.\nAdd a different currency to favorites."
+          }
+        }
+      }
+    },
     "호주 달러": {
       "localizations": {
         "en": {

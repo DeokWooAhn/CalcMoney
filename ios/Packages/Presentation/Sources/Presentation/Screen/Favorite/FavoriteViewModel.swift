@@ -58,17 +58,25 @@ public final class FavoriteViewModel {
         loadTask?.cancel()
         loadTask = nil
 
-        guard let base = fromCurrency, !favoriteCurrencyCodes.isEmpty, !availableCurrencies.isEmpty else {
+        // 기준 통화는 카드로 만들지 않으므로, 즐겨찾기가 비었거나 기준 통화뿐이면 조회할 환율이 없다.
+        guard let base = fromCurrency,
+              !availableCurrencies.isEmpty,
+              favoriteCurrencyCodes.contains(where: { $0 != base.code })
+        else {
             cachedRates = [:]
             state.isLoading = false
             state.items = []
+            state.baseOnlyFavoriteCode = Self.baseOnlyFavoriteCode(fromCurrency, favoriteCurrencyCodes)
             return
         }
 
         loadTask = Task { [weak self] in
             guard let self else { return }
+            // 시작하기 전에 다음 입력으로 취소됐다면 그 입력이 만든 상태를 덮어쓰지 않는다.
+            if Task.isCancelled { return }
 
             state.isLoading = true
+            state.baseOnlyFavoriteCode = nil
 
             let currencyByCode = Dictionary(
                 availableCurrencies.map { ($0.code, $0) },
@@ -98,6 +106,15 @@ public final class FavoriteViewModel {
     public func onBaseAmountChanged(_ fromAmount: String) {
         currentBaseAmount = fromAmount
         rebuildItems(finishLoading: false)
+    }
+
+    private static func baseOnlyFavoriteCode(_ base: CurrencyInfo?, _ favoriteCurrencyCodes: [String]) -> String? {
+        guard let base, !favoriteCurrencyCodes.isEmpty,
+              favoriteCurrencyCodes.allSatisfy({ $0 == base.code })
+        else {
+            return nil
+        }
+        return base.code
     }
 
     private func rebuildItems(finishLoading: Bool) {

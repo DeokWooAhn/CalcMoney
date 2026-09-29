@@ -47,3 +47,32 @@ extension CalculatorKey {
         }
     }
 }
+
+extension CalculatorKey {
+    /// E2E 테스트(Maestro)가 키를 찾을 때 쓰는 id. Android `CalculatorKey.testTag`와 값이 같아야
+    /// Flow 하나로 두 플랫폼을 돌릴 수 있다.
+    ///
+    /// 숫자는 그대로, 나머지는 영어 이름으로 짓고 기호(`+`, `=`, `( )`)는 쓰지 않는다. Maestro는 `id:`를
+    /// 정규식으로 해석해서, `keypad.+`는 "keypad 뒤에 아무 글자나"가 되어 다른 키를 누른다.
+    var testID: String {
+        let name = switch self {
+        case .history: "history"
+        case .clear: "clear"
+        case .parenthesis: "parenthesis"
+        case .dot: "dot"
+        case .delete: "delete"
+        case .calculate: "equals"
+        case let .number(value): value
+        case let .operatorKey(_, inputValue):
+            switch inputValue {
+            case "+": "plus"
+            case "-": "minus"
+            case "×": "multiply"
+            case "÷": "divide"
+            default: inputValue
+            }
+        }
+
+        return "keypad.\(name)"
+    }
+}

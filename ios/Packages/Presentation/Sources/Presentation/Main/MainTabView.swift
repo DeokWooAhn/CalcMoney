@@ -32,9 +32,14 @@ public struct MainTabView: View {
             ForEach(MainTab.allCases) { tab in
                 NavigationStack {
                     rootScreen(for: tab)
+                        // 식별자만 달면 id가 없는 자식 요소(글자 등)가 모두 같은 id를 물려받아
+                        // 기준점 하나가 여러 요소와 매칭된다. .contain으로 컨테이너 요소를 하나 따로 만든다.
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier(tab.screenTestID)
                 }
                 .tabItem {
                     Label(tab.title, systemImage: tab.systemImage)
+                        .accessibilityIdentifier(tab.testID)
                 }
                 .tag(tab)
             }

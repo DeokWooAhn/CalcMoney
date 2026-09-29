@@ -25,9 +25,9 @@ final class CalcMoneyUITests: XCTestCase {
         let app = launchApp()
 
         app.buttons["keypad.7"].tap()
-        app.buttons["keypad.+"].tap()
+        app.buttons["keypad.plus"].tap()
         app.buttons["keypad.7"].tap()
-        app.buttons["keypad.="].tap()
+        app.buttons["keypad.equals"].tap()
 
         XCTAssertTrue(
             app.staticTexts["14"].waitForExistence(timeout: 5),

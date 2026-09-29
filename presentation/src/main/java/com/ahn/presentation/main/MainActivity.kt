@@ -1,5 +1,6 @@
 package com.ahn.presentation.main
 
+import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -37,7 +38,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         adConsentManager = AdConsentManager(this)
-        requestAdConsent()
+        // UI 테스트가 UMP의 지역 판정에 좌우되면 안 된다. EEA로 판정되면 동의 양식이 화면을 덮어
+        // 테스트가 통째로 막힌다. 동의 흐름을 건너뛰면 canRequestAds가 false로 남아 광고 로드도
+        // 함께 빠지므로, 테스트가 실제 광고를 노출시키지도 않는다. iOS AdConsentManager와 같은 동작.
+        if (isUiTesting()) {
+            Log.i(TAG, "UI testing detected; skipping ad consent flow")
+        } else {
+            requestAdConsent()
+        }
 
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
@@ -99,7 +107,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * 디버그 빌드에 [UI_TESTING_EXTRA]가 붙어 실행됐는지 확인한다.
+     *
+     * 런처 Activity는 exported라 다른 앱도 extra를 붙여 실행할 수 있다. 릴리스 빌드에서 이 값을
+     * 받아 주면 동의 흐름을 외부에서 끌 수 있게 되므로 디버그 빌드로 한정한다.
+     */
+    private fun isUiTesting(): Boolean {
+        val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        return isDebuggable && intent.getBooleanExtra(UI_TESTING_EXTRA, false)
+    }
+
     private companion object {
         const val TAG = "MainActivity"
+
+        /** Maestro Flow의 `launchApp.arguments`가 넘기는 값. iOS `AdConsentManager.uiTestingLaunchArgument` 대응. */
+        const val UI_TESTING_EXTRA = "UI_TESTING"
     }
 }

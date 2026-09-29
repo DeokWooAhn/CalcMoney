@@ -21,7 +21,6 @@ struct CalculatorButton: View {
         .buttonStyle(CalculatorKeyButtonStyle())
         .aspectRatio(1, contentMode: .fit)
         .padding(6)
-        .accessibilityIdentifier("keypad.\(text)")
     }
 }
 

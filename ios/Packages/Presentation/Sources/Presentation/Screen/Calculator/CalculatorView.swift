@@ -246,6 +246,12 @@ private struct CalculatorKeyButton: View {
     let onTap: () -> Void
 
     var body: some View {
+        keyButton
+            .accessibilityIdentifier(key.testID)
+    }
+
+    @ViewBuilder
+    private var keyButton: some View {
         switch key {
         case .history:
             CalculatorIconButton(

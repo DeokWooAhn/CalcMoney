@@ -72,4 +72,31 @@ class CalculatorKeyTest :
                     )
             }
         }
+
+        describe("E2E 테스트 id") {
+            // Maestro Flow가 이 값으로 키를 찾고, iOS CalculatorKey.testID와 같은 값이어야
+            // Flow 하나로 두 플랫폼을 돌릴 수 있다. 값을 바꾸면 .maestro Flow와 iOS도 함께 바꿔야 한다.
+            it("키패드 배열 순서대로 약속한 id를 가진다") {
+                calculatorKeyRows.flatten().map { it.testTag } shouldBe
+                    listOf(
+                        "keypad.history", "keypad.clear", "keypad.parenthesis", "keypad.divide",
+                        "keypad.7", "keypad.8", "keypad.9", "keypad.multiply",
+                        "keypad.4", "keypad.5", "keypad.6", "keypad.minus",
+                        "keypad.1", "keypad.2", "keypad.3", "keypad.plus",
+                        "keypad.dot", "keypad.0", "keypad.delete", "keypad.equals",
+                    )
+            }
+
+            // Maestro는 id를 정규식으로 해석한다. 기호가 섞이면 다른 키와 매칭된다.
+            it("모든 키의 id가 정규식 특수문자 없이 영문 소문자와 숫자로만 이뤄진다") {
+                calculatorKeyRows.flatten().forEach { key ->
+                    key.testTag.matches(Regex("""keypad\.[a-z0-9]+""")) shouldBe true
+                }
+            }
+
+            it("모든 키의 id가 서로 다르다") {
+                val tags = calculatorKeyRows.flatten().map { it.testTag }
+                tags.toSet().size shouldBe tags.size
+            }
+        }
     })

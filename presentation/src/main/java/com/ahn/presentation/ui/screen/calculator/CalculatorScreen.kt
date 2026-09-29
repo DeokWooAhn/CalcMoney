@@ -53,6 +53,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -129,6 +130,7 @@ fun CalculatorScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .testTag("screen.calculator")
                 .padding(paddingValues)
                 .padding(16.dp, 5.dp, 16.dp),
             verticalArrangement = Arrangement.SpaceBetween,
@@ -410,10 +412,12 @@ private fun CalculatorKeyButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val keyModifier = modifier.testTag(key.testTag)
+
     when (key) {
         CalculatorKey.History -> CalculatorIconButton(
             imageVector = Icons.Default.AccessTime,
-            modifier = modifier,
+            modifier = keyModifier,
             backgroundColor = MaterialTheme.colorScheme.buttonFunction,
             contentColor = MaterialTheme.colorScheme.buttonTextSecondary,
             contentDescription = stringResource(R.string.calculator_history),
@@ -422,7 +426,7 @@ private fun CalculatorKeyButton(
 
         CalculatorKey.Clear -> CalculatorButton(
             text = "AC",
-            modifier = modifier,
+            modifier = keyModifier,
             backgroundColor = MaterialTheme.colorScheme.buttonFunction,
             textColor = MaterialTheme.colorScheme.buttonTextSecondary,
             onClick = onClick,
@@ -430,7 +434,7 @@ private fun CalculatorKeyButton(
 
         CalculatorKey.Parenthesis -> CalculatorButton(
             text = "( )",
-            modifier = modifier,
+            modifier = keyModifier,
             backgroundColor = MaterialTheme.colorScheme.buttonFunction,
             textColor = MaterialTheme.colorScheme.buttonTextSecondary,
             onClick = onClick,
@@ -438,13 +442,13 @@ private fun CalculatorKeyButton(
 
         CalculatorKey.Dot -> CalculatorButton(
             text = ".",
-            modifier = modifier,
+            modifier = keyModifier,
             onClick = onClick,
         )
 
         CalculatorKey.Delete -> DeleteCalculatorButton(
             text = "⌫",
-            modifier = modifier,
+            modifier = keyModifier,
             backgroundColor = MaterialTheme.colorScheme.buttonFunction,
             textColor = MaterialTheme.colorScheme.buttonTextSecondary,
             onDeleteAction = onClick,
@@ -452,20 +456,20 @@ private fun CalculatorKeyButton(
 
         CalculatorKey.Calculate -> CalculatorButton(
             text = "=",
-            modifier = modifier,
+            modifier = keyModifier,
             backgroundColor = MaterialTheme.colorScheme.buttonOperator,
             onClick = onClick,
         )
 
         is CalculatorKey.Number -> CalculatorButton(
             text = key.value,
-            modifier = modifier,
+            modifier = keyModifier,
             onClick = onClick,
         )
 
         is CalculatorKey.Operator -> CalculatorButton(
             text = key.operatorText(),
-            modifier = modifier,
+            modifier = keyModifier,
             backgroundColor = MaterialTheme.colorScheme.buttonOperator,
             onClick = onClick,
         )

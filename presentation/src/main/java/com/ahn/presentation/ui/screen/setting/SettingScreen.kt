@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -131,7 +132,7 @@ fun SettingScreen(
     onPrivacyOptionsClick: () -> Unit = {},
 ) {
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.testTag("screen.setting"),
         snackbarHost = {
             CustomSnackbarHost(snackbarHostState = snackbarHostState)
         },

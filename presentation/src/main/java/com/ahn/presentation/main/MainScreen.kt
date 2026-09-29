@@ -28,8 +28,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ahn.presentation.R
@@ -118,6 +121,9 @@ private fun MainScreenScaffold(
         contentWindowInsets = WindowInsets(0.dp),
         modifier = Modifier
             .fillMaxSize()
+            // testTag를 Android resource-id로 노출한다. 이게 없으면 Maestro 같은 외부 UI 테스트 도구가
+            // testTag를 볼 수 없어 화면 문구로만 요소를 찾아야 하고, 언어 설정이 바뀌면 깨진다.
+            .semantics { testTagsAsResourceId = true }
             .background(MaterialTheme.colorScheme.background)
             .padding(top = statusBarPadding),
         bottomBar = {
@@ -126,6 +132,7 @@ private fun MainScreenScaffold(
                     val selected = selectedRoute == item.route
 
                     NavigationBarItem(
+                        modifier = Modifier.testTag(item.testTag),
                         icon = {
                             Icon(
                                 painterResource(if (selected) item.selectedIcon else item.icon),

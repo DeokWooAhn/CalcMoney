@@ -72,4 +72,34 @@ struct CalculatorKeyTests {
         #expect(historyCount == 1)
         #expect(calculatorKeyRows.first?.first == .history)
     }
+
+    /// Maestro Flow가 이 값으로 키를 찾고, Android CalculatorKey.testTag와 같은 값이어야
+    /// Flow 하나로 두 플랫폼을 돌릴 수 있다. 값을 바꾸면 .maestro Flow와 Android도 함께 바꿔야 한다.
+    @Test("키패드 배열 순서대로 약속한 E2E id를 가진다")
+    func 키패드_배열_순서대로_약속한_E2E_id를_가진다() {
+        let ids = calculatorKeyRows.flatMap(\.self).map(\.testID)
+
+        #expect(ids == [
+            "keypad.history", "keypad.clear", "keypad.parenthesis", "keypad.divide",
+            "keypad.7", "keypad.8", "keypad.9", "keypad.multiply",
+            "keypad.4", "keypad.5", "keypad.6", "keypad.minus",
+            "keypad.1", "keypad.2", "keypad.3", "keypad.plus",
+            "keypad.dot", "keypad.0", "keypad.delete", "keypad.equals",
+        ])
+    }
+
+    /// Maestro는 id를 정규식으로 해석한다. 기호가 섞이면 다른 키와 매칭된다.
+    @Test("모든 키의 E2E id가 정규식 특수문자 없이 영문 소문자와 숫자로만 이뤄진다")
+    func 모든_키의_E2E_id가_정규식_특수문자_없이_영문_소문자와_숫자로만_이뤄진다() {
+        let ids = calculatorKeyRows.flatMap(\.self).map(\.testID)
+
+        #expect(ids.allSatisfy { $0.wholeMatch(of: /keypad\.[a-z0-9]+/) != nil })
+    }
+
+    @Test("모든 키의 E2E id가 서로 다르다")
+    func 모든_키의_E2E_id가_서로_다르다() {
+        let ids = calculatorKeyRows.flatMap(\.self).map(\.testID)
+
+        #expect(Set(ids).count == ids.count)
+    }
 }

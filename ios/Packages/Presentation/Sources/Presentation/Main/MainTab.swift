@@ -9,6 +9,12 @@ enum MainTab: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// E2E 테스트(Maestro)가 탭을 찾을 때 쓰는 id. Android `BottomNavItem.testTag`와 값이 같아야 한다.
+    var testID: String { "tab.\(rawValue)" }
+
+    /// 탭 화면이 떴는지 확인하는 기준점 id. Android 각 Screen 루트의 testTag와 값이 같아야 한다.
+    var screenTestID: String { "screen.\(rawValue)" }
+
     var title: String {
         switch self {
         case .calculator: L("계산기")

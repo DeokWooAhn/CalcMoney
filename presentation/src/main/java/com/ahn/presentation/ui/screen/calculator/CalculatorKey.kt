@@ -75,3 +75,28 @@ internal fun CalculatorKey.toIntent(): CalculatorContract.Intent? =
         is CalculatorKey.Operator ->
             CalculatorContract.Intent.Input(CalculatorToken.Operator(inputValue))
     }
+
+/**
+ * E2E 테스트(Maestro)가 키를 찾을 때 쓰는 id. iOS `CalculatorKey.testID`와 값이 같아야
+ * Flow 하나로 두 플랫폼을 돌릴 수 있다.
+ *
+ * 숫자는 그대로, 나머지는 영어 이름으로 짓고 기호(`+`, `=`, `( )`)는 쓰지 않는다. Maestro는 `id:`를
+ * 정규식으로 해석해서, `keypad.+`는 "keypad 뒤에 아무 글자나"가 되어 다른 키를 누른다.
+ */
+internal val CalculatorKey.testTag: String
+    get() = "keypad." + when (this) {
+        CalculatorKey.History -> "history"
+        CalculatorKey.Clear -> "clear"
+        CalculatorKey.Parenthesis -> "parenthesis"
+        CalculatorKey.Dot -> "dot"
+        CalculatorKey.Delete -> "delete"
+        CalculatorKey.Calculate -> "equals"
+        is CalculatorKey.Number -> value
+        is CalculatorKey.Operator -> when (inputValue) {
+            "+" -> "plus"
+            "-" -> "minus"
+            "×" -> "multiply"
+            "÷" -> "divide"
+            else -> inputValue
+        }
+    }

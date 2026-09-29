@@ -291,6 +291,7 @@ private fun FavoriteRateCard(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
+        modifier = Modifier.testTag("favorite.card.${item.currency.code}"),
     ) {
         Column(Modifier.padding(12.dp)) {
             Row(

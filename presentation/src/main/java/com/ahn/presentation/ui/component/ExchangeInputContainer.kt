@@ -38,8 +38,9 @@ fun ExchangeInputContainer(
     onToggleFavorite: (String) -> Unit,
     isEditable: Boolean,
     label: String,
+    modifier: Modifier = Modifier,
 ) {
-    Column {
+    Column(modifier = modifier) {
         Text(
             text = label,
             fontSize = 14.sp,

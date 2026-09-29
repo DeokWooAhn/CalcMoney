@@ -172,4 +172,5 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 - iOS 화면/레이어 배선: `.claude/skills/ios-screen/SKILL.md`
 - iOS 테스트: `.claude/skills/ios-testing/SKILL.md`
 - iOS 린트·빌드·CI: `.claude/skills/ios-ci/SKILL.md`
+- Maestro E2E(Android·iOS 공통 Flow): `.claude/skills/maestro/SKILL.md`
 - 프로젝트 개요: `CLAUDE.md`

@@ -1,0 +1,18 @@
+appId: ${APP_ID}
+name: 앱이 뜨고 계산기와 하단 탭이 보인다
+tags:
+  - smoke
+---
+- runFlow: ../subflows/launch_clean.yaml
+- assertVisible:
+    id: "keypad.0"
+- assertVisible:
+    id: "keypad.equals"
+- assertVisible:
+    id: "tab.calculator"
+- assertVisible:
+    id: "tab.exchange"
+- assertVisible:
+    id: "tab.favorite"
+- assertVisible:
+    id: "tab.setting"

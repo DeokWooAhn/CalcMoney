@@ -91,3 +91,4 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 | iOS 새 화면/ViewModel 추가, 레이어별 배선 | `.claude/skills/ios-screen/SKILL.md` |
 | iOS 테스트 작성 | `.claude/skills/ios-testing/SKILL.md` |
 | iOS 린트·빌드·CI | `.claude/skills/ios-ci/SKILL.md` |
+| Maestro E2E Flow 작성·실행, 테스트 id 부여 | `.claude/skills/maestro/SKILL.md` |

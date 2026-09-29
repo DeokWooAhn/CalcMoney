@@ -39,7 +39,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -77,7 +80,9 @@ fun CurrencyPickerDialog(
             color = MaterialTheme.colorScheme.surface,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 500.dp),
+                .heightIn(max = 500.dp)
+                // Dialog는 별도 창이라 MainScreen에서 켠 testTagsAsResourceId가 적용되지 않는다.
+                .semantics { testTagsAsResourceId = true },
         ) {
             Column {
                 Text(
@@ -202,6 +207,7 @@ private fun CurrencyPickerItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .testTag("currency.row.${currency.code}")
             .clickable(
                 onClickLabel = selectCurrencyLabel,
                 onClick = onClick,
@@ -238,7 +244,9 @@ private fun CurrencyPickerItem(
 
         IconButton(
             onClick = onToggleFavorite,
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier
+                .size(48.dp)
+                .testTag("favorite.toggle.${currency.code}"),
         ) {
             Icon(
                 imageVector = if (isFavorite) {

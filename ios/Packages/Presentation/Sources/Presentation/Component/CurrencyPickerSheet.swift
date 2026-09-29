@@ -95,6 +95,7 @@ struct CurrencyPickerSheet: View {
                             .font(.system(size: 14, weight: .semibold))
                     }
                     .accessibilityLabel(L("닫기"))
+                    .accessibilityIdentifier("currency.picker.close")
                 }
             }
         }
@@ -171,11 +172,14 @@ private struct CurrencyPickerRow: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isFavorite ? L("즐겨찾기 해제") : L("즐겨찾기 추가"))
+            .accessibilityIdentifier("favorite.toggle.\(currency.code)")
         }
         // 행 기본 여백에 더해 빠른 이동 인덱스 폭만큼 비워, 스크롤 직후에도 하트 버튼이 가려지지 않게 한다.
         .padding(.trailing, fastScrollIndexWidth - 16)
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("currency.row.\(currency.code)")
         .listRowBackground(isSelected ? AppColors.surface : Color.clear)
     }
 }

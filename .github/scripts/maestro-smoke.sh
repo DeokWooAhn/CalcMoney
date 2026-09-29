@@ -18,10 +18,10 @@ adb install -r "$APK"
 
 # 설치 직후 첫 실행은 dex 검증·파일 캐시 적재 때문에 유난히 느리다. Flow가 아니라 여기서 그 비용을 치른다.
 # -W는 첫 프레임이 그려질 때까지 기다린다. UI_TESTING은 Flow와 같게 광고 동의 흐름을 끈다.
-echo "Warming up $APP_ID..."
-timeout 120 adb shell am start -W \
-  -a android.intent.action.MAIN -c android.intent.category.LAUNCHER \
-  -p "$APP_ID" --ez UI_TESTING true \
+# 런처 Activity에는 DEFAULT 카테고리가 없어 암시적 인텐트로는 안 뜨므로 컴포넌트를 찾아 직접 지정한다.
+LAUNCHER=$(adb shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER "$APP_ID" | tail -n 1 | tr -d '\r')
+echo "Warming up $LAUNCHER..."
+timeout 120 adb shell am start -W -n "$LAUNCHER" --ez UI_TESTING true \
   || echo "::warning::Warm-up launch did not finish in time"
 adb shell am force-stop "$APP_ID"
 

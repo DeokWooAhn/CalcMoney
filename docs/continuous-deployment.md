@@ -12,7 +12,7 @@
 
 ## Android — Google Play 내부 테스트 배포
 
-`android-v`로 시작하는 태그를 푸시하면 서명된 AAB를 빌드해 Google Play 내부 테스트 트랙에 업로드합니다.
+`android-v`로 시작하는 태그를 푸시하면 서명된 AAB를 빌드해 Google Play 내부 테스트 트랙에 업로드합니다. 서명 빌드(`release_bundle`)는 Maestro smoke E2E(`e2e_smoke`)가 통과해야 시작하므로, smoke가 실패하면 AAB 빌드와 Play 업로드가 모두 멈춥니다. 수동 실행(`workflow_dispatch`)의 릴리스 빌드와 Firebase App Distribution 배포도 같은 조건입니다.
 
 ```bash
 git tag android-v1.0.2
@@ -47,6 +47,33 @@ GitHub Actions 실행 번호를 `10000 + 실행 번호` 규칙으로 변환해 A
 - **실패했을 때**: `maestro-smoke-results` artifact에 JUnit 리포트(`report.xml`), 실패 시점 스크린샷, Maestro 로그, 테스트 동안의 `logcat.txt`가 들어 있습니다.
 
 Flow 작성 규칙과 로컬 실행 방법은 `.claude/skills/maestro/SKILL.md`를 따릅니다.
+
+## 릴리스 전 실기기 확인
+
+CI는 `smoke`만 돌리고, Firestore가 필요한 `release` Flow(환율 표시, 즐겨찾기 추가)는 돌리지 않습니다. 내부 테스트 트랙을 프로덕션으로 올리기 전에 실기기에서 아래를 확인합니다.
+
+### 1. 태그 커밋의 debug 빌드로 `release` Flow 돌리기
+
+debug 빌드는 테스트 광고를 쓰고 `UI_TESTING` 인자로 광고 동의 창을 끌 수 있어서, 자동화로 돌려도 안전합니다.
+
+```bash
+git switch --detach android-v1.0.2
+./gradlew :app:assembleDebug
+adb -s <serial> install -r app/build/outputs/apk/debug/app-debug.apk
+maestro --device <serial> test .maestro --include-tags=release -e APP_ID=com.ahn.calcmoney
+```
+
+- 기기에 Play 스토어판(또는 내부 테스트판)이 깔려 있으면 서명이 달라 설치되지 않습니다. 지우면 그 기기의 앱 데이터(즐겨찾기, 계산 기록)가 사라지니 개인 기기라면 먼저 확인하세요.
+- Flow는 `clearState`로 앱 데이터를 매번 지웁니다.
+- Firestore가 App Check를 강제하면 기기의 디버그 토큰이 Firebase 콘솔에 등록돼 있어야 합니다.
+- iOS 코드도 바뀌었다면 시뮬레이터에서 같은 Flow를 `-e APP_ID=com.ahn.CalcMoney`로 돌립니다.
+
+### 2. 내부 테스트판을 직접 써 보기
+
+1번은 debug 빌드라 R8 난독화, Play Integrity(App Check), 실제 광고 단위를 검증하지 못합니다. Play 스토어에서 내부 테스트판을 받아 환율이 뜨는지, 통화를 바꾸고 즐겨찾기를 추가할 수 있는지, 광고 배너가 뜨는지 손으로 확인합니다.
+
+- 내부 테스트판에는 Maestro를 돌리지 않습니다. 릴리스 빌드는 `UI_TESTING`을 무시해서 실제 광고가 뜨고, 자동화가 만든 노출은 AdMob 무효 트래픽이 됩니다. 꼭 돌려야 한다면 먼저 AdMob 콘솔에서 그 기기를 테스트 기기로 등록하세요.
+- 확인이 끝나면 Play Console에서 내부 테스트 릴리스를 프로덕션으로 승급합니다.
 
 ## iOS 지속적 통합
 

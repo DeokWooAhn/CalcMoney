@@ -7,23 +7,47 @@ actor CalculatorTestRecorder {
     private(set) var savedHistories: [CalculatorHistory] = []
     private(set) var savedMainCurrencyCodes: [String] = []
     private(set) var requestedRatePairs: [String] = []
+    private(set) var refreshCount = 0
+
+    /// 기록이 늘 때마다 신호를 보낸다. `waitUntil(_:)`이 이 신호를 받을 때마다 조건을 다시 확인한다.
+    private let changes: AsyncStream<Void>
+    private let changesContinuation: AsyncStream<Void>.Continuation
+
+    init() {
+        (changes, changesContinuation) = AsyncStream.makeStream(bufferingPolicy: .bufferingNewest(1))
+    }
 
     func recordHistory(_ history: CalculatorHistory) {
         savedHistories.append(history)
+        changesContinuation.yield()
     }
 
     func recordMainCurrency(_ code: String) {
         savedMainCurrencyCodes.append(code)
+        changesContinuation.yield()
     }
 
     func recordRatePair(from: String, to: String) {
         requestedRatePairs.append("\(from)->\(to)")
+        changesContinuation.yield()
     }
-
-    private(set) var refreshCount = 0
 
     func recordRefresh() {
         refreshCount += 1
+        changesContinuation.yield()
+    }
+
+    /// 기록이 조건을 만족할 때까지 기다린다. 고정 시간 대기 대신 저장·조회가 끝났는지 확인할 때 쓴다.
+    ///
+    /// 기록은 늘기만 하므로 "몇 건 이상"처럼 한 번 참이 되면 되돌아가지 않는 조건을 넘길 것.
+    /// 조건이 끝내 참이 되지 않으면 스위트의 `.timeLimit`이 테스트를 취소하고, 그때 대기를 푼다.
+    /// 신호 스트림은 하나이므로 한 번에 한 곳에서만 기다린다.
+    func waitUntil(_ condition: @Sendable (isolated CalculatorTestRecorder) -> Bool) async {
+        guard !condition(self) else { return }
+
+        for await _ in changes where condition(self) {
+            return
+        }
     }
 }
 

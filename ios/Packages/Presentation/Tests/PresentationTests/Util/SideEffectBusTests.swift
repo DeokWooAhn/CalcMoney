@@ -1,7 +1,7 @@
 import Testing
 @testable import Presentation
 
-@Suite("SideEffectBus")
+@Suite("SideEffectBus", .timeLimit(.minutes(1)))
 struct SideEffectBusTests {
     @Test("구독자가 없는 동안 보낸 이벤트는 다음 구독자에게 전달된다")
     @MainActor
@@ -57,36 +57,14 @@ struct SideEffectBusTests {
         #expect(received == ["탭 전환 직후 도착한 이벤트"])
     }
 
-    /// 이벤트가 유실되면 무한 대기 대신 빈 배열로 실패하도록 시간 제한을 둔다.
-    private func effects(
-        from stream: AsyncStream<String>,
-        count: Int,
-        timeout: Duration = .seconds(1),
-    ) async -> [String] {
-        await withTaskGroup(of: [String]?.self) { group in
-            group.addTask {
-                var collected: [String] = []
-                for await effect in stream {
-                    collected.append(effect)
-                    if collected.count == count { break }
-                }
-                return collected
-            }
-            group.addTask {
-                try? await Task.sleep(for: timeout)
-                return nil
-            }
-
-            var result: [String] = []
-            for await collected in group {
-                if let collected {
-                    result = collected
-                }
-                break
-            }
-            group.cancelAll()
-
-            return result
+    /// 이벤트를 `count`개 받을 때까지 모은다.
+    /// 이벤트가 유실되면 스위트의 `.timeLimit`이 테스트를 취소하고, 그때 스트림 순회가 끝나 받은 만큼만 반환한다.
+    private func effects(from stream: AsyncStream<String>, count: Int) async -> [String] {
+        var collected: [String] = []
+        for await effect in stream {
+            collected.append(effect)
+            if collected.count == count { break }
         }
+        return collected
     }
 }

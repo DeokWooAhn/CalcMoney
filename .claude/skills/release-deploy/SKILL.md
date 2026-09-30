@@ -11,11 +11,14 @@ description: 릴리스, 배포, 버전 관리, CI/CD 워크플로, Firebase Func
 
 1. `master`에 머지
 2. `android-v*` 태그 push (예: `android-v1.2.0`)
-3. `.github/workflows/android-ci.yml`이 서명된 AAB 빌드 → Play **internal** 트랙 자동 업로드
+3. `.github/workflows/android-ci.yml`이 Maestro smoke E2E(`e2e_smoke`) 통과 후 서명된 AAB 빌드 → Play **internal** 트랙 자동 업로드.
+   smoke가 실패하면 AAB 빌드와 업로드가 멈춘다
+4. 프로덕션 승급 전 실기기 확인: 태그 커밋의 debug 빌드로 `release` Flow, 내부 테스트판은 손으로 확인
+   (`docs/continuous-deployment.md`의 "릴리스 전 실기기 확인"). 내부 테스트판에 Maestro를 돌리지 말 것 — 실제 광고가 뜬다
 
 - `versionCode = 10000 + GITHUB_RUN_NUMBER`, `versionName = 태그에서 android-v 제거` — **절대 손으로 versionCode를 올리지 말 것**
 - 패키지명은 `com.ahn.calcmoney` 고정 (Play Console 등록명)
-- Firebase App Distribution 배포는 `workflow_dispatch` 수동 트리거 (`distribute_debug` 입력)
+- Firebase App Distribution 배포는 `workflow_dispatch` 수동 트리거 (`distribute_debug` 입력). 이것도 `e2e_smoke` 통과가 조건
 
 ## CI 파이프라인 (PR → master)
 

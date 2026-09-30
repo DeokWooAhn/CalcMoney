@@ -90,7 +90,12 @@ MCP로 한 번 성공한 시나리오와 매번 통과하는 시나리오는 다
 - debug 빌드는 App Check debug provider를 쓴다. Firestore가 App Check를 강제하면 기기의 디버그 토큰을
   Firebase 콘솔에 등록해야 `release` Flow가 통과한다(첫 실행 시 Logcat/Xcode 콘솔에 토큰이 찍힌다).
 - CI(`android-ci.yml`의 `e2e_smoke`)는 Android 에뮬레이터(API 34, 영어)에서 `smoke`만 돌린다. `release`는
-  CI에서 돌리지 않으니 릴리스 전에 실기기에서 직접 돌린다. iOS는 아직 CI에 없다.
+  CI에서 돌리지 않으니 릴리스 전에 실기기에서 태그 커밋의 debug 빌드로 돌린다(`docs/continuous-deployment.md`의
+  "릴리스 전 실기기 확인"). iOS는 아직 CI에 없다.
+- `e2e_smoke`는 태그 릴리스의 관문이다. `release_bundle`과 `firebase_app_distribution`이 이 job을 기다리므로,
+  smoke Flow가 불안정하면 릴리스가 막힌다. 새 `smoke` Flow는 CI 에뮬레이터에서 여러 번 통과하는지 확인하고 넣는다.
+- **릴리스 빌드(Play 스토어·내부 테스트판)에는 Maestro를 돌리지 않는다.** `UI_TESTING`은 디버그 빌드에서만
+  받아서 릴리스에서는 실제 광고가 뜨고, 자동화가 만든 노출은 AdMob 무효 트래픽이 된다.
 - CI 에뮬레이터는 실기기보다 느리다. 새 Flow의 대기 시간(`extendedWaitUntil`의 `timeout`)을 넉넉히 둔다.
 - Android에서 살아 있는 앱을 `clearState`로 지우고 1초 안에 다시 띄우면, 옛 태스크 정리가 새 프로세스까지
   죽여 빈 화면으로 남는다(느린 에뮬레이터에서만 드러난다). `launch_clean.yaml`이 먼저 `stopApp` 후 2초

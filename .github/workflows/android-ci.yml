@@ -256,9 +256,11 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # smoke E2E가 통과해야 서명된 AAB를 만든다. 태그 push와 수동 실행에서는 e2e_changes가 항상 E2E를
+  # 돌리도록 정하므로, e2e_smoke가 실패하거나 건너뛰어지면 이 job과 뒤따르는 Play 업로드도 실행되지 않는다.
   release_bundle:
     name: Build signed release bundle
-    needs: build
+    needs: [build, e2e_smoke]
     runs-on: ubuntu-latest
     if: ${{ startsWith(github.ref, 'refs/tags/android-v') || (github.event_name == 'workflow_dispatch' && inputs.build_release_bundle) }}
 
@@ -355,9 +357,10 @@ jobs:
           track: internal
           status: completed
 
+  # smoke E2E가 깨진 debug 빌드를 테스터에게 보내지 않는다.
   firebase_app_distribution:
     name: Firebase App Distribution
-    needs: build
+    needs: [build, e2e_smoke]
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.distribute_debug }}
 

@@ -1,6 +1,6 @@
 ---
 name: maestro
-description: Maestro E2E Flow(.maestro/)를 작성·수정·실행하거나, 화면에 테스트 id를 붙일 때 사용. Maestro MCP로 기기를 조작해 Flow를 만들고 CLI로 검증하는 절차와 이 저장소의 id·태그 규칙.
+description: Maestro E2E Flow(.maestro/)를 작성·수정·실행하거나, 화면에 테스트 id를 붙일 때, 화면·UI 코드를 바꾼 뒤 작업을 마치기 전 검증할 때 사용. Maestro MCP로 기기를 조작해 Flow를 만들고 CLI로 검증하는 절차와 이 저장소의 id·태그 규칙.
 ---
 
 # Maestro E2E 테스트

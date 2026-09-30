@@ -1,6 +1,6 @@
 ---
 name: maestro
-description: Maestro E2E Flow(.maestro/)를 작성·수정·실행하거나, 화면에 테스트 id를 붙일 때 사용. Maestro MCP로 기기를 조작해 Flow를 만들고 CLI로 검증하는 절차와 이 저장소의 id·태그 규칙.
+description: Maestro E2E Flow(.maestro/)를 작성·수정·실행하거나, 화면에 테스트 id를 붙일 때, 화면·UI 코드를 바꾼 뒤 작업을 마치기 전 검증할 때 사용. Maestro MCP로 기기를 조작해 Flow를 만들고 CLI로 검증하는 절차와 이 저장소의 id·태그 규칙.
 ---
 
 # Maestro E2E 테스트
@@ -30,8 +30,14 @@ maestro --device <udid> test .maestro -e APP_ID=com.ahn.CalcMoney
 maestro test .maestro -e APP_ID=... --include-tags=smoke
 ```
 
-- Android는 실기기가 연결돼 있으면 실기기로 돌린다. 실기기에 Play 스토어판이 깔려 있으면 서명이 달라
-  debug 앱을 덮어쓸 수 없고, 지우면 사용자 데이터가 사라지므로 **지우기 전에 반드시 사용자에게 묻는다.**
+- **두 플랫폼 모두 실기기가 연결돼 있으면 실기기로, 없으면 에뮬레이터·시뮬레이터로 돌린다.** 기기 목록은
+  `adb devices`(serial이 `emulator-`로 시작하지 않으면 실기기)와 `xcrun devicectl list devices`로 확인한다.
+  설치된 Maestro 2.1.0 CLI는 iOS 대상을 시뮬레이터로만 안내한다. iOS 실기기에서 돌지 않으면 시뮬레이터로
+  돌리고 그렇게 했다고 보고한다.
+- 실기기에 스토어판(Play 스토어·App Store)이 깔려 있으면 서명이 달라 debug 앱을 덮어쓸 수 없고, 지우면
+  사용자 데이터가 사라지므로 **지우기 전에 반드시 사용자에게 묻는다.** 잠금 화면이 떠 있으면 테스트가
+  실패하니 잠금 해제를 요청한다(직접 풀지 않는다).
+- 에뮬레이터·시뮬레이터는 다 쓰면 끈다(`xcrun simctl shutdown all`). 켜 두면 RAM을 수 GB씩 계속 쓴다.
 - 실패하면 `--test-output-dir`에 스크린샷이 남는다. 화면 계층은 `maestro --device <id> hierarchy --compact`.
 - iOS 빌드: `ios/`에서 `xcodebuild build -workspace CalcMoney.xcworkspace -scheme CalcMoney -destination 'platform=iOS Simulator,id=<udid>' -derivedDataPath <dir>` 후 `xcrun simctl install`.
 

@@ -79,7 +79,7 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 - 주석·KDoc·테스트 설명·커밋 메시지는 **한국어**, 코드 식별자·로그는 영어.
 - **App Check는 provider가 빌드 타입별로 갈린다.** 디버그는 debug provider, 릴리스는 Play Integrity(Android) / App Attest(iOS). Android는 `app/src/debug`·`app/src/release`의 `AppCheckInstaller.kt` 두 파일로, iOS는 `FirebaseBootstrap.swift`의 `#if DEBUG`로 분기한다. iOS는 반드시 `FirebaseApp.configure()` **이전에** factory를 지정해야 한다.
 - **로컬에서 Firestore를 읽으려면 디버그 토큰 등록이 필요하다.** 앱을 처음 디버그로 띄우면 Logcat/Xcode 콘솔에 App Check 디버그 토큰이 찍히는데, 이걸 Firebase 콘솔 App Check에 등록해야 한다. 등록 전에는 enforce가 켜진 뒤부터 읽기가 거부된다.
-- **화면·UI 코드를 바꾼 작업은 마치기 전에 Maestro Flow(`.maestro/`)를 돌린다.** 요청이 없어도 한다. Android 화면(`presentation/`)을 바꿨으면 Android에서, iOS 화면(`ios/Packages/Presentation/`)을 바꿨으면 iOS에서 `smoke`와 `release`를 모두 돌린다. CI는 Android `smoke`만 돌리므로 나머지는 여기서만 확인된다. **두 플랫폼 모두 실기기가 연결돼 있으면 실기기로, 없으면 Android 에뮬레이터·iOS 시뮬레이터로 돌린다.** iOS 실기기에서 Maestro가 돌지 않으면(설치된 2.1.0 CLI는 iOS 대상을 시뮬레이터로만 안내한다) 시뮬레이터로 돌리고 그렇게 했다고 보고한다. 실기기가 잠겨 있으면 잠금 해제를 요청한다. 기기에 스토어판(Play 스토어·App Store)이 깔려 있으면 debug 빌드로 바꾸기 전에 사용자에게 묻는다(지우면 데이터가 사라진다). 에뮬레이터·시뮬레이터는 다 쓰면 끈다. 테스트 id를 바꿨으면 Flow도 함께 고친다. 실행 방법은 `.claude/skills/maestro/SKILL.md`.
+- **테스트 id(`testTag`·`accessibilityIdentifier`)를 바꿨으면 `.maestro/` Flow도 함께 고친다.** CI `e2e_smoke`가 태그 릴리스의 관문이라 Flow가 깨지면 릴리스가 막힌다.
 
 ## 세부 규칙 (필요할 때 해당 스킬 참조)
 
@@ -92,4 +92,4 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 | iOS 새 화면/ViewModel 추가, 레이어별 배선 | `.claude/skills/ios-screen/SKILL.md` |
 | iOS 테스트 작성 | `.claude/skills/ios-testing/SKILL.md` |
 | iOS 린트·빌드·CI | `.claude/skills/ios-ci/SKILL.md` |
-| Maestro E2E Flow 작성·실행, 테스트 id 부여 | `.claude/skills/maestro/SKILL.md` |
+| Maestro E2E Flow 작성·실행·리뷰, 테스트 id 부여 | `maestro-e2e` 플러그인의 `flows` 스킬 + `.claude/skills/maestro/SKILL.md`(이 저장소의 APP_ID·id 표·제약) |

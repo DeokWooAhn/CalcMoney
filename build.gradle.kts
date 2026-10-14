@@ -59,6 +59,15 @@ kover {
                 annotatedBy("androidx.compose.runtime.Composable")
             }
         }
+
+        variant("unit") {
+            verify {
+                // 도입 시점 기준선 77.08%에서 2%p 남짓 낮춘 하한. 커버리지가 오르면 함께 올린다.
+                rule {
+                    minBound(75)
+                }
+            }
+        }
     }
 }
 

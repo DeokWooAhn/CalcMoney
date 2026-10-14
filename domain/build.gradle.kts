@@ -1,6 +1,7 @@
 plugins {
     id("java-library")
     alias(libs.plugins.jetbrains.kotlin.jvm)
+    alias(libs.plugins.kover)
 }
 
 java {
@@ -25,4 +26,13 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+// 루트가 같은 이름의 variant를 모아 병합 리포트를 만든다.
+kover {
+    currentProject {
+        createVariant("unit") {
+            add("jvm")
+        }
+    }
 }

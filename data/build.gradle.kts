@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.kover)
     id("com.google.devtools.ksp")
 }
 
@@ -46,6 +47,15 @@ android {
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+// debug만 묶는다. release를 넣으면 release 컴파일과 테스트가 함께 돈다.
+kover {
+    currentProject {
+        createVariant("unit") {
+            add("debug")
+        }
+    }
 }
 
 dependencies {

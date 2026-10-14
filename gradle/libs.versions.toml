@@ -34,6 +34,8 @@ playServicesAds = "25.3.0"
 userMessagingPlatform = "4.0.0"
 # Keep the 2.x dev.detekt plugin line while it is alpha-only; switch to stable when 2.x is released.
 detekt = "2.0.0-alpha.0"
+# AGP 9 지원은 0.9.4+, AGP 9 빌드 변형 수정은 0.9.5+.
+kover = "0.9.11"
 
 [libraries]
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
@@ -108,3 +110,4 @@ compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }

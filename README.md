@@ -144,7 +144,10 @@ Firebase 설정 파일(`app/google-services.json`, `ios/CalcMoney/CalcMoney/Goog
 ./gradlew detekt              # 정적 분석 (ktlint 포함)
 ./gradlew test                # 전체 단위 테스트
 ./gradlew :app:assembleDebug  # 디버그 APK 빌드
+./gradlew :koverHtmlReportUnit  # 단위 테스트 커버리지 (build/reports/kover/htmlUnit/index.html)
 ```
+
+커버리지는 `domain`·`data`·`presentation`의 단위 테스트를 루트에서 병합해 측정합니다. 생성 코드와 `@Composable` 화면 코드는 제외하며, 하한은 루트 `build.gradle.kts`에 있습니다.
 
 모듈 단위 검증도 가능합니다.
 
@@ -182,7 +185,7 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 | `ios-ci.yml` | `macos-26` | `ios/**`를 건드린 PR과 `master` 푸시 |
 | `firebase-deploy.yml` | `ubuntu-latest` | `functions/**`, `firebase.json`, `firestore.rules`, `.firebaserc`를 건드린 `master` 푸시 |
 
-Android CI는 detekt → 단위 테스트 → Android Lint → 디버그 APK 빌드 순으로 실행합니다. iOS CI는 SwiftFormat·SwiftLint 검사와 `xcodebuild analyze` + 테스트 플랜 실행으로 구성되며, 시뮬레이터만 사용하므로 서명 시크릿이 필요 없습니다.
+Android CI는 detekt → 단위 테스트(커버리지 리포트 포함) → Android Lint → 디버그 APK 빌드 → 커버리지 하한 검사 순으로 실행합니다. iOS CI는 SwiftFormat·SwiftLint 검사와 `xcodebuild analyze` + 테스트 플랜 실행으로 구성되며, 시뮬레이터만 사용하므로 서명 시크릿이 필요 없습니다.
 
 ### Android 릴리스
 

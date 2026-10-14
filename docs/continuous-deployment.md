@@ -35,6 +35,15 @@ GitHub Actions 실행 번호를 `10000 + 실행 번호` 규칙으로 변환해 A
 
 앱은 Play Console에 한 번 생성해 두어야 하며, 패키지명은 `com.ahn.calcmoney`로 고정입니다.
 
+## Android 단위 테스트 커버리지 (Kover)
+
+`android-ci.yml`의 `build` job이 단위 테스트와 함께 Kover 병합 리포트(`:koverXmlReportUnit`, `:koverHtmlReportUnit`)를 만들고, 마지막 단계에서 `:koverVerifyUnit`으로 하한을 검사합니다.
+
+- **측정 범위**: `domain`(jvm)·`data`·`presentation`(debug)의 단위 테스트를 루트에서 병합합니다. `:app`은 테스트가 없는 Hilt 조립 모듈이라 뺍니다. Hilt·Room·Compose 생성 코드, DI 모듈, Room entity, `MainActivity`·광고·테마, `@Composable` 함수는 제외합니다.
+- **결과 확인**: 실행 요약(Job Summary)에 전체 라인 커버리지가 찍히고, 상세 리포트는 `coverage-reports` 아티팩트의 `htmlUnit/index.html`에 있습니다.
+- **하한**: 루트 `build.gradle.kts`의 `minBound`. 도입 시점(2026-10) 기준선 77.08%에서 2%p 남짓 낮춘 75%로 시작했습니다. 커버리지가 오르면 하한도 따라 올립니다.
+- **실패하면**: `build` job이 실패하므로 `e2e_smoke`가 돌지 않고, 태그 릴리스의 AAB 빌드와 Play 업로드, App Distribution 배포도 멈춥니다.
+
 ## Android E2E 스모크 테스트 (Maestro)
 
 `android-ci.yml`의 `e2e_smoke` job이 `build`가 만든 debug APK를 에뮬레이터(API 34, `google_apis`, x86_64)에 설치하고 `.maestro/`에서 `smoke` 태그가 붙은 Flow를 돌립니다. 시크릿은 필요 없습니다.

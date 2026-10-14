@@ -32,6 +32,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.kover)
     id("com.google.devtools.ksp")
 }
 
@@ -100,6 +101,15 @@ android {
     testOptions {
         unitTests.all {
             it.useJUnitPlatform()
+        }
+    }
+}
+
+// debug만 묶는다. release variant 태스크는 이름에 Release가 들어가 AdMob 시크릿 검증에 걸린다.
+kover {
+    currentProject {
+        createVariant("unit") {
+            add("debug")
         }
     }
 }

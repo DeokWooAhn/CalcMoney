@@ -51,6 +51,7 @@ KSP는 2.3.0부터 Kotlin 컴파일러 버전과 분리됐다. `2.2.0-2.0.2` 형
 - **shader, NDK, density split, ABI filter 사용처가 없다.**
 - **`android.enableR8.fullMode=false`가 없다.** full mode가 이미 켜져 있다.
 - **CI가 JDK 17**(`temurin`)을 쓴다. AGP 9 요구치를 이미 만족한다.
+- **Kover 0.9.11이 AGP 9를 지원한다.** 0.9.4에서 AGP 9 지원, 0.9.5에서 AGP 9 빌드 변형 수정이 들어갔고 Gradle 9도 지원한다. 설정은 빌드 변형 이름(`debug`)만 쓰고 루트 스크립트에서 Kover 타입을 import하지 않는다. 다만 built-in Kotlin 조합은 실제로 확인되지 않았으므로 아래 8단계에서 검증한다.
 
 ## 블로커
 
@@ -133,7 +134,7 @@ AGP 9.0에서 둘 다 지우면 리패키징이 꺼져 DEX가 다시 커진다. 
 | 5 | Hilt 2.57.1 → 2.59.2+ | |
 | 6 | `:app`·`:presentation`에 `resValues = true` 명시 | AGP 9 이전에 넣어도 무해하다 |
 | 7 | AGP 8.13.2 → 9.0.1. Android Studio **AGP Upgrade Assistant** 사용 | |
-| 8 | built-in Kotlin 마이그레이션 (Android 모듈 3개에서 `kotlin.android` 제거) | |
+| 8 | built-in Kotlin 마이그레이션 (Android 모듈 3개에서 `kotlin.android` 제거) | `./gradlew :koverHtmlReportUnit --dry-run`에 `:data:testDebugUnitTest`·`:presentation:testDebugUnitTest`·`:domain:test`가 그대로 있고 Release 태스크가 없는지, `:koverVerifyUnit`이 통과하고 커버리지가 전과 같은지 확인. 테스트가 조용히 빠지면 수치가 떨어져 드러난다 |
 | 9 | `gradle.properties`에서 `optimizedResourceShrinking` 제거 | AGP 9.0부터 기본값 |
 | 10 | 서명 release 빌드로 크기·광고 검증 | 아래 체크리스트 |
 | 11 | (AGP 9.1 이후) `-repackageclasses` 제거 | |

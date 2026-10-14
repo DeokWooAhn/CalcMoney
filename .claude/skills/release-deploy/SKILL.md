@@ -22,11 +22,13 @@ description: 릴리스, 배포, 버전 관리, CI/CD 워크플로, Firebase Func
 
 ## CI 파이프라인 (PR → master)
 
-`detekt` → `test` → `lintDebug` → `assembleDebug` 순서. PR 올리기 전 로컬에서 동일하게 검증:
+`detekt` → `test`(+ Kover 리포트) → `lintDebug` → `assembleDebug` → `koverVerifyUnit` 순서. PR 올리기 전 로컬에서 동일하게 검증:
 
 ```bash
-./gradlew detekt test :app:assembleDebug
+./gradlew detekt test :app:assembleDebug :koverVerifyUnit
 ```
+
+커버리지가 루트 `build.gradle.kts`의 하한(`minBound`) 아래로 떨어지면 `build` job이 실패하고, 그러면 `e2e_smoke`와 태그 릴리스·Play 업로드도 막힌다.
 
 `build` 다음에 `e2e_smoke` job이 debug APK를 에뮬레이터에 설치해 Maestro `smoke` Flow를 돌린다.
 문서·Functions·iOS만 바꾼 PR은 `e2e_changes` job이 건너뛰게 한다. 규칙은 `.claude/skills/maestro/SKILL.md`,

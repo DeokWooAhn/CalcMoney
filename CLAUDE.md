@@ -27,6 +27,8 @@ Kotlin 2.2 / JVM 17 / compileSdk 36 · Compose(Material3) · Hilt+KSP(kapt 없�
 ./gradlew detekt            # 린트 (ktlint 포함, autoCorrect 켜짐)
 ./gradlew test              # 전체 유닛 테스트
 ./gradlew :app:assembleDebug
+./gradlew :koverHtmlReportUnit   # 병합 커버리지 → build/reports/kover/htmlUnit/index.html
+./gradlew :koverVerifyUnit       # CI 커버리지 게이트와 같은 검사
 ```
 
 ### Android 주의사항 (Gotchas)
@@ -35,6 +37,7 @@ Kotlin 2.2 / JVM 17 / compileSdk 36 · Compose(Material3) · Hilt+KSP(kapt 없�
 - **versionCode를 손으로 고치지 말 것.** 릴리스는 `android-v*` 태그 push → CI가 `10000 + GITHUB_RUN_NUMBER`로 계산. 로컬 기본값은 `app/build.gradle.kts`의 `DEFAULT_VERSION_CODE`.
 - detekt는 `dev.detekt` 2.0 알파 (구 `io.gitlab.arturbosch.detekt` 아님). 모듈별 `detekt-baseline.xml` 존재.
 - 테스트는 JUnit5 플랫폼(`useJUnitPlatform()`) 위의 Kotest — JUnit4 러너로 돌리면 안 됨.
+- **Kover는 루트의 `unit` variant만 쓴다.** 각 모듈의 debug(domain은 jvm)를 루트가 병합하고, 제외 필터와 하한(`minBound`)은 루트 `build.gradle.kts`에만 있다. 태스크 앞에 `:`를 빼면 필터 없는 모듈별 리포트까지 만들고, `koverHtmlReport`(total)는 release까지 돌며, `*Release` variant 태스크는 위 시크릿 검증에 걸린다.
 - 앱은 환율 API를 직접 호출하지 않는다. 환율 API 키는 Cloud Functions의 Firebase secret `EXCHANGE_RATE_API_KEY` 하나뿐 (`local.properties`에는 `sdk.dir`만 있으면 됨).
 
 ## iOS — 패키지 구조 (SPM 로컬 패키지, Android와 같은 레이어 방향)

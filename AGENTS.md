@@ -124,10 +124,13 @@ ios/Packages/Presentation   -> Domain                         # SwiftUI, Observa
 ./gradlew :domain:test
 ./gradlew :presentation:detekt
 ./gradlew detekt test :app:assembleDebug
+./gradlew :koverVerifyUnit   # CI 커버리지 게이트
 ```
 
 - `./gradlew build`와 release/bundle 계열 태스크는 로컬 시크릿 검증 때문에 실패할 수 있다.
   일반 검증에는 `assembleDebug`, `test`, `detekt`를 사용한다.
+- 커버리지는 Kover 루트 `unit` variant(`:koverHtmlReportUnit`)로 본다. 제외 필터와 하한은 루트
+  `build.gradle.kts`에만 있다. `koverHtmlReport`(total)나 `*Release` variant 태스크는 쓰지 않는다.
 
 ## iOS 테스트와 검증
 

@@ -27,6 +27,8 @@ PR 올리기 전 위 4개를 순서대로 로컬에서 통과시킬 것 — CI �
 
 - **`runs-on: macos-26` 고정, `macos-latest` 아님.** `Package.swift`들이 `swift-tools-version: 6.2`와 `.defaultIsolation(MainActor.self)`를 쓰는데, 이건 Xcode 26 이상이 있어야 빌드된다. `macos-latest`는 이미지 전환기에 조용히 바뀔 수 있어서 버전을 고정해둔 것 — 낮추지 말 것.
 - **SwiftLint 버전도 고정** (`SWIFTLINT_VERSION: 0.65.0`, `ios-ci.yml`). 러너 이미지에 SwiftLint가 기본 포함되어 있지 않아서 매번 다운로드하는데, 버전을 안 박으면 새 규칙이 추가될 때 코드 변경 없이 CI가 깨질 수 있다.
+- **SwiftFormat 버전도 고정** (`SWIFTFORMAT_VERSION: 0.62.1`, `ios-ci.yml`). 러너 이미지에도 SwiftFormat이 있지만 이미지 갱신 때 함께 올라간다. 0.63.1로 올라가며 수식어 순서 기본값(`nonisolated` 위치)이 바뀌어, 코드를 안 바꾼 파일이 CI에서만 실패한 적이 있다. 그래서 릴리스 바이너리를 내려받고 `swiftformat --version`이 고정 버전과 같은지 확인한 뒤 검사한다.
+- **로컬 도구도 CI와 같은 버전을 쓴다.** 버전이 다르면 로컬과 CI의 검사 결과가 갈린다. Homebrew로 설치했다면 `brew pin swiftlint swiftformat`으로 자동 업그레이드를 막는다. 새로 설치할 때 Homebrew 최신판이 고정 버전과 다르면 GitHub 릴리스의 `swiftformat.zip`(바이너리 하나)을 받아 PATH에 둔다. 버전을 올릴 때는 `ios-ci.yml` 값과 로컬을 함께 올리고 `swiftformat --lint .` 결과를 같은 PR에서 정리한다.
 - **경고→오류 승격은 `xcodebuild` 커맨드라인 인자로 넘기지 않는다.** `SWIFT_TREAT_WARNINGS_AS_ERRORS = YES`는 `CalcMoney.xcodeproj`의 프로젝트 레벨 빌드 설정에 있음(커밋 `4199252`). 커맨드라인으로 넘기면 Firebase·GoogleMobileAds 같은 SPM 의존성 타깃까지 전파되고, 그 패키지들이 쓰는 `-suppress-warnings`와 충돌해서 컴파일이 깨진다. 새로 경고 억제를 추가하고 싶으면 반드시 프로젝트 설정 쪽에서.
 - **워크스페이스로만 테스트를 실행할 것.** `CalcMoney.xctestplan` 하나가 앱 타깃 2개(`CalcMoneyTests`, `CalcMoneyUITests`) + 패키지 테스트 3개(`DomainTests`, `DataTests`, `PresentationTests`)를 전부 포함하는데, `.xcodeproj`만 열면 패키지 테스트가 test plan에서 해석되지 않고 빠진다.
 - `.swiftlint.yml`은 레포 루트가 아니라 `ios/.swiftlint.yml`에 있음. CodeRabbit 설정(`.coderabbit.yaml`)도 `config_file: ios/.swiftlint.yml`로 명시적으로 경로를 지정해둠 — 새 도구를 추가할 때 이 경로 기준을 유지할 것.

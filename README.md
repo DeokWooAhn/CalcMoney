@@ -129,7 +129,7 @@ Firebase 설정 파일(`app/google-services.json`, `ios/CalcMoney/CalcMoney/Goog
 
 - Xcode 26 이상 — 로컬 패키지가 `swift-tools-version: 6.2`와 `.defaultIsolation(MainActor.self)`를 사용합니다
 - iOS 17 이상 시뮬레이터 또는 기기
-- 로컬 검증용 SwiftLint, SwiftFormat (`brew install swiftlint swiftformat`)
+- 로컬 검증용 SwiftLint, SwiftFormat (`brew install swiftlint swiftformat`). CI는 `.github/workflows/ios-ci.yml`의 `SWIFTLINT_VERSION`·`SWIFTFORMAT_VERSION`으로 버전을 고정하므로 로컬도 같은 버전을 씁니다. Homebrew 최신판이 다르면 각 도구의 GitHub 릴리스에서 그 버전을 받고, `brew pin swiftlint swiftformat`으로 자동 업그레이드를 막습니다.
 
 설정 및 실행
 

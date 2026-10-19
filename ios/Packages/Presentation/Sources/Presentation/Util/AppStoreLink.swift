@@ -11,9 +11,10 @@ enum AppStoreLink {
         recommendURL(appID: appID)
     }
 
+    /// App Store 앱 ID는 양의 정수다. 잘못 넣은 값(음수, 0, 숫자 뒤에 붙은 문자)으로 엉뚱한 링크를 공유하지 않게 거른다.
     static func recommendURL(appID: String?) -> URL? {
-        guard let appID, !appID.isEmpty else { return nil }
+        guard let appID, let number = UInt64(appID), number > 0 else { return nil }
 
-        return URL(string: "https://apps.apple.com/app/id\(appID)")
+        return URL(string: "https://apps.apple.com/app/id\(number)")
     }
 }

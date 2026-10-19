@@ -260,8 +260,9 @@ private struct SettingShareCard: View {
 
     var body: some View {
         ShareLink(
-            item: url,
-            message: Text(L("심플 환율 계산기 — 160여 개 통화를 원화로 바로 환산해요")),
+            // ShareLink의 message는 일부 공유 대상만 받아서, 복사·AirDrop 같은 대상으로는 링크만 간다.
+            // Android EXTRA_TEXT처럼 문구와 링크를 한 텍스트로 묶어 어디로 보내도 함께 가게 한다.
+            item: "\(L("심플 환율 계산기 — 160여 개 통화를 원화로 바로 환산해요"))\n\(url.absoluteString)",
             // 이미지를 주지 않으면 시트 제목 옆에 빈 아이콘 틀이 뜬다.
             preview: SharePreview(L("친구에게 이 앱을 추천해 보세요"), image: Self.appIcon),
         ) {

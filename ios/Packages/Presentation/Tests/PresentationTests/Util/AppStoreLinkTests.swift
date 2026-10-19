@@ -16,4 +16,9 @@ struct AppStoreLinkTests {
         #expect(AppStoreLink.recommendURL(appID: nil) == nil)
         #expect(AppStoreLink.recommendURL(appID: "") == nil)
     }
+
+    @Test("앱 ID가 양의 정수가 아니면 링크를 만들지 않는다", arguments: ["0", "-1", "123?foo", "12 34", "abc"])
+    func 양의_정수가_아니면_링크를_만들지_않는다(appID: String) {
+        #expect(AppStoreLink.recommendURL(appID: appID) == nil)
+    }
 }

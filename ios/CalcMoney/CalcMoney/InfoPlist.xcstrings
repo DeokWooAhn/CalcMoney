@@ -1,0 +1,24 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "홈 화면과 인앱 리뷰 창에 표시되는 앱 이름. Android app_name과 맞춘다.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simple Currency Calculator"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "심플 환율 계산기"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

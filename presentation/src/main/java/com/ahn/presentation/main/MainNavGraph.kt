@@ -21,6 +21,7 @@ fun MainNavGraph(
     navController: NavHostController,
     adConsentState: AdConsentState,
     onPrivacyOptionsClick: () -> Unit,
+    onRequestReview: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val sharedOwner = LocalActivity.current as ViewModelStoreOwner
@@ -34,7 +35,7 @@ fun MainNavGraph(
         popEnterTransition = { EnterTransition.None },
         popExitTransition = { ExitTransition.None },
     ) {
-        composable(BottomNavItem.Calculator.route) { CalculatorRoute() }
+        composable(BottomNavItem.Calculator.route) { CalculatorRoute(onRequestReview = onRequestReview) }
         composable(BottomNavItem.Exchange.route) {
             ExchangeRoute(
                 viewModel = hiltViewModel(sharedOwner),

@@ -171,4 +171,7 @@ dependencies {
     // 광고
     implementation(libs.play.services.ads)
     implementation(libs.user.messaging.platform)
+
+    // 인앱 리뷰 (Activity가 필요해 광고·동의처럼 presentation에 둔다)
+    implementation(libs.play.review.ktx)
 }

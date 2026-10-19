@@ -51,6 +51,15 @@ object DataStoreModule {
         return createPreferencesDataStore(context, "theme_preferences")
     }
 
+    @Provides
+    @Singleton
+    @ReviewPromptPreferencesDataStore
+    fun provideReviewPromptDataStore(
+        @ApplicationContext context: Context,
+    ): DataStore<Preferences> {
+        return createPreferencesDataStore(context, "review_prompt")
+    }
+
     private fun createPreferencesDataStore(
         context: Context,
         name: String,

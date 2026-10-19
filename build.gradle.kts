@@ -53,6 +53,7 @@ kover {
                     // 유닛 테스트 대상이 아닌 프레임워크 진입점과 테마
                     "com.ahn.presentation.main.MainActivity*",
                     "com.ahn.presentation.ads.*",
+                    "com.ahn.presentation.review.*",
                     "com.ahn.presentation.ui.theme.*",
                 )
                 // 화면은 Maestro E2E가 맡는다. 유닛 커버리지는 ViewModel·reducer·유틸만 본다.

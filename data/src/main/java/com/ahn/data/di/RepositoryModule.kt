@@ -4,11 +4,13 @@ import com.ahn.data.calculator.repository.CalculatorHistoryRepositoryImpl
 import com.ahn.data.currency.repository.CurrencySelectionRepositoryImpl
 import com.ahn.data.exchange.repository.ExchangeRateRepositoryImpl
 import com.ahn.data.favorite.repository.FavoriteCurrencyRepositoryImpl
+import com.ahn.data.review.repository.ReviewPromptRepositoryImpl
 import com.ahn.data.setting.repository.ThemeRepositoryImpl
 import com.ahn.domain.calculator.repository.CalculatorHistoryRepository
 import com.ahn.domain.currency.repository.CurrencySelectionRepository
 import com.ahn.domain.exchange.repository.ExchangeRateRepository
 import com.ahn.domain.favorite.repository.FavoriteCurrencyRepository
+import com.ahn.domain.review.repository.ReviewPromptRepository
 import com.ahn.domain.setting.repository.ThemeRepository
 import dagger.Binds
 import dagger.Module
@@ -42,4 +44,9 @@ abstract class RepositoryModule {
     abstract fun bindThemeRepository(
         impl: ThemeRepositoryImpl,
     ): ThemeRepository
+
+    @Binds
+    abstract fun bindReviewPromptRepository(
+        impl: ReviewPromptRepositoryImpl,
+    ): ReviewPromptRepository
 }

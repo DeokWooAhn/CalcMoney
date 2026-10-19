@@ -89,6 +89,7 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 
 @Composable
 fun CalculatorRoute(
+    onRequestReview: () -> Unit,
     viewModel: CalculatorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.collectAsState()
@@ -98,6 +99,7 @@ fun CalculatorRoute(
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
             is CalculatorContract.SideEffect.ShowSnackBar -> showSnackbar(sideEffect.message)
+            CalculatorContract.SideEffect.RequestReview -> onRequestReview()
         }
     }
 

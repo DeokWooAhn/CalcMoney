@@ -17,3 +17,7 @@ annotation class FavoriteCurrencyPreferencesDataStore
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class ThemePreferencesDataStore
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ReviewPromptPreferencesDataStore

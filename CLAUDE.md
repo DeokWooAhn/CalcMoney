@@ -82,6 +82,7 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 - 주석·KDoc·테스트 설명·커밋 메시지는 **한국어**, 코드 식별자·로그는 영어.
 - **App Check는 provider가 빌드 타입별로 갈린다.** 디버그는 debug provider, 릴리스는 Play Integrity(Android) / App Attest(iOS). Android는 `app/src/debug`·`app/src/release`의 `AppCheckInstaller.kt` 두 파일로, iOS는 `FirebaseBootstrap.swift`의 `#if DEBUG`로 분기한다. iOS는 반드시 `FirebaseApp.configure()` **이전에** factory를 지정해야 한다.
 - **로컬에서 Firestore를 읽으려면 디버그 토큰 등록이 필요하다.** 앱을 처음 디버그로 띄우면 Logcat/Xcode 콘솔에 App Check 디버그 토큰이 찍히는데, 이걸 Firebase 콘솔 App Check에 등록해야 한다. 등록 전에는 enforce가 켜진 뒤부터 읽기가 거부된다.
+- **인앱 리뷰는 OS·스토어의 시스템 창만 쓴다.** "앱이 어떤가요?"처럼 먼저 묻는 창을 직접 만들면 Play 정책(카드 전후 질문 금지)과 App Store 심사 지침 5.6.1 위반이다. 요청 조건은 domain `ReviewPromptPolicy`(Android·iOS 같은 값)에 있고, 계산기에서 계산에 성공한 직후에만 요청한다. `UI_TESTING` 실행에서는 띄우지 않는다 — iOS 개발 빌드는 요청할 때마다 창이 떠서 테스트를 막는다.
 - **테스트 id(`testTag`·`accessibilityIdentifier`)를 바꿨으면 `.maestro/` Flow도 함께 고친다.** CI `e2e_smoke`가 태그 릴리스의 관문이라 Flow가 깨지면 릴리스가 막힌다.
 
 ## 세부 규칙 (필요할 때 해당 스킬 참조)

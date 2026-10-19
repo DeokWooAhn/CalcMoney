@@ -21,6 +21,7 @@
 - 시스템 설정을 따르는 라이트·다크 테마
 - 한국어·영어 지원
 - AdMob 광고 동의 관리(UMP) 및 배너 광고
+- 충분히 사용한 뒤 시스템 인앱 리뷰 창 요청(Google Play In-App Review, StoreKit)
 
 ## 아키텍처
 
@@ -82,6 +83,7 @@ ios/Packages/Presentation  → Domain            # SwiftUI + Observation 기반 
 | 원격 데이터 | Firebase Firestore | Firebase Firestore |
 | 분석·안정성 | Firebase Analytics, Crashlytics | Firebase Analytics, Crashlytics |
 | 광고 | Google Mobile Ads, UMP | Google Mobile Ads, UMP |
+| 인앱 리뷰 | Google Play In-App Review | StoreKit `requestReview` |
 | 테스트 | Kotest, MockK, Orbit Test | Swift Testing(유닛), XCTest(UI) |
 | 정적 분석 | Detekt, Android Lint | SwiftLint, SwiftFormat |
 

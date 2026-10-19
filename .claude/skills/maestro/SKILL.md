@@ -32,7 +32,8 @@ maestro --device <udid> test .maestro -e APP_ID=com.ahn.CalcMoney
 ```
 
 - iOS 빌드: `ios/`에서 `xcodebuild build -workspace CalcMoney.xcworkspace -scheme CalcMoney -destination 'platform=iOS Simulator,id=<udid>' -derivedDataPath <dir>` 후 `xcrun simctl install`.
-- `UI_TESTING` 인자가 광고 동의 창과 광고 로드를 끈다. 디버그 빌드에서만 받는다.
+- `UI_TESTING` 인자가 광고 동의 창과 광고 로드, 인앱 리뷰 창을 끈다. Android는 디버그 빌드에서만 받는다.
+  iOS 개발 빌드는 리뷰를 요청할 때마다 창을 띄우므로, 이 인자 없이 계산을 반복하는 Flow는 리뷰 창에 막힐 수 있다.
 
 ## id 표
 

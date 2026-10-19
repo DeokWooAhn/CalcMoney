@@ -32,6 +32,7 @@ datastorePreferences = "1.2.1"
 room = "2.8.4"
 playServicesAds = "25.3.0"
 userMessagingPlatform = "4.0.0"
+playReview = "2.0.2"
 # Keep the 2.x dev.detekt plugin line while it is alpha-only; switch to stable when 2.x is released.
 detekt = "2.0.0-alpha.0"
 # AGP 9 지원은 0.9.4+, AGP 9 빌드 변형 수정은 0.9.5+.
@@ -93,6 +94,7 @@ androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
 user-messaging-platform = { module = "com.google.android.ump:user-messaging-platform", version.ref = "userMessagingPlatform" }
+play-review-ktx = { module = "com.google.android.play:review-ktx", version.ref = "playReview" }
 detekt-rules-ktlint-wrapper = { module = "dev.detekt:detekt-rules-ktlint-wrapper", version.ref = "detekt" }
 
 [bundles]

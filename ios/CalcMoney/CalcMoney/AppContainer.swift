@@ -23,6 +23,7 @@ final class AppContainer {
             exchangeUseCases: useCases.exchange,
             favoriteUseCases: useCases.favorite,
             currencySelectionUseCases: useCases.currencySelection,
+            reviewPromptUseCases: useCases.reviewPrompt,
         )
         exchangeViewModel = ExchangeViewModel(
             exchangeUseCases: useCases.exchange,
@@ -33,7 +34,7 @@ final class AppContainer {
             exchangeUseCases: useCases.exchange,
             favoriteUseCases: useCases.favorite,
         )
-        mainViewModel = MainViewModel(themeUseCases: useCases.theme)
+        mainViewModel = MainViewModel(themeUseCases: useCases.theme, reviewPromptUseCases: useCases.reviewPrompt)
     }
 }
 
@@ -44,6 +45,7 @@ private struct Repositories {
     let favoriteCurrency: any FavoriteCurrencyRepository
     let theme: any ThemeRepository
     let calculatorHistory: any CalculatorHistoryRepository
+    let reviewPrompt: any ReviewPromptRepository
 
     init() {
         // GoogleService-Info.plist가 없으면 원격 환율은 "준비 안 됨" 상태로 동작한다.
@@ -60,6 +62,7 @@ private struct Repositories {
         favoriteCurrency = FavoriteCurrencyRepositoryImpl(dataSource: FavoriteCurrencyDataSource())
         theme = ThemeRepositoryImpl(dataSource: ThemePreferenceDataSource())
         calculatorHistory = CalculatorHistoryRepositoryImpl(dataSource: CalculatorHistoryDataSource())
+        reviewPrompt = ReviewPromptRepositoryImpl(dataSource: ReviewPromptDataSource())
     }
 
     /// 디스크 캐시를 만들지 못하면 메모리 캐시로 내려간다.
@@ -92,6 +95,7 @@ private struct UseCases {
     let favorite: FavoriteUseCases
     let currencySelection: CurrencySelectionUseCases
     let theme: ThemeUseCases
+    let reviewPrompt: ReviewPromptUseCases
 
     init(repositories: Repositories) {
         let calculateExpression = CalculateExpressionUseCase()
@@ -130,6 +134,10 @@ private struct UseCases {
         theme = ThemeUseCases(
             getThemeMode: GetThemeModeUseCase(repository: repositories.theme),
             saveThemeMode: SaveThemeModeUseCase(repository: repositories.theme),
+        )
+        reviewPrompt = ReviewPromptUseCases(
+            recordAppOpen: RecordAppOpenUseCase(repository: repositories.reviewPrompt),
+            recordCalculationSuccess: RecordCalculationSuccessUseCase(repository: repositories.reviewPrompt),
         )
     }
 }

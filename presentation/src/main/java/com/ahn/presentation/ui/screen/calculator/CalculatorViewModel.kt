@@ -9,6 +9,7 @@ import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.domain.currency.usecase.CurrencySelectionUseCases
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
+import com.ahn.domain.review.usecase.ReviewPromptUseCases
 import com.ahn.presentation.R
 import com.ahn.presentation.util.UiText
 import com.ahn.presentation.util.toExchangeRateErrorUiText
@@ -28,6 +29,7 @@ class CalculatorViewModel @Inject constructor(
     private val exchangeUseCases: ExchangeUseCases,
     private val favoriteUseCases: FavoriteUseCases,
     private val currencySelectionUseCases: CurrencySelectionUseCases,
+    private val reviewPromptUseCases: ReviewPromptUseCases,
 ) : ViewModel(), ContainerHost<CalculatorContract.State, CalculatorContract.SideEffect> {
     override val container = container(
         initialState = CalculatorContract.State(),
@@ -238,6 +240,29 @@ class CalculatorViewModel @Inject constructor(
                 isCalculatedResult = true,
                 histories = if (isHistorySaved) nextHistories else state.histories,
             )
+        }
+
+        performReviewPrompt()
+    }
+
+    /**
+     * 계산 성공을 기록하고, 리뷰를 요청할 때가 되면 [CalculatorContract.SideEffect.RequestReview]를 보냅니다.
+     *
+     * 결과를 화면에 반영한 뒤에 호출해 작업을 하나 끝낸 순간에 창이 뜨게 합니다.
+     * 기록 저장에 실패해도 계산 흐름에는 영향을 주지 않습니다.
+     */
+    private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.performReviewPrompt() {
+        val shouldRequestReview = try {
+            reviewPromptUseCases.recordCalculationSuccess()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("CalculatorViewModel", "Failed to record calculation for review prompt.", e)
+            false
+        }
+
+        if (shouldRequestReview) {
+            postSideEffect(CalculatorContract.SideEffect.RequestReview)
         }
     }
 

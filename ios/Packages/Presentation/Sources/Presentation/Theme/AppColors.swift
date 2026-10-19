@@ -25,7 +25,7 @@ extension Color {
 }
 
 private extension UIColor {
-    convenience nonisolated init(hex: UInt32) {
+    nonisolated convenience init(hex: UInt32) {
         self.init(
             red: CGFloat((hex >> 16) & 0xFF) / 255,
             green: CGFloat((hex >> 8) & 0xFF) / 255,

@@ -1,4 +1,5 @@
 import Domain
+import StoreKit
 import SwiftUI
 
 /// 계산기 화면 (Android `CalculatorScreen` 대응)
@@ -6,6 +7,7 @@ struct CalculatorView: View {
     let viewModel: CalculatorViewModel
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.requestReview) private var requestReview
     @State private var showHistory = false
     @State private var snackbar = SnackbarPresenter()
 
@@ -46,6 +48,12 @@ struct CalculatorView: View {
                 switch sideEffect {
                 case let .showSnackbar(message):
                     snackbar.show(message)
+
+                case .requestReview:
+                    // 개발 빌드는 요청할 때마다 창이 떠서 XCUITest·Maestro Flow를 막는다.
+                    if !UITestingLaunch.isActive {
+                        requestReview()
+                    }
                 }
             }
         }

@@ -39,3 +39,8 @@
 
 # `var id: String { rawValue }` 같은 한 줄 계산 프로퍼티는 Swift 관용 표기다.
 --disable wrapPropertyBodies
+
+# 수식어 순서를 고정한다. CI는 러너 이미지에 든 SwiftFormat을 쓰는데, 0.63에서 기본 순서의
+# nonisolated 위치가 바뀌어(convenience 앞으로) 버전에 따라 결과가 갈렸다.
+# 0.62 기본값에서 isolated·nonisolated만 convenience 앞으로 옮긴 순서다.
+--modifier-order override,private,fileprivate,internal,package,public,open,private(set),fileprivate(set),internal(set),package(set),public(set),open(set),final,dynamic,optional,required,isolated,nonisolated,nonisolated(unsafe),convenience,indirect,lazy,weak,unowned,unowned(safe),unowned(unsafe),static,class,borrowing,consuming,mutating,nonmutating,prefix,infix,postfix,async

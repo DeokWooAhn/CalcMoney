@@ -29,6 +29,9 @@ import com.ahn.domain.favorite.usecase.BuildFavoriteRatesUseCase
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
 import com.ahn.domain.favorite.usecase.GetFavoriteCurrenciesUseCase
 import com.ahn.domain.favorite.usecase.ToggleFavoriteCurrencyUseCase
+import com.ahn.domain.review.usecase.RecordAppOpenUseCase
+import com.ahn.domain.review.usecase.RecordCalculationSuccessUseCase
+import com.ahn.domain.review.usecase.ReviewPromptUseCases
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.clearAllMocks
@@ -78,6 +81,8 @@ class CalculatorViewModelTest : BehaviorSpec({
     val saveExchangeFromCurrencyUseCase = mockk<SaveExchangeFromCurrencyUseCase>()
     val saveExchangeToCurrencyUseCase = mockk<SaveExchangeToCurrencyUseCase>()
     val saveExchangeSelectionUseCase = mockk<SaveExchangeSelectionUseCase>()
+    val recordAppOpenUseCase = mockk<RecordAppOpenUseCase>()
+    val recordCalculationSuccessUseCase = mockk<RecordCalculationSuccessUseCase>()
     val favoriteCurrencyCodesFlow = MutableStateFlow<List<String>>(emptyList())
 
     fun createViewModel() = CalculatorViewModel(
@@ -111,6 +116,10 @@ class CalculatorViewModelTest : BehaviorSpec({
             saveExchangeFromCurrency = saveExchangeFromCurrencyUseCase,
             saveExchangeToCurrency = saveExchangeToCurrencyUseCase,
             saveExchangeSelection = saveExchangeSelectionUseCase,
+        ),
+        reviewPromptUseCases = ReviewPromptUseCases(
+            recordAppOpen = recordAppOpenUseCase,
+            recordCalculationSuccess = recordCalculationSuccessUseCase,
         ),
     )
 
@@ -194,6 +203,7 @@ class CalculatorViewModelTest : BehaviorSpec({
         favoriteCurrencyCodesFlow.value = emptyList()
         every { getFavoriteCurrenciesUseCase() } returns favoriteCurrencyCodesFlow
         coEvery { toggleFavoriteCurrencyUseCase(any()) } returns Unit
+        coEvery { recordCalculationSuccessUseCase() } returns false
     }
 
     Given("계산기 초기 상태에서") {

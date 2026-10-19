@@ -19,22 +19,12 @@ public final class AdConsentManager {
 
     public init() {}
 
-    /// UI 테스트가 넘기는 실행 인자. `CalcMoneyUITests`의 `launchApp()`과 값이 같아야 한다.
-    ///
-    /// UserDefaults가 하이픈으로 시작하는 인자를 키-값 쌍으로 해석해 뒤따르는 인자를 삼키므로
-    /// (`-AppleLanguages (ko)`처럼) 여기서는 하이픈을 붙이지 않는다.
-    static let uiTestingLaunchArgument = "UI_TESTING"
-
-    private static var isUITesting: Bool {
-        ProcessInfo.processInfo.arguments.contains(uiTestingLaunchArgument)
-    }
-
     /// 앱 시작 시 호출: 동의 상태 갱신 → 필요 시 동의 양식 표시 → 광고 SDK 시작.
     public func gatherConsent() async {
         // UI 테스트가 UMP의 지역 판정에 좌우되면 안 된다. EEA로 판정되면 동의 양식이 화면을
         // 덮어 테스트가 통째로 막히고, 그 전에도 실행마다 네트워크 왕복이 붙는다.
         // 여기서 빠져나가면 canRequestAds가 false로 남아 배너 로드까지 함께 건너뛴다.
-        if Self.isUITesting {
+        if UITestingLaunch.isActive {
             logger.info("UI testing detected; skipping ad consent flow")
 
             return

@@ -10,6 +10,9 @@
 		<string>ko</string>
 		<string>en</string>
 	</array>
+	<!-- 앱 표시 이름. 언어별 값은 CalcMoney/InfoPlist.xcstrings에 있고, 여기 값은 그 파일에 없는 언어의 기본값이다. -->
+	<key>CFBundleDisplayName</key>
+	<string>심플 환율 계산기</string>
 	<!-- AdMob 앱 ID — 현재는 Google 공식 테스트 ID. 릴리스 전에 실제 AdMob 앱 ID로 교체할 것. -->
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-3940256099942544~1458002511</string>

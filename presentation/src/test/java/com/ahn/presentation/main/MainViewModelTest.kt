@@ -1,6 +1,9 @@
 package com.ahn.presentation.main
 
 import android.util.Log
+import com.ahn.domain.review.usecase.RecordAppOpenUseCase
+import com.ahn.domain.review.usecase.RecordCalculationSuccessUseCase
+import com.ahn.domain.review.usecase.ReviewPromptUseCases
 import com.ahn.domain.setting.model.ThemeMode
 import com.ahn.domain.setting.usecase.GetThemeModeUseCase
 import com.ahn.domain.setting.usecase.SaveThemeModeUseCase
@@ -34,11 +37,17 @@ class MainViewModelTest : BehaviorSpec({
     val testDispatcher = UnconfinedTestDispatcher()
     val getThemeModeUseCase = mockk<GetThemeModeUseCase>()
     val saveThemeModeUseCase = mockk<SaveThemeModeUseCase>()
+    val recordAppOpenUseCase = mockk<RecordAppOpenUseCase>()
+    val recordCalculationSuccessUseCase = mockk<RecordCalculationSuccessUseCase>()
 
     fun createViewModel() = MainViewModel(
         themeUseCases = ThemeUseCases(
             getThemeMode = getThemeModeUseCase,
             saveThemeMode = saveThemeModeUseCase,
+        ),
+        reviewPromptUseCases = ReviewPromptUseCases(
+            recordAppOpen = recordAppOpenUseCase,
+            recordCalculationSuccess = recordCalculationSuccessUseCase,
         ),
     )
 
@@ -57,6 +66,7 @@ class MainViewModelTest : BehaviorSpec({
         every { Log.w(any<String>(), any<String>(), any<Throwable>()) } returns 0
         every { getThemeModeUseCase() } returns emptyFlow()
         coEvery { saveThemeModeUseCase(any()) } returns Unit
+        coEvery { recordAppOpenUseCase() } returns Unit
     }
 
     Given("메인 ViewModel에서") {
@@ -111,6 +121,37 @@ class MainViewModelTest : BehaviorSpec({
                     verify(exactly = 1) {
                         Log.w("MainViewModel", "Failed to save theme mode.", any<Throwable>())
                     }
+                }
+            }
+        }
+
+        When("ViewModel이 만들어지기만 하면") {
+            Then("앱 열기를 기록하지 않아야 한다") {
+                createViewModel()
+
+                coVerify(exactly = 0) { recordAppOpenUseCase() }
+            }
+        }
+
+        When("앱이 앞으로 올 때마다 앱 열기 기록을 요청하면") {
+            Then("요청한 횟수만큼 기록 UseCase를 호출해야 한다") {
+                val viewModel = createViewModel()
+
+                viewModel.recordAppOpen()
+                viewModel.recordAppOpen()
+
+                coVerify(exactly = 2) { recordAppOpenUseCase() }
+            }
+        }
+
+        When("앱 열기 기록 중 일반 예외가 발생하면") {
+            Then("예외를 전파하지 않고 로그로 처리해야 한다") {
+                coEvery { recordAppOpenUseCase() } throws IllegalStateException("record failed")
+
+                createViewModel().recordAppOpen()
+
+                verify(exactly = 1) {
+                    Log.w("MainViewModel", "Failed to record app open.", any<Throwable>())
                 }
             }
         }

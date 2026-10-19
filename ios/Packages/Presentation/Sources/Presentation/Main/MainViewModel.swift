@@ -10,10 +10,12 @@ public final class MainViewModel {
     public private(set) var themeMode: ThemeMode = .system
 
     @ObservationIgnored private let themeUseCases: ThemeUseCases
+    @ObservationIgnored private let reviewPromptUseCases: ReviewPromptUseCases
     @ObservationIgnored private var observeTask: Task<Void, Never>?
 
-    public init(themeUseCases: ThemeUseCases) {
+    public init(themeUseCases: ThemeUseCases, reviewPromptUseCases: ReviewPromptUseCases) {
         self.themeUseCases = themeUseCases
+        self.reviewPromptUseCases = reviewPromptUseCases
 
         let themeModeStream = themeUseCases.getThemeMode()
         observeTask = Task { [weak self] in
@@ -32,6 +34,15 @@ public final class MainViewModel {
     public func saveThemeMode(_ themeMode: ThemeMode) {
         Task {
             try? await themeUseCases.saveThemeMode(themeMode)
+        }
+    }
+
+    /// 인앱 리뷰 요청 조건에 쓰는 사용 일수를 남긴다. 같은 날 다시 불려도 하루로 센다.
+    ///
+    /// 앱이 앞으로 올 때마다 부른다. 프로세스가 살아 있는 채로 며칠 뒤 돌아와도 그날을 센다.
+    public func recordAppOpen() {
+        Task {
+            await reviewPromptUseCases.recordAppOpen()
         }
     }
 }

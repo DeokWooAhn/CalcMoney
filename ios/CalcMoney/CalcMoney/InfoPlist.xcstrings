@@ -1,0 +1,24 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "홈 화면과 인앱 리뷰 창에 표시되는 앱 이름. 홈 화면은 한 줄이라 영어는 13자 안팎에서 잘리므로 짧게 둔다. 스토어 등록 이름은 따로 정한다.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currency Calc"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "심플 환율 계산기"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

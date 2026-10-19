@@ -16,6 +16,7 @@ public final class CalculatorViewModel {
     @ObservationIgnored private let exchangeUseCases: ExchangeUseCases
     @ObservationIgnored private let favoriteUseCases: FavoriteUseCases
     @ObservationIgnored private let currencySelectionUseCases: CurrencySelectionUseCases
+    @ObservationIgnored private let reviewPromptUseCases: ReviewPromptUseCases
     @ObservationIgnored private let reducer: CalculatorExpressionReducer
     @ObservationIgnored private let sideEffectBus = SideEffectBus<CalculatorSideEffect>()
     @ObservationIgnored private var observeHistoriesTask: Task<Void, Never>?
@@ -27,11 +28,13 @@ public final class CalculatorViewModel {
         exchangeUseCases: ExchangeUseCases,
         favoriteUseCases: FavoriteUseCases,
         currencySelectionUseCases: CurrencySelectionUseCases,
+        reviewPromptUseCases: ReviewPromptUseCases,
     ) {
         self.calculatorUseCases = calculatorUseCases
         self.exchangeUseCases = exchangeUseCases
         self.favoriteUseCases = favoriteUseCases
         self.currencySelectionUseCases = currencySelectionUseCases
+        self.reviewPromptUseCases = reviewPromptUseCases
         reducer = CalculatorExpressionReducer(
             calculateExpression: calculatorUseCases.calculateExpression,
             convertExchangeAmount: exchangeUseCases.convertExchangeAmount,
@@ -225,6 +228,11 @@ public final class CalculatorViewModel {
         newState.isCalculatedResult = true
         newState.histories = isHistorySaved ? nextHistories : state.histories
         state = newState
+
+        // 결과를 반영한 뒤에 기록해 작업을 하나 끝낸 순간에 리뷰 창이 뜨게 한다 (Android `performReviewPrompt` 대응)
+        if await reviewPromptUseCases.recordCalculationSuccess() {
+            sideEffectBus.send(.requestReview)
+        }
     }
 
     private func handleClearHistory() async {

@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import com.ahn.domain.setting.model.ThemeMode
 import com.ahn.presentation.ads.AdConsentManager
 import com.ahn.presentation.ads.AdConsentState
+import com.ahn.presentation.review.InAppReviewLauncher
 import com.ahn.presentation.ui.theme.CalcMoneyTheme
 import com.google.android.gms.ads.MobileAds
 import dagger.hilt.android.AndroidEntryPoint
@@ -28,6 +29,7 @@ import kotlinx.coroutines.withContext
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
     private lateinit var adConsentManager: AdConsentManager
+    private val inAppReviewLauncher by lazy { InAppReviewLauncher(this) }
     private var adConsentState by mutableStateOf(AdConsentState())
     private var isMobileAdsInitialized = false
     private var isMobileAdsInitializing = false
@@ -60,9 +62,30 @@ class MainActivity : ComponentActivity() {
                 MainScreen(
                     adConsentState = adConsentState,
                     onPrivacyOptionsClick = ::showPrivacyOptionsForm,
+                    onRequestReview = ::requestInAppReview,
                 )
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // 처음 뜰 때와 백그라운드에서 돌아올 때 모두 센다 (iOS `MainTabView`의 scenePhase 대응).
+        viewModel.recordAppOpen()
+    }
+
+    /**
+     * 인앱 리뷰 창을 요청한다.
+     *
+     * UI 테스트에서는 띄우지 않는다. iOS 개발 빌드는 요청할 때마다 창이 떠서 Flow가 막히므로 두 플랫폼을 맞춰 둔다.
+     */
+    private fun requestInAppReview() {
+        if (isUiTesting()) {
+            Log.i(TAG, "UI testing detected; skipping in-app review")
+            return
+        }
+
+        inAppReviewLauncher.launch()
     }
 
     private fun requestAdConsent() {
@@ -121,7 +144,7 @@ class MainActivity : ComponentActivity() {
     private companion object {
         const val TAG = "MainActivity"
 
-        /** Maestro Flow의 `launchApp.arguments`가 넘기는 값. iOS `AdConsentManager.uiTestingLaunchArgument` 대응. */
+        /** Maestro Flow의 `launchApp.arguments`가 넘기는 값. iOS `UITestingLaunch.argument` 대응. */
         const val UI_TESTING_EXTRA = "UI_TESTING"
     }
 }

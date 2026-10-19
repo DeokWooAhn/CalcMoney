@@ -49,6 +49,7 @@ fun MainScreen(
     navController: NavHostController = rememberNavController(),
     adConsentState: AdConsentState = AdConsentState(),
     onPrivacyOptionsClick: () -> Unit = {},
+    onRequestReview: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val backPressExitMessage = stringResource(R.string.back_press_exit)
@@ -102,6 +103,7 @@ fun MainScreen(
             navController = navController,
             adConsentState = adConsentState,
             onPrivacyOptionsClick = onPrivacyOptionsClick,
+            onRequestReview = onRequestReview,
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize(),

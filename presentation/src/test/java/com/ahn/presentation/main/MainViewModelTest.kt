@@ -125,11 +125,22 @@ class MainViewModelTest : BehaviorSpec({
             }
         }
 
-        When("ViewModel이 만들어지면") {
-            Then("앱 열기를 한 번 기록해야 한다") {
+        When("ViewModel이 만들어지기만 하면") {
+            Then("앱 열기를 기록하지 않아야 한다") {
                 createViewModel()
 
-                coVerify(exactly = 1) { recordAppOpenUseCase() }
+                coVerify(exactly = 0) { recordAppOpenUseCase() }
+            }
+        }
+
+        When("앱이 앞으로 올 때마다 앱 열기 기록을 요청하면") {
+            Then("요청한 횟수만큼 기록 UseCase를 호출해야 한다") {
+                val viewModel = createViewModel()
+
+                viewModel.recordAppOpen()
+                viewModel.recordAppOpen()
+
+                coVerify(exactly = 2) { recordAppOpenUseCase() }
             }
         }
 
@@ -137,7 +148,7 @@ class MainViewModelTest : BehaviorSpec({
             Then("예외를 전파하지 않고 로그로 처리해야 한다") {
                 coEvery { recordAppOpenUseCase() } throws IllegalStateException("record failed")
 
-                createViewModel()
+                createViewModel().recordAppOpen()
 
                 verify(exactly = 1) {
                     Log.w("MainViewModel", "Failed to record app open.", any<Throwable>())

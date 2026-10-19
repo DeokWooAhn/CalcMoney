@@ -6,6 +6,7 @@ import SwiftUI
 /// Exchange·Favorite·Setting 탭이 함께 쓴다.
 public struct MainTabView: View {
     @State private var selectedTab: MainTab = .calculator
+    @Environment(\.scenePhase) private var scenePhase
 
     private let calculatorViewModel: CalculatorViewModel
     private let exchangeViewModel: ExchangeViewModel
@@ -48,6 +49,12 @@ public struct MainTabView: View {
         .task {
             // Google 정책: 앱 시작 시마다 동의 상태를 갱신한다.
             await adConsentManager.gatherConsent()
+        }
+        // 처음 뜰 때와 백그라운드에서 돌아올 때 모두 센다 (Android `MainActivity.onStart` 대응).
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            if phase == .active {
+                mainViewModel.recordAppOpen()
+            }
         }
     }
 

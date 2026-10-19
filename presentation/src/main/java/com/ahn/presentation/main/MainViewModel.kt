@@ -26,12 +26,12 @@ class MainViewModel @Inject constructor(
             initialValue = ThemeMode.SYSTEM,
         )
 
-    init {
-        recordAppOpen()
-    }
-
-    /** 인앱 리뷰 요청 조건에 쓰는 사용 일수를 남긴다. 같은 날 다시 불려도 하루로 센다. */
-    private fun recordAppOpen() {
+    /**
+     * 인앱 리뷰 요청 조건에 쓰는 사용 일수를 남긴다. 같은 날 다시 불려도 하루로 센다.
+     *
+     * 앱이 앞으로 올 때마다(`MainActivity.onStart`) 부른다. Activity가 살아 있는 채로 며칠 뒤 돌아와도 그날을 센다.
+     */
+    fun recordAppOpen() {
         viewModelScope.launch {
             try {
                 reviewPromptUseCases.recordAppOpen()

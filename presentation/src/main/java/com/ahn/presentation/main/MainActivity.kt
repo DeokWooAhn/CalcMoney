@@ -68,6 +68,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        // 처음 뜰 때와 백그라운드에서 돌아올 때 모두 센다 (iOS `MainTabView`의 scenePhase 대응).
+        viewModel.recordAppOpen()
+    }
+
     /**
      * 인앱 리뷰 창을 요청한다.
      *

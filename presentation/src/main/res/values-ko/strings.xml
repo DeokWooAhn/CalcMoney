@@ -89,6 +89,6 @@
     <string name="setting_section_app_info">앱 정보</string>
     <string name="setting_app_version">버전</string>
     <string name="setting_recommend_app">친구에게 추천하기</string>
-    <string name="share_app_sheet_title">친구에게 심플 환율 계산기를 추천해 보세요</string>
+    <string name="share_app_sheet_title">친구에게 이 앱을 추천해 보세요</string>
     <string name="share_app_message">심플 환율 계산기 — 160여 개 통화를 원화로 바로 환산해요\n%1$s</string>
 </resources>

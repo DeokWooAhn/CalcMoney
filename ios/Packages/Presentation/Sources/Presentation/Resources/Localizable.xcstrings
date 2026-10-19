@@ -591,12 +591,12 @@
         }
       }
     },
-    "친구에게 심플 환율 계산기를 추천해 보세요": {
+    "친구에게 이 앱을 추천해 보세요": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recommend Simple Currency Calculator to a friend"
+            "value": "Recommend this app to a friend"
           }
         }
       }

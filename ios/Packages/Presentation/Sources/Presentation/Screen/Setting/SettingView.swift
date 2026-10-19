@@ -263,7 +263,7 @@ private struct SettingShareCard: View {
             item: url,
             message: Text(L("심플 환율 계산기 — 160여 개 통화를 원화로 바로 환산해요")),
             // 이미지를 주지 않으면 시트 제목 옆에 빈 아이콘 틀이 뜬다.
-            preview: SharePreview(L("친구에게 심플 환율 계산기를 추천해 보세요"), image: Self.appIcon),
+            preview: SharePreview(L("친구에게 이 앱을 추천해 보세요"), image: Self.appIcon),
         ) {
             SettingActionRow(title: L("친구에게 추천하기"), systemImage: "square.and.arrow.up")
         }

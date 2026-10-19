@@ -90,7 +90,7 @@
     <string name="setting_app_version">Version</string>
     <string name="setting_recommend_app">Recommend to a friend</string>
     <!-- 공유 시트 상단 미리보기 제목. 보내는 사람만 보고 받는 사람에게는 가지 않는다. -->
-    <string name="share_app_sheet_title">Recommend Simple Currency Calculator to a friend</string>
+    <string name="share_app_sheet_title">Recommend this app to a friend</string>
     <!-- 받는 사람에게 가는 메시지. %1$s는 스토어 링크. -->
     <string name="share_app_message">Simple Currency Calculator — instantly convert 160+ currencies to Korean won\n%1$s</string>
 </resources>

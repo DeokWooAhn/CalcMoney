@@ -12,7 +12,7 @@ final class CalcMoneyUITests: XCTestCase {
     private func launchApp() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments += ["-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
-        // UMP 동의 흐름을 끈다. AdConsentManager.uiTestingLaunchArgument와 값이 같아야 한다.
+        // UMP 동의 흐름과 인앱 리뷰 요청을 끈다. Presentation `UITestingLaunch.argument`와 값이 같아야 한다.
         // 하이픈으로 시작하면 UserDefaults가 키-값으로 해석해 뒤 인자를 삼키므로 붙이지 않는다.
         app.launchArguments.append("UI_TESTING")
         app.launch()

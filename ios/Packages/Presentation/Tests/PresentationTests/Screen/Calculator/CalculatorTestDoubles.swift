@@ -156,12 +156,45 @@ struct FakeCurrencySelectionRepository: CurrencySelectionRepository {
     func saveExchangeSelection(fromCode _: String, toCode _: String) async throws {}
 }
 
+/// 인앱 리뷰 요청 기록을 메모리에 들고 있는다. 기본값은 빈 기록이라 리뷰 요청 조건을 만족하지 않는다.
+actor FakeReviewPromptRepository: ReviewPromptRepository {
+    private(set) var record: ReviewPromptRecord
+
+    /// 기록이 바뀔 때마다 신호를 보낸다. `waitUntil(_:)`이 이 신호를 받을 때마다 조건을 다시 확인한다.
+    private let changes: AsyncStream<Void>
+    private let changesContinuation: AsyncStream<Void>.Continuation
+
+    init(record: ReviewPromptRecord = ReviewPromptRecord()) {
+        self.record = record
+        (changes, changesContinuation) = AsyncStream.makeStream(bufferingPolicy: .bufferingNewest(1))
+    }
+
+    func updateRecord<Result: Sendable>(
+        _ transform: @Sendable (inout ReviewPromptRecord) -> Result,
+    ) async -> Result {
+        let result = transform(&record)
+        changesContinuation.yield()
+
+        return result
+    }
+
+    /// 기록이 조건을 만족할 때까지 기다린다. `CalculatorTestRecorder.waitUntil(_:)`과 같은 방식이다.
+    func waitUntil(_ condition: @Sendable (ReviewPromptRecord) -> Bool) async {
+        guard !condition(record) else { return }
+
+        for await _ in changes where condition(record) {
+            return
+        }
+    }
+}
+
 @MainActor
 enum CalculatorTestEnvironment {
     static func makeViewModel(
         history: FakeCalculatorHistoryRepository,
         exchangeRate: FakeExchangeRateRepository,
         currencySelection: FakeCurrencySelectionRepository,
+        reviewPrompt: FakeReviewPromptRepository = FakeReviewPromptRepository(),
     ) -> CalculatorViewModel {
         let favorite = FakeFavoriteCurrencyRepository()
         let calculateExpression = CalculateExpressionUseCase()
@@ -197,6 +230,10 @@ enum CalculatorTestEnvironment {
                 saveExchangeFromCurrency: SaveExchangeFromCurrencyUseCase(repository: currencySelection),
                 saveExchangeToCurrency: SaveExchangeToCurrencyUseCase(repository: currencySelection),
                 saveExchangeSelection: SaveExchangeSelectionUseCase(repository: currencySelection),
+            ),
+            reviewPromptUseCases: ReviewPromptUseCases(
+                recordAppOpen: RecordAppOpenUseCase(repository: reviewPrompt),
+                recordCalculationSuccess: RecordCalculationSuccessUseCase(repository: reviewPrompt),
             ),
         )
     }

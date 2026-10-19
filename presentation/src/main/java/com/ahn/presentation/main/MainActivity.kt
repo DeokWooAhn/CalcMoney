@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
     private companion object {
         const val TAG = "MainActivity"
 
-        /** Maestro Flow의 `launchApp.arguments`가 넘기는 값. iOS `AdConsentManager.uiTestingLaunchArgument` 대응. */
+        /** Maestro Flow의 `launchApp.arguments`가 넘기는 값. iOS `UITestingLaunch.argument` 대응. */
         const val UI_TESTING_EXTRA = "UI_TESTING"
     }
 }

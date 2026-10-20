@@ -43,6 +43,6 @@ val Green = Color(0xFF4CAF50)
 val KeyPressGlowSoft = Color(0xFFFFCF7A)
 
 // AC·⌫ 글자와 누름 빛. 밝은 레드 핑크로, iOS(CalculatorColors.destructive의 코랄 레드)와 다르다.
-val LightCalculatorDestructive = Color(0xFFFF3B60)
+val LightCalculatorDestructive = Color(0xFFF12B51) // 숫자 키 바탕(#E0E0E0)과 대비 3:1 이상
 val DarkCalculatorDestructive = Color(0xFFFF5674)
 val DestructiveKeyPressGlowSoft = Color(0xFFFFB3C6)

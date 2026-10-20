@@ -39,6 +39,13 @@ struct CalculatorView: View {
                     }
                 },
             )
+            // 떠 있는 탭바와 붙어 보이지 않게 띄운다. 버튼 크기는 그대로 두고 그만큼 디스플레이 높이가 준다.
+            .padding(.bottom, 12)
+            // 키패드가 먼저 가로 폭에 맞춘 정사각 버튼 높이를 가져가고 남는 높이를 디스플레이가 쓴다
+            // (Android의 디스플레이 weight(1f) 대응). 없으면 maxHeight가 무한인 디스플레이와 높이를 나눠 가져
+            // 버튼이 높이에 맞춰 작아지고 양옆이 비어 가운데로 몰린다.
+            // padding보다 바깥에 둬야 한다. 안쪽에 두면 padding이 만든 바깥 뷰는 우선순위가 없어 같은 문제가 난다.
+            .layoutPriority(1)
         }
         .padding(.horizontal, 16)
         .background(colors.background.ignoresSafeArea())

@@ -31,6 +31,14 @@ tags:
     commands:
       - hideKeyboard
       - back
+      # inputText는 adb 키 입력이라 기기가 터치 모드를 벗어난다. 일부 기기(Galaxy S25)는 시트가 닫힐 때 뒤 화면의
+      # 첫 입력칸(환율 금액)에 기본 포커스를 줘 숫자 키보드가 하단 탭을 가린다. 화면 키보드로 치면 생기지 않는다.
+      - runFlow:
+          when:
+            notVisible:
+              id: "tab.favorite"
+          commands:
+            - hideKeyboard
 - runFlow:
     when:
       platform: iOS

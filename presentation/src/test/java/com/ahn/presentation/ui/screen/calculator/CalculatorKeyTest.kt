@@ -67,8 +67,18 @@ class CalculatorKeyTest :
                     listOf(
                         CalculatorKey.History,
                         CalculatorKey.Clear,
-                        CalculatorKey.Parenthesis,
+                        CalculatorKey.Delete,
                         CalculatorKey.Operator(displayText = "÷", inputValue = "÷"),
+                    )
+            }
+
+            it("마지막 행은 ( ) 0 . = 순서다") {
+                calculatorKeyRows.last() shouldBe
+                    listOf(
+                        CalculatorKey.Parenthesis,
+                        CalculatorKey.Number("0"),
+                        CalculatorKey.Dot,
+                        CalculatorKey.Calculate,
                     )
             }
         }

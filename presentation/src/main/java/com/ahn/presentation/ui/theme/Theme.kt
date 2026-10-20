@@ -32,6 +32,10 @@ val ColorScheme.calculatorAccent: Color
     @Composable
     get() = if (LocalCalcMoneyDarkTheme.current) DarkButtonOperator else LightCalculatorAccent
 
+val ColorScheme.calculatorDestructive: Color
+    @Composable
+    get() = if (LocalCalcMoneyDarkTheme.current) DarkCalculatorDestructive else LightCalculatorDestructive
+
 val ColorScheme.currencySelectorSurface: Color
     @Composable
     get() = if (LocalCalcMoneyDarkTheme.current) DarkCurrencySelectorSurface else LightCurrencySelectorSurface

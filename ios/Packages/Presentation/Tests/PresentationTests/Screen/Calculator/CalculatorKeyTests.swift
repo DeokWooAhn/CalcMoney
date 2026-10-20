@@ -70,7 +70,12 @@ struct CalculatorKeyTests {
         let historyCount = calculatorKeyRows.flatMap(\.self).count { $0 == .history }
 
         #expect(historyCount == 1)
-        #expect(calculatorKeyRows.first?.first == .history)
+        #expect(calculatorKeyRows.first == [.history, .clear, .delete, .operatorKey(displayText: "÷", inputValue: "÷")])
+    }
+
+    @Test("마지막 행은 ( ) 0 . = 순서다")
+    func 마지막_행은_괄호_0_점_등호_순서다() {
+        #expect(calculatorKeyRows.last == [.parenthesis, .number("0"), .dot, .calculate])
     }
 
     /// Maestro Flow가 이 값으로 키를 찾고, Android CalculatorKey.testTag와 같은 값이어야
@@ -80,11 +85,11 @@ struct CalculatorKeyTests {
         let ids = calculatorKeyRows.flatMap(\.self).map(\.testID)
 
         #expect(ids == [
-            "keypad.history", "keypad.clear", "keypad.parenthesis", "keypad.divide",
+            "keypad.history", "keypad.clear", "keypad.delete", "keypad.divide",
             "keypad.7", "keypad.8", "keypad.9", "keypad.multiply",
             "keypad.4", "keypad.5", "keypad.6", "keypad.minus",
             "keypad.1", "keypad.2", "keypad.3", "keypad.plus",
-            "keypad.dot", "keypad.0", "keypad.delete", "keypad.equals",
+            "keypad.parenthesis", "keypad.0", "keypad.dot", "keypad.equals",
         ])
     }
 

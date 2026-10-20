@@ -11,10 +11,10 @@ val DarkOnSurface = Color.White
 val DarkGray = Color(0xFF9E9E9E)
 
 val DarkButtonNumber = Color(0xFF333333) // 숫자 버튼 배경
-val DarkButtonFunction = Color(0xFF9E9E9E) // AC, ( ) 버튼 배경
+val DarkButtonFunction = Color(0xFF9E9E9E) // 기록 버튼 배경
 val DarkButtonOperator = Color(0xFFFF9500) // 연산자 버튼 배경
 val DarkButtonTextPrimary = Color.White // 기본 텍스트
-val DarkButtonTextSecondary = Color.Black // AC, ( ) 버튼 텍스트
+val DarkButtonTextSecondary = Color.Black // 기록 버튼 아이콘
 val DarkCurrencySelectorSurface = Color(0xFF24242A)
 val DarkCurrencySelectorBorder = Color(0xFF3A3A42)
 
@@ -27,11 +27,11 @@ val LightOnSurface = Color(0xFF1C1B1F)
 val LightGray = Color(0xFF616161)
 
 val LightButtonNumber = Color(0xFFE0E0E0) // 숫자 버튼 배경
-val LightButtonFunction = Color(0xFF757575) // AC, ( ) 버튼 배경
+val LightButtonFunction = Color(0xFF757575) // 기록 버튼 배경
 val LightButtonOperator = Color(0xFFFF9500) // 연산자 버튼 배경
 val LightCalculatorAccent = Color(0xFFE36F00) // 계산식 강조 텍스트
 val LightButtonTextPrimary = Color.Black // 기본 텍스트
-val LightButtonTextSecondary = Color.White // AC, ( ) 버튼 텍스트
+val LightButtonTextSecondary = Color.White // 기록 버튼 아이콘
 val LightCurrencySelectorSurface = Color(0xFFE9ECEF)
 val LightCurrencySelectorBorder = Color(0xFFD0D7DE)
 
@@ -41,3 +41,8 @@ val Green = Color(0xFF4CAF50)
 
 // 계산기 키를 누를 때 번지는 빛의 옅은 쪽 색. 주황(Orange)에서 이 색으로 이어진다.
 val KeyPressGlowSoft = Color(0xFFFFCF7A)
+
+// AC·⌫ 글자와 누름 빛. 밝은 레드 핑크로, iOS(CalculatorColors.destructive의 코랄 레드)와 다르다.
+val LightCalculatorDestructive = Color(0xFFF12B51) // 숫자 키 바탕(#E0E0E0)과 대비 3:1 이상
+val DarkCalculatorDestructive = Color(0xFFFF5674)
+val DestructiveKeyPressGlowSoft = Color(0xFFFFB3C6)

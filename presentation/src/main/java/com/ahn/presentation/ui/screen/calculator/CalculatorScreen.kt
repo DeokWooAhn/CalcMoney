@@ -442,9 +442,11 @@ private fun CalculatorKeyButton(
             onClick = onClick,
         )
 
+        // 누를 때 글자색을 강조색으로 바꾸는 건 바탕이 무채색인 숫자 키뿐이다. 회색·주황 바탕에서는 강조색이 묻힌다.
         CalculatorKey.Dot -> CalculatorButton(
             text = ".",
             modifier = keyModifier,
+            pressedTextColor = MaterialTheme.colorScheme.calculatorAccent,
             onClick = onClick,
         )
 
@@ -466,6 +468,7 @@ private fun CalculatorKeyButton(
         is CalculatorKey.Number -> CalculatorButton(
             text = key.value,
             modifier = keyModifier,
+            pressedTextColor = MaterialTheme.colorScheme.calculatorAccent,
             onClick = onClick,
         )
 

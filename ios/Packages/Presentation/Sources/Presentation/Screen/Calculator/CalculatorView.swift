@@ -271,74 +271,61 @@ private struct CalculatorKeyButton: View {
         case .history:
             CalculatorIconButton(
                 systemImage: "clock",
-                backgroundColor: colors.keyBackground,
-                iconColor: colors.keyText,
-                hasShadow: colors.hasKeyShadow,
+                appearance: neutralKey(content: colors.keyText),
                 accessibilityLabel: L("계산 기록"),
                 action: onTap,
             )
 
         case .clear:
-            CalculatorButton(
-                text: "AC",
-                backgroundColor: colors.keyBackground,
-                textColor: colors.destructive,
-                hasShadow: colors.hasKeyShadow,
-                action: onTap,
-            )
+            CalculatorButton(text: "AC", appearance: coloredKey(content: colors.destructive), action: onTap)
 
         case .parenthesis:
-            CalculatorButton(
-                text: "( )",
-                backgroundColor: colors.keyBackground,
-                textColor: colors.keyText,
-                hasShadow: colors.hasKeyShadow,
-                action: onTap,
-            )
+            CalculatorButton(text: "( )", appearance: neutralKey(content: colors.keyText), action: onTap)
 
         case .dot:
-            CalculatorButton(
-                text: ".",
-                backgroundColor: colors.keyBackground,
-                textColor: colors.keyText,
-                hasShadow: colors.hasKeyShadow,
-                action: onTap,
-            )
+            CalculatorButton(text: ".", appearance: neutralKey(content: colors.keyText), action: onTap)
 
         case .delete:
-            DeleteCalculatorButton(
-                backgroundColor: colors.keyBackground,
-                textColor: colors.destructive,
-                hasShadow: colors.hasKeyShadow,
-                onDeleteAction: onTap,
-            )
+            DeleteCalculatorButton(appearance: coloredKey(content: colors.destructive), onDeleteAction: onTap)
 
         case .calculate:
             CalculatorButton(
                 text: "=",
-                backgroundColor: colors.equalsBackground,
-                textColor: .white,
-                hasShadow: colors.hasKeyShadow,
+                appearance: coloredKey(content: .white, background: colors.equalsBackground),
                 action: onTap,
             )
 
         case let .number(value):
-            CalculatorButton(
-                text: value,
-                backgroundColor: colors.keyBackground,
-                textColor: colors.keyText,
-                hasShadow: colors.hasKeyShadow,
-                action: onTap,
-            )
+            CalculatorButton(text: value, appearance: neutralKey(content: colors.keyText), action: onTap)
 
         case let .operatorKey(displayText, _):
             CalculatorButton(
                 text: displayText,
-                backgroundColor: colors.operatorKeyBackground,
-                textColor: colors.keyText,
-                hasShadow: colors.hasKeyShadow,
+                appearance: neutralKey(content: colors.keyText, background: colors.operatorKeyBackground),
                 action: onTap,
             )
         }
+    }
+
+    /// 무채색 글자 키. 누르면 글자도 강조색으로 바뀐다.
+    private func neutralKey(content: Color, background: Color? = nil) -> CalculatorKeyAppearance {
+        CalculatorKeyAppearance(
+            backgroundColor: background ?? colors.keyBackground,
+            contentColor: content,
+            pressedContentColor: colors.accent,
+            hasShadow: colors.hasKeyShadow,
+            press: colors.keyPress,
+        )
+    }
+
+    /// 글자·바탕에 이미 색이 있는 키(AC·⌫·=). 누를 때 글자색은 그대로 두고 빛과 바탕만 바뀐다.
+    private func coloredKey(content: Color, background: Color? = nil) -> CalculatorKeyAppearance {
+        CalculatorKeyAppearance(
+            backgroundColor: background ?? colors.keyBackground,
+            contentColor: content,
+            pressedContentColor: nil,
+            hasShadow: colors.hasKeyShadow,
+            press: colors.keyPress,
+        )
     }
 }

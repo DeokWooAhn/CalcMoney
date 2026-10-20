@@ -38,3 +38,6 @@ val LightCurrencySelectorBorder = Color(0xFFD0D7DE)
 // 공통 색상
 val Orange = Color(0xFFFF9500)
 val Green = Color(0xFF4CAF50)
+
+// 계산기 키를 누를 때 번지는 빛의 옅은 쪽 색. 주황(Orange)에서 이 색으로 이어진다.
+val KeyPressGlowSoft = Color(0xFFFFCF7A)

@@ -391,6 +391,16 @@
         }
       }
     },
+    "심플 환율 계산기 — 160여 개 통화를 원화로 바로 환산해요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simple Currency Calculator — instantly convert 160+ currencies to Korean won"
+          }
+        }
+      }
+    },
     "싱가포르 달러": {
       "localizations": {
         "en": {
@@ -577,6 +587,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete"
+          }
+        }
+      }
+    },
+    "친구에게 이 앱을 추천해 보세요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommend this app to a friend"
+          }
+        }
+      }
+    },
+    "친구에게 추천하기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommend to a friend"
           }
         }
       }

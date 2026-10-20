@@ -58,6 +58,10 @@ struct SettingView: View {
                 }
 
                 SettingSection(title: L("앱 정보")) {
+                    if let recommendURL = AppStoreLink.recommendURL {
+                        SettingShareCard(url: recommendURL)
+                    }
+
                     SettingInfoCard(title: L("버전"), value: appVersion)
                 }
             }
@@ -242,31 +246,75 @@ private struct SettingActionCard: View {
 
     var body: some View {
         Button(action: action) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(Color.primary)
-
-                    if let summary {
-                        Text(summary)
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.secondary)
-                    }
-                }
-
-                Spacer()
-
-                Image(systemName: "arrow.up.forward.square")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Color.secondary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background(AppColors.surface)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            SettingActionRow(title: title, summary: summary, systemImage: "arrow.up.forward.square")
         }
         .padding(.bottom, 8)
+    }
+}
+
+/// 친구에게 앱을 추천하는 공유 카드 (Android `SettingActionCard` + `shareAppRecommendation` 대응)
+///
+/// 미리보기 제목은 공유 시트 위쪽에만 보이고, 받는 사람에게는 메시지와 링크가 간다.
+private struct SettingShareCard: View {
+    let url: URL
+
+    var body: some View {
+        ShareLink(
+            // ShareLink의 message는 일부 공유 대상만 받아서, 복사·AirDrop 같은 대상으로는 링크만 간다.
+            // Android EXTRA_TEXT처럼 문구와 링크를 한 텍스트로 묶어 어디로 보내도 함께 가게 한다.
+            item: "\(L("심플 환율 계산기 — 160여 개 통화를 원화로 바로 환산해요"))\n\(url.absoluteString)",
+            // 이미지를 주지 않으면 시트 제목 옆에 빈 아이콘 틀이 뜬다.
+            preview: SharePreview(L("친구에게 이 앱을 추천해 보세요"), image: Self.appIcon),
+        ) {
+            SettingActionRow(title: L("친구에게 추천하기"), systemImage: "square.and.arrow.up")
+        }
+        .accessibilityIdentifier("setting.share")
+        .padding(.bottom, 8)
+    }
+
+    /// 앱 아이콘. 에셋 카탈로그의 앱 아이콘은 이름으로 바로 못 읽어서 Info.plist에 적힌 아이콘 이름으로 찾는다.
+    private static let appIcon: Image = {
+        let icons = Bundle.main.object(forInfoDictionaryKey: "CFBundleIcons") as? [String: Any]
+        let primaryIcon = icons?["CFBundlePrimaryIcon"] as? [String: Any]
+        let iconName = (primaryIcon?["CFBundleIconFiles"] as? [String])?.last
+            ?? primaryIcon?["CFBundleIconName"] as? String
+
+        guard let iconName, let uiImage = UIImage(named: iconName) else {
+            return Image(systemName: "app.badge")
+        }
+        return Image(uiImage: uiImage)
+    }()
+}
+
+private struct SettingActionRow: View {
+    let title: String
+    var summary: String?
+    let systemImage: String
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Color.primary)
+
+                if let summary {
+                    Text(summary)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.secondary)
+                }
+            }
+
+            Spacer()
+
+            Image(systemName: systemImage)
+                .font(.system(size: 16))
+                .foregroundStyle(Color.secondary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 

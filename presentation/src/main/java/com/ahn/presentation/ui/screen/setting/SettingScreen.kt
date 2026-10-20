@@ -28,6 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -46,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
@@ -112,6 +114,7 @@ fun SettingRoute(
         onThemeModeSelected = mainViewModel::saveThemeMode,
         onPrivacyPolicyClick = { uriHandler.openUri(PRIVACY_POLICY_URL) },
         onPrivacyOptionsClick = onPrivacyOptionsClick,
+        onRecommendClick = { context.shareAppRecommendation() },
     )
 }
 
@@ -130,6 +133,7 @@ fun SettingScreen(
     onThemeModeSelected: (ThemeMode) -> Unit = {},
     onPrivacyPolicyClick: () -> Unit = {},
     onPrivacyOptionsClick: () -> Unit = {},
+    onRecommendClick: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.testTag("screen.setting"),
@@ -170,6 +174,7 @@ fun SettingScreen(
             onThemeModeSelected = onThemeModeSelected,
             onPrivacyPolicyClick = onPrivacyPolicyClick,
             onPrivacyOptionsClick = onPrivacyOptionsClick,
+            onRecommendClick = onRecommendClick,
         )
     }
 }
@@ -186,6 +191,7 @@ private fun SettingContent(
     onThemeModeSelected: (ThemeMode) -> Unit,
     onPrivacyPolicyClick: () -> Unit,
     onPrivacyOptionsClick: () -> Unit,
+    onRecommendClick: () -> Unit,
 ) {
     val emptyValue = stringResource(R.string.setting_exchange_rate_date_empty)
     val loadingValue = stringResource(R.string.setting_loading)
@@ -243,6 +249,13 @@ private fun SettingContent(
         }
 
         SettingSection(title = stringResource(R.string.setting_section_app_info)) {
+            SettingActionCard(
+                title = stringResource(R.string.setting_recommend_app),
+                icon = Icons.Filled.Share,
+                onClick = onRecommendClick,
+                modifier = Modifier.testTag("setting.share"),
+            )
+
             AppInfoCard(
                 title = stringResource(R.string.setting_app_version),
                 versionName = appInfo.versionName,
@@ -254,11 +267,13 @@ private fun SettingContent(
 @Composable
 private fun SettingActionCard(
     title: String,
-    summary: String? = null,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    summary: String? = null,
+    icon: ImageVector = Icons.AutoMirrored.Filled.OpenInNew,
 ) {
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(
                 onClickLabel = title,
@@ -293,7 +308,7 @@ private fun SettingActionCard(
             }
 
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),

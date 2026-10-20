@@ -46,6 +46,7 @@ maestro --device <udid> test .maestro -e APP_ID=com.ahn.CalcMoney
 | 통화 선택 버튼 | `currency.selector` | `CurrencySelector` | `CurrencySelectorView` |
 | 선택 창 행·하트·닫기 | `currency.row.<코드>`, `favorite.toggle.<코드>`, `currency.picker.close`(iOS만) | `CurrencyPickerDialog` | `CurrencyPickerSheet` |
 | 즐겨찾기 카드 | `favorite.card.<코드>` | `FavoriteScreen` | `FavoriteView` |
+| 친구에게 추천하기 | `setting.share` | `SettingScreen` | `SettingView`(App Store 출시 전에는 숨김) |
 
 - Android는 `MainScreen`에서 `testTagsAsResourceId`를 켠다. Dialog는 별도 창이라 따로 켠다(`CurrencyPickerDialog` 참고).
 - 계산기 키 id는 양쪽 유닛 테스트(`CalculatorKeyTestTagTest.kt`, `CalculatorKeyTests.swift`)가 고정한다.

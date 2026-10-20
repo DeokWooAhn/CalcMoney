@@ -209,6 +209,11 @@ git push origin android-v1.0.2
 
 아직 App Store / TestFlight 배포 파이프라인은 없습니다. CI는 검증까지만 수행합니다. 추가할 때는 `ios-v*` 태그를 트리거로 쓰고 App Store Connect 서명 시크릿이 필요합니다.
 
+첫 출시 전에 채워야 하는 값이 있습니다.
+
+- `ios/CalcMoney/Info.plist`의 `GADApplicationIdentifier`와 `AdConfig.swift`의 배너 ID: 지금은 Google 테스트 ID입니다.
+- `AppStoreLink.appID`: App Store Connect의 앱 Apple ID(숫자)입니다. 비어 있으면 설정의 "친구에게 추천하기"가 숨겨집니다.
+
 ### Firebase
 
 Firebase Functions와 Firestore 규칙은 `functions/**`, `firebase.json`, `firestore.rules`, `.firebaserc` 변경이 `master`에 반영되면 자동 배포됩니다.

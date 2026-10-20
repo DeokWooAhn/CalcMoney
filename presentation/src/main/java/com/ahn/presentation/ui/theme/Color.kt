@@ -42,7 +42,7 @@ val Green = Color(0xFF4CAF50)
 // 계산기 키를 누를 때 번지는 빛의 옅은 쪽 색. 주황(Orange)에서 이 색으로 이어진다.
 val KeyPressGlowSoft = Color(0xFFFFCF7A)
 
-// AC·⌫ 글자와 누름 빛. iOS CalculatorColors.destructive와 같은 값이다.
-val LightCalculatorDestructive = Color(0xFFE5695C)
-val DarkCalculatorDestructive = Color(0xFFEF6E62)
-val DestructiveKeyPressGlowSoft = Color(0xFFFFB4A8)
+// AC·⌫ 글자와 누름 빛. 밝은 레드 핑크로, iOS(CalculatorColors.destructive의 코랄 레드)와 다르다.
+val LightCalculatorDestructive = Color(0xFFFF3B60)
+val DarkCalculatorDestructive = Color(0xFFFF5674)
+val DestructiveKeyPressGlowSoft = Color(0xFFFFB3C6)

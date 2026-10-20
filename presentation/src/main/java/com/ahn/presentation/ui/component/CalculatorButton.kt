@@ -79,7 +79,7 @@ fun CalculatorButton(
             text = text,
             fontSize = 30.sp,
             fontWeight = FontWeight.Medium,
-            color = lerp(textColor, pressedTextColor, pressProgress.value),
+            color = keyContentColor(textColor, pressedTextColor, pressProgress.value),
         )
     }
 }
@@ -112,7 +112,7 @@ fun CalculatorIconButton(
         Icon(
             imageVector = imageVector,
             contentDescription = contentDescription,
-            tint = lerp(contentColor, pressedContentColor, pressProgress.value),
+            tint = keyContentColor(contentColor, pressedContentColor, pressProgress.value),
             modifier = Modifier.size(32.dp),
         )
     }
@@ -166,7 +166,7 @@ fun DeleteCalculatorButton(
             text = text,
             fontSize = 31.sp,
             fontWeight = FontWeight.Medium,
-            color = lerp(textColor, pressedTextColor, pressProgress.value),
+            color = keyContentColor(textColor, pressedTextColor, pressProgress.value),
         )
     }
 }
@@ -242,6 +242,15 @@ private fun rememberKeyPressProgress(interactionSource: InteractionSource): Anim
     return progress
 }
 
+/**
+ * 누른 정도([progress])에 맞춘 글자·아이콘 색입니다.
+ *
+ * 빛처럼 천천히 바꾸면 검은 글자와 주황 사이의 적갈색이 오래 보여 빨갛게 보인다. 글자색은 누른 정도가 가운데를
+ * 지날 때 짧게 넘어가게 해서, 떼고 약 0.1초 동안 강조색을 유지하다가 바로 원래 색으로 돌아온다.
+ */
+private fun keyContentColor(color: Color, pressedColor: Color, progress: Float): Color =
+    lerp(color, pressedColor, ((progress - CONTENT_SWITCH_START) / CONTENT_SWITCH_WIDTH).coerceIn(0f, 1f))
+
 /** 원 둘레로 번지는 빛. 오른쪽·아래는 [KeyPressColors.accent], 왼쪽·위는 [KeyPressColors.soft]다. */
 private fun Modifier.keyPressGlow(colors: KeyPressColors, progress: () -> Float): Modifier = drawBehind {
     val alpha = progress()
@@ -278,6 +287,10 @@ private fun calculatorButtonElevation() = if (LocalCalcMoneyDarkTheme.current) 0
 // 삼성 계산기에서 잰 값: 켜질 때 약 0.1초, 꺼질 때 약 0.25~0.3초
 private const val PRESS_IN_MILLIS = 90
 private const val PRESS_OUT_MILLIS = 320
+
+// 글자색은 누른 정도가 0.4~0.6 사이일 때만 바뀐다. 떼는 애니메이션에서 이 구간은 약 25ms다.
+private const val CONTENT_SWITCH_START = 0.4f
+private const val CONTENT_SWITCH_WIDTH = 0.2f
 
 // 빛을 키보다 조금 크게 그린 뒤 흐린다. 키 사이 간격(12dp)으로 번지고, 더 번진 부분은 옆 키에 가려진다.
 private val GLOW_SPREAD = 3.dp

@@ -11,11 +11,11 @@ enum CalculatorKey: Hashable {
 }
 
 let calculatorKeyRows: [[CalculatorKey]] = [
-    [.history, .clear, .parenthesis, .operatorKey(displayText: "÷", inputValue: "÷")],
+    [.history, .clear, .delete, .operatorKey(displayText: "÷", inputValue: "÷")],
     [.number("7"), .number("8"), .number("9"), .operatorKey(displayText: "×", inputValue: "×")],
     [.number("4"), .number("5"), .number("6"), .operatorKey(displayText: "−", inputValue: "-")],
     [.number("1"), .number("2"), .number("3"), .operatorKey(displayText: "+", inputValue: "+")],
-    [.dot, .number("0"), .delete, .calculate],
+    [.parenthesis, .number("0"), .dot, .calculate],
 ]
 
 extension CalculatorKey {

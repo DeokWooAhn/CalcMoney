@@ -20,11 +20,11 @@ class CalculatorKeyTestTagTest :
             When("각 키의 E2E 테스트 id를 읽으면") {
                 Then("배열 순서대로 약속한 id를 가져야 한다") {
                     tags shouldBe listOf(
-                        "keypad.history", "keypad.clear", "keypad.parenthesis", "keypad.divide",
+                        "keypad.history", "keypad.clear", "keypad.delete", "keypad.divide",
                         "keypad.7", "keypad.8", "keypad.9", "keypad.multiply",
                         "keypad.4", "keypad.5", "keypad.6", "keypad.minus",
                         "keypad.1", "keypad.2", "keypad.3", "keypad.plus",
-                        "keypad.dot", "keypad.0", "keypad.delete", "keypad.equals",
+                        "keypad.parenthesis", "keypad.0", "keypad.dot", "keypad.equals",
                     )
                 }
 

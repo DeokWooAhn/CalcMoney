@@ -20,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -57,6 +58,7 @@ fun CalculatorButton(
     backgroundColor: Color = MaterialTheme.colorScheme.buttonNumber,
     textColor: Color = MaterialTheme.colorScheme.buttonTextPrimary,
     pressedTextColor: Color = textColor,
+    pressColors: KeyPressColors = KeyPressColors.Default,
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -65,6 +67,7 @@ fun CalculatorButton(
     CalculatorKeySurface(
         pressProgress = pressProgress,
         backgroundColor = backgroundColor,
+        pressColors = pressColors,
         modifier = modifier,
         inputModifier = Modifier.clickable(
             interactionSource = interactionSource,
@@ -88,6 +91,7 @@ fun CalculatorIconButton(
     backgroundColor: Color = MaterialTheme.colorScheme.buttonFunction,
     contentColor: Color = MaterialTheme.colorScheme.buttonTextSecondary,
     pressedContentColor: Color = contentColor,
+    pressColors: KeyPressColors = KeyPressColors.Default,
     contentDescription: String,
     onClick: () -> Unit,
 ) {
@@ -97,6 +101,7 @@ fun CalculatorIconButton(
     CalculatorKeySurface(
         pressProgress = pressProgress,
         backgroundColor = backgroundColor,
+        pressColors = pressColors,
         modifier = modifier,
         inputModifier = Modifier.clickable(
             interactionSource = interactionSource,
@@ -117,9 +122,10 @@ fun CalculatorIconButton(
 fun DeleteCalculatorButton(
     text: String,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = MaterialTheme.colorScheme.buttonFunction,
-    textColor: Color = MaterialTheme.colorScheme.buttonTextSecondary,
+    backgroundColor: Color = MaterialTheme.colorScheme.buttonNumber,
+    textColor: Color = MaterialTheme.colorScheme.buttonTextPrimary,
     pressedTextColor: Color = textColor,
+    pressColors: KeyPressColors = KeyPressColors.Default,
     onDeleteAction: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -129,6 +135,7 @@ fun DeleteCalculatorButton(
     CalculatorKeySurface(
         pressProgress = pressProgress,
         backgroundColor = backgroundColor,
+        pressColors = pressColors,
         modifier = modifier,
         inputModifier = Modifier.pointerInput(Unit) {
             detectTapGestures(
@@ -167,13 +174,14 @@ fun DeleteCalculatorButton(
 /**
  * 계산기 키의 원형 바탕과 누름 효과를 그립니다.
  *
- * 누르면 원 둘레로 주황→호박색 빛이 번지고 바탕이 강조색 쪽으로 물듭니다. 삼성 계산기의 누름 효과를
+ * 누르면 원 둘레로 [KeyPressColors]의 빛이 번지고 바탕이 그 색 쪽으로 물듭니다. 기본은 주황→호박색입니다. 삼성 계산기의 누름 효과를
  * 앱 강조색으로 옮긴 것으로, 손가락 위치에서 퍼지는 기본 물결 효과(ripple)는 쓰지 않습니다.
  */
 @Composable
 private fun CalculatorKeySurface(
     pressProgress: Animatable<Float, AnimationVector1D>,
     backgroundColor: Color,
+    pressColors: KeyPressColors,
     modifier: Modifier,
     inputModifier: Modifier,
     content: @Composable BoxScope.() -> Unit,
@@ -186,14 +194,14 @@ private fun CalculatorKeySurface(
         modifier = modifier
             .aspectRatio(1f)
             .padding(6.dp)
-            .keyPressGlow(progress = { pressProgress.value * glowAlpha })
+            .keyPressGlow(colors = pressColors, progress = { pressProgress.value * glowAlpha })
             .shadow(
                 elevation = calculatorButtonElevation(),
                 shape = CircleShape,
                 clip = false,
             )
             .clip(CircleShape)
-            .drawBehind { drawRect(lerp(backgroundColor, Orange, tintFraction * pressProgress.value)) }
+            .drawBehind { drawRect(lerp(backgroundColor, pressColors.accent, tintFraction * pressProgress.value)) }
             .then(inputModifier),
         contentAlignment = Alignment.Center,
         content = content,
@@ -234,19 +242,33 @@ private fun rememberKeyPressProgress(interactionSource: InteractionSource): Anim
     return progress
 }
 
-/** 원 둘레로 번지는 빛. 오른쪽·아래는 주황, 왼쪽·위는 옅은 호박색이다. */
-private fun Modifier.keyPressGlow(progress: () -> Float): Modifier = drawBehind {
+/** 원 둘레로 번지는 빛. 오른쪽·아래는 [KeyPressColors.accent], 왼쪽·위는 [KeyPressColors.soft]다. */
+private fun Modifier.keyPressGlow(colors: KeyPressColors, progress: () -> Float): Modifier = drawBehind {
     val alpha = progress()
     if (alpha <= 0f) return@drawBehind
 
     drawIntoCanvas { canvas ->
         val paint = Paint()
         Brush.sweepGradient(
-            colors = listOf(Orange, Orange, KeyPressGlowSoft, KeyPressGlowSoft, Orange),
+            colors = listOf(colors.accent, colors.accent, colors.soft, colors.soft, colors.accent),
             center = center,
         ).applyTo(size, paint, alpha)
         paint.asFrameworkPaint().maskFilter = BlurMaskFilter(GLOW_BLUR_RADIUS.toPx(), BlurMaskFilter.Blur.NORMAL)
         canvas.drawCircle(center, size.minDimension / 2 + GLOW_SPREAD.toPx(), paint)
+    }
+}
+
+/**
+ * 키를 누를 때 번지는 빛과 바탕을 물들이는 색입니다.
+ *
+ * @property accent 빛의 진한 쪽(오른쪽·아래)이자 바탕을 물들이는 색
+ * @property soft 빛의 옅은 쪽(왼쪽·위)
+ */
+@Immutable
+data class KeyPressColors(val accent: Color, val soft: Color) {
+    companion object {
+        /** 숫자·연산자 키. 앱 강조색 주황에서 옅은 호박색으로 이어진다. */
+        val Default = KeyPressColors(accent = Orange, soft = KeyPressGlowSoft)
     }
 }
 

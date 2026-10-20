@@ -73,10 +73,13 @@ import com.ahn.presentation.ui.component.CalculatorIconButton
 import com.ahn.presentation.ui.component.CurrencyPickerDialog
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.DeleteCalculatorButton
+import com.ahn.presentation.ui.component.KeyPressColors
+import com.ahn.presentation.ui.theme.DestructiveKeyPressGlowSoft
 import com.ahn.presentation.ui.theme.buttonFunction
 import com.ahn.presentation.ui.theme.buttonOperator
 import com.ahn.presentation.ui.theme.buttonTextSecondary
 import com.ahn.presentation.ui.theme.calculatorAccent
+import com.ahn.presentation.ui.theme.calculatorDestructive
 import com.ahn.presentation.ui.theme.currencySelectorBorder
 import com.ahn.presentation.ui.theme.currencySelectorSurface
 import com.ahn.presentation.util.ThousandSeparatorTransformation
@@ -427,36 +430,36 @@ private fun CalculatorKeyButton(
             onClick = onClick,
         )
 
+        // AC·⌫는 숫자 키 바탕에 빨간 글자를 두고, 누를 때 번지는 빛도 같은 빨강으로 맞춘다.
         CalculatorKey.Clear -> CalculatorButton(
             text = "AC",
             modifier = keyModifier,
-            backgroundColor = MaterialTheme.colorScheme.buttonFunction,
-            textColor = MaterialTheme.colorScheme.buttonTextSecondary,
-            onClick = onClick,
-        )
-
-        CalculatorKey.Parenthesis -> CalculatorButton(
-            text = "( )",
-            modifier = keyModifier,
-            backgroundColor = MaterialTheme.colorScheme.buttonFunction,
-            textColor = MaterialTheme.colorScheme.buttonTextSecondary,
-            onClick = onClick,
-        )
-
-        // 누를 때 글자색을 강조색으로 바꾸는 건 바탕이 무채색인 숫자 키뿐이다. 회색·주황 바탕에서는 강조색이 묻힌다.
-        CalculatorKey.Dot -> CalculatorButton(
-            text = ".",
-            modifier = keyModifier,
-            pressedTextColor = MaterialTheme.colorScheme.calculatorAccent,
+            textColor = MaterialTheme.colorScheme.calculatorDestructive,
+            pressColors = destructiveKeyPressColors(),
             onClick = onClick,
         )
 
         CalculatorKey.Delete -> DeleteCalculatorButton(
             text = "⌫",
             modifier = keyModifier,
-            backgroundColor = MaterialTheme.colorScheme.buttonFunction,
-            textColor = MaterialTheme.colorScheme.buttonTextSecondary,
+            textColor = MaterialTheme.colorScheme.calculatorDestructive,
+            pressColors = destructiveKeyPressColors(),
             onDeleteAction = onClick,
+        )
+
+        // 누를 때 글자색을 강조색으로 바꾸는 건 바탕이 무채색인 숫자 키뿐이다. 회색·주황 바탕에서는 강조색이 묻힌다.
+        CalculatorKey.Parenthesis -> CalculatorButton(
+            text = "( )",
+            modifier = keyModifier,
+            pressedTextColor = MaterialTheme.colorScheme.calculatorAccent,
+            onClick = onClick,
+        )
+
+        CalculatorKey.Dot -> CalculatorButton(
+            text = ".",
+            modifier = keyModifier,
+            pressedTextColor = MaterialTheme.colorScheme.calculatorAccent,
+            onClick = onClick,
         )
 
         CalculatorKey.Calculate -> CalculatorButton(
@@ -481,6 +484,13 @@ private fun CalculatorKeyButton(
         )
     }
 }
+
+/** AC·⌫ 누름 빛. 글자와 같은 빨강에서 옅은 분홍으로 이어진다. */
+@Composable
+private fun destructiveKeyPressColors() = KeyPressColors(
+    accent = MaterialTheme.colorScheme.calculatorDestructive,
+    soft = DestructiveKeyPressGlowSoft,
+)
 
 @Composable
 private fun CalculatorKey.Operator.operatorText(): String {

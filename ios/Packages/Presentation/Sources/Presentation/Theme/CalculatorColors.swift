@@ -14,11 +14,11 @@ extension Color {
 
 /// 계산기 키를 누를 때 번지는 빛과 바탕 물듦 (Android `CalculatorKeySurface`의 상수 대응)
 struct CalculatorKeyPress {
-    /// 원 둘레 빛의 색. 오른쪽·아래는 강조색, 왼쪽·위는 옅은 연두로 이어진다.
+    /// 원 둘레 빛의 색. 오른쪽·아래는 진한 쪽(첫 색), 왼쪽·위는 옅은 쪽(마지막 색)으로 이어진다.
     let glowColors: [Color]
     let glowOpacity: Double
     let tint: Color
-    /// 누른 동안 바탕을 강조색 쪽으로 물들이는 정도
+    /// 누른 동안 바탕을 tint 쪽으로 물들이는 정도
     let tintAmount: Double
 
     /// AngularGradient는 오른쪽(3시)에서 시계 방향으로 돈다. 오른쪽·아래 → 왼쪽·위 → 다시 오른쪽 순서로 이어 붙인다.
@@ -42,6 +42,8 @@ struct CalculatorColors {
     let snackbarBackground: Color
     let hasKeyShadow: Bool
     let keyPress: CalculatorKeyPress
+    /// AC·⌫ 누름 효과. 글자와 같은 코랄 레드에서 옅은 분홍으로 이어진다.
+    let destructiveKeyPress: CalculatorKeyPress
 
     static func palette(for colorScheme: ColorScheme) -> CalculatorColors {
         colorScheme == .dark ? .dark : .light
@@ -64,6 +66,12 @@ struct CalculatorColors {
             tint: Color(hex: 0x2FC0B0),
             tintAmount: 0.15,
         ),
+        destructiveKeyPress: CalculatorKeyPress(
+            glowColors: [Color(hex: 0xEF6E62), Color(hex: 0xFFB4A8)],
+            glowOpacity: 0.9,
+            tint: Color(hex: 0xEF6E62),
+            tintAmount: 0.15,
+        ),
     )
 
     static let light = CalculatorColors(
@@ -82,6 +90,12 @@ struct CalculatorColors {
             glowColors: [Color(hex: 0x0AA968), Color(hex: 0xA6E3A1)],
             glowOpacity: 0.85,
             tint: Color(hex: 0x0AA968),
+            tintAmount: 0.08,
+        ),
+        destructiveKeyPress: CalculatorKeyPress(
+            glowColors: [Color(hex: 0xE5695C), Color(hex: 0xFFB4A8)],
+            glowOpacity: 0.85,
+            tint: Color(hex: 0xE5695C),
             tintAmount: 0.08,
         ),
     )

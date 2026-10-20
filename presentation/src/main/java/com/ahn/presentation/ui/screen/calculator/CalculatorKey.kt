@@ -25,7 +25,7 @@ internal val calculatorKeyRows = listOf(
     listOf(
         CalculatorKey.History,
         CalculatorKey.Clear,
-        CalculatorKey.Parenthesis,
+        CalculatorKey.Delete,
         CalculatorKey.Operator(displayText = "÷", inputValue = "÷"),
     ),
     listOf(
@@ -47,9 +47,9 @@ internal val calculatorKeyRows = listOf(
         CalculatorKey.Operator(displayText = "+", inputValue = "+"),
     ),
     listOf(
-        CalculatorKey.Dot,
+        CalculatorKey.Parenthesis,
         CalculatorKey.Number("0"),
-        CalculatorKey.Delete,
+        CalculatorKey.Dot,
         CalculatorKey.Calculate,
     ),
 )

@@ -277,7 +277,7 @@ private struct CalculatorKeyButton: View {
             )
 
         case .clear:
-            CalculatorButton(text: "AC", appearance: coloredKey(content: colors.destructive), action: onTap)
+            CalculatorButton(text: "AC", appearance: destructiveKey, action: onTap)
 
         case .parenthesis:
             CalculatorButton(text: "( )", appearance: neutralKey(content: colors.keyText), action: onTap)
@@ -286,7 +286,7 @@ private struct CalculatorKeyButton: View {
             CalculatorButton(text: ".", appearance: neutralKey(content: colors.keyText), action: onTap)
 
         case .delete:
-            DeleteCalculatorButton(appearance: coloredKey(content: colors.destructive), onDeleteAction: onTap)
+            DeleteCalculatorButton(appearance: destructiveKey, onDeleteAction: onTap)
 
         case .calculate:
             CalculatorButton(
@@ -318,7 +318,7 @@ private struct CalculatorKeyButton: View {
         )
     }
 
-    /// 글자·바탕에 이미 색이 있는 키(AC·⌫·=). 누를 때 글자색은 그대로 두고 빛과 바탕만 바뀐다.
+    /// 글자·바탕에 이미 색이 있는 키(=). 누를 때 글자색은 그대로 두고 빛과 바탕만 바뀐다.
     private func coloredKey(content: Color, background: Color? = nil) -> CalculatorKeyAppearance {
         CalculatorKeyAppearance(
             backgroundColor: background ?? colors.keyBackground,
@@ -326,6 +326,17 @@ private struct CalculatorKeyButton: View {
             pressedContentColor: nil,
             hasShadow: colors.hasKeyShadow,
             press: colors.keyPress,
+        )
+    }
+
+    /// AC·⌫. 숫자 키 바탕에 빨간 글자를 두고, 누를 때 번지는 빛도 같은 빨강으로 맞춘다.
+    private var destructiveKey: CalculatorKeyAppearance {
+        CalculatorKeyAppearance(
+            backgroundColor: colors.keyBackground,
+            contentColor: colors.destructive,
+            pressedContentColor: nil,
+            hasShadow: colors.hasKeyShadow,
+            press: colors.destructiveKeyPress,
         )
     }
 }

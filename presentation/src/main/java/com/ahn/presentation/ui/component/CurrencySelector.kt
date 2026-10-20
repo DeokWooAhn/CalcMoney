@@ -86,7 +86,7 @@ fun CurrencySelector(
     }
 
     if (showDialog) {
-        CurrencyPickerDialog(
+        CurrencyPickerSheet(
             currencies = availableCurrencies,
             selectedCurrency = selectedCurrency,
             favoriteCurrencyCodesForSort = favoriteCodesSnapshot,

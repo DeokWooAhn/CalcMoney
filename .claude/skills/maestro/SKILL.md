@@ -44,11 +44,11 @@ maestro --device <udid> test .maestro -e APP_ID=com.ahn.CalcMoney
 | 화면 기준점 | `screen.<탭>` | 각 Screen 루트 | `MainTab.screenTestID` |
 | 환율 입력 카드 | `exchange.from`, `exchange.to` | `ExchangeScreen` | `ExchangeView` |
 | 통화 선택 버튼 | `currency.selector` | `CurrencySelector` | `CurrencySelectorView` |
-| 선택 창 행·하트·닫기 | `currency.row.<코드>`, `favorite.toggle.<코드>`, `currency.picker.close`(iOS만) | `CurrencyPickerDialog` | `CurrencyPickerSheet` |
+| 선택 창 검색·행·하트·닫기 | `currency.search`, `currency.row.<코드>`, `favorite.toggle.<코드>`, `currency.picker.close`(iOS만) | `CurrencyPickerSheet` | `CurrencyPickerSheet` |
 | 즐겨찾기 카드 | `favorite.card.<코드>` | `FavoriteScreen` | `FavoriteView` |
 | 친구에게 추천하기 | `setting.share` | `SettingScreen` | `SettingView`(App Store 출시 전에는 숨김) |
 
-- Android는 `MainScreen`에서 `testTagsAsResourceId`를 켠다. Dialog는 별도 창이라 따로 켠다(`CurrencyPickerDialog` 참고).
+- Android는 `MainScreen`에서 `testTagsAsResourceId`를 켠다. 바텀시트·Dialog는 별도 창이라 따로 켠다(`CurrencyPickerSheet` 참고).
 - 계산기 키 id는 양쪽 유닛 테스트(`CalculatorKeyTestTagTest.kt`, `CalculatorKeyTests.swift`)가 고정한다.
   바꾸면 Flow와 반대쪽 플랫폼도 함께 바꾼다.
 - 앱은 영어·한국어를 지원한다. 화면 문구로 찾지 않는다. 통화 코드·숫자는 괜찮다
@@ -58,8 +58,8 @@ maestro --device <udid> test .maestro -e APP_ID=com.ahn.CalcMoney
 
 - 계산 결과는 키패드 글자(한 자리 숫자)와 겹치지 않는 값으로 단언한다. `"7"`을 단언하면 7 키가 잡힌다.
 - 환율 값은 매일 바뀐다. 값이 아니라 형식을 본다.
-- 선택 창 닫기는 Android `back`, iOS `currency.picker.close`다.
-- 통화 목록은 160개 안팎이다. `scrollUntilVisible` 기본 20초로는 뒤쪽 통화에 닿지 못하니 앞쪽 통화를 쓴다.
+- 선택 창 닫기는 Android `back`, iOS `currency.picker.close`다. Android는 검색창에 입력해 키보드가 떠 있으면 첫 `back`이 키보드만 내리니 `hideKeyboard`를 먼저 한다.
+- 통화 목록은 160개 안팎이다. `scrollUntilVisible` 기본 20초로는 뒤쪽 통화에 닿지 못하니, 스크롤하지 말고 `currency.search`에 통화 코드를 입력해 찾는다.
 - 즐겨찾기 화면은 기준 통화와 같은 통화를 카드로 만들지 않는다. 즐겨찾기 Flow에서 그 통화를 기준 통화로 고르지 않는다.
 
 ## 제약

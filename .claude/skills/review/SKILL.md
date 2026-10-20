@@ -32,7 +32,7 @@ description: CalcMoney 코드를 리뷰할 때 사용한다. "코드리뷰 해�
 - `Route`와 `Screen` 경계: `Route`는 ViewModel 배선·상태 수집·이펙트 처리, `Screen`은 순수 UI다.
   `Screen`과 재사용 컴포넌트에 `@Preview`가 있는지 본다.
 - `collectSideEffect`의 `when` 분기를 유지했는지. 분기를 없애면 이펙트가 추가돼도 컴파일러가 잡지 못한다.
-- Lazy 리스트의 `key`는 안정적인 식별자가 있을 때만 넣는다. `CurrencyPickerDialog`(`it.code`)와
+- Lazy 리스트의 `key`는 안정적인 식별자가 있을 때만 넣는다. `CurrencyPickerSheet`(`it.code`)와
   `FavoriteScreen`(`it.currency.code`)이 그 예다. `CalculatorHistory`처럼 값이 같은 항목이
   중복 저장될 수 있는 목록에 내용 기반 키를 주면 "Key was already used"로 죽는다.
   식별자가 없으면 키를 지어내지 말고 모델에 id를 넣는 쪽을 검토한다.

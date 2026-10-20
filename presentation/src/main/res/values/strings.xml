@@ -16,6 +16,9 @@
     <string name="select_currency">Select currency</string>
     <string name="select_currency_with_label">Select %1$s</string>
     <string name="select_currency_accessibility">Select %1$s %2$s</string>
+    <string name="currency_search_hint">Search country, currency or code</string>
+    <string name="currency_search_clear">Clear search</string>
+    <string name="currency_search_no_result">No matching currencies.</string>
     <string name="empty_favorite_currency">No favorite currencies yet.</string>
     <string name="favorite_rate_load_failed">Could not load exchange rates.</string>
     <string name="favorite_only_base_currency">%1$s is your base currency.\nAdd a different currency to favorites.</string>

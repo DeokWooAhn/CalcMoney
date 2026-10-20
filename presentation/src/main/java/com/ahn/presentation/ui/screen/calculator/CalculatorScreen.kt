@@ -70,7 +70,7 @@ import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.R
 import com.ahn.presentation.ui.component.CalculatorButton
 import com.ahn.presentation.ui.component.CalculatorIconButton
-import com.ahn.presentation.ui.component.CurrencyPickerDialog
+import com.ahn.presentation.ui.component.CurrencyPickerSheet
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.DeleteCalculatorButton
 import com.ahn.presentation.ui.component.KeyPressColors
@@ -543,7 +543,7 @@ private fun CalculatorExchangeCurrencySelector(
     }
 
     if (showDialog) {
-        CurrencyPickerDialog(
+        CurrencyPickerSheet(
             currencies = availableCurrencies,
             selectedCurrency = selectedCurrency,
             favoriteCurrencyCodesForSort = favoriteCodesSnapshot,

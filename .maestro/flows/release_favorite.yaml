@@ -16,20 +16,20 @@ tags:
     id: "currency.selector"
     childOf:
       id: "exchange.from"
-# 목록은 알파벳순이라 AUD는 맨 앞쪽에 있다. 뒤쪽 통화(EUR 등)를 고르면 스크롤이 기본 제한 시간
-# 20초 안에 닿지 못한다. 작은 화면에서 첫 화면에 안 보일 때를 대비해 스크롤은 남겨 둔다.
-- scrollUntilVisible:
-    element:
-      id: "favorite.toggle.AUD"
-    direction: DOWN
+# 검색창에 통화 코드를 쳐서 찾는다. 화면 문구는 언어마다 달라서 코드로 찾는다.
+- tapOn:
+    id: "currency.search"
+- inputText: "aud"
 - tapOn:
     id: "favorite.toggle.AUD"
 # 행을 눌러 AUD를 기준 통화로 고르면 안 된다. 즐겨찾기 화면은 기준 통화와 같은 통화를 카드로 만들지 않는다.
-# 통화는 그대로 두고 창만 닫는다. Android 대화상자는 뒤로가기, iOS 시트는 닫기 버튼으로 닫는다.
+# 통화는 그대로 두고 창만 닫는다. Android 바텀시트는 뒤로가기, iOS 시트는 닫기 버튼으로 닫는다.
+# Android는 키보드가 떠 있으면 첫 뒤로가기가 키보드만 내리므로 먼저 키보드를 내린다.
 - runFlow:
     when:
       platform: Android
     commands:
+      - hideKeyboard
       - back
 - runFlow:
     when:

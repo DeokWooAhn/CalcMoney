@@ -1,7 +1,9 @@
 import Domain
 import SwiftUI
 
-/// 통화 선택 시트 (Android `CurrencyPickerDialog` 대응)
+/// 통화 선택 시트 (Android `CurrencyPickerSheet` 대응)
+///
+/// 맨 위 검색창이 비어 있으면 즐겨찾기를 맨 위에 둔 전체 목록과 빠른 이동 인덱스를, 검색어가 있으면 맞는 통화만 보여준다.
 ///
 /// 정렬용 즐겨찾기 스냅샷과 아이콘용 실시간 즐겨찾기를 분리해,
 /// 시트가 열려 있는 동안 하트를 눌러도 목록 순서가 튀지 않게 한다.
@@ -15,11 +17,14 @@ struct CurrencyPickerSheet: View {
     let onToggleFavorite: (String) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @State private var query = ""
     @State private var isScrolling = false
     @State private var isTouchingIndex = false
     /// 미리보기가 사라지는 동안에도 마지막 라벨을 보여주도록 손을 떼도 지우지 않는다.
     @State private var previewLabel: String?
     @State private var isIndexVisible = false
+
+    private static let englishLocale = Locale(identifier: "en")
 
     /// 스크롤과 인덱스 조작이 멈춘 뒤 인덱스를 숨기기까지 기다리는 시간
     private static let indexHideDelay: Duration = .milliseconds(1500)
@@ -33,8 +38,26 @@ struct CurrencyPickerSheet: View {
         }
     }
 
+    private var isSearching: Bool {
+        !query.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     private var pickerList: CurrencyPickerList {
-        CurrencyPickerList(currencies: currencies, favoriteCodesForSort: favoriteCurrencyCodesForSort)
+        guard isSearching else {
+            return CurrencyPickerList(currencies: currencies, favoriteCodesForSort: favoriteCurrencyCodesForSort)
+        }
+
+        let results = CurrencyPickerList.search(
+            currencies,
+            query: query,
+            favoriteCodesForSort: favoriteCurrencyCodesForSort,
+            // 서버 이름은 한국어라, 화면 언어와 관계없이 "dollar"로도 찾을 수 있게 영어 이름을 더한다.
+            namesOf: { currency in
+                [currency.localizedName, currency.name, platformCurrencyName(currency.code, locale: Self.englishLocale)]
+                    .compactMap(\.self)
+            },
+        )
+        return CurrencyPickerList(searchResults: results)
     }
 
     var body: some View {
@@ -55,9 +78,29 @@ struct CurrencyPickerSheet: View {
                     )
                 }
                 .listStyle(.plain)
+                .scrollDismissesKeyboard(.immediately)
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    CurrencySearchField(text: $query)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(.background)
+                }
+                .overlay {
+                    if isSearching, pickerList.currencies.isEmpty {
+                        Text(L("검색 결과가 없습니다."))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                // 검색어가 바뀌어 목록이 달라지면 맨 위 결과부터 보여준다.
+                .onChange(of: query) {
+                    if let first = self.pickerList.currencies.first {
+                        proxy.scrollTo(first.code, anchor: .top)
+                    }
+                }
                 .modifier(ScrollActivityModifier(isScrolling: $isScrolling))
                 .overlay(alignment: .trailing) {
-                    if isIndexVisible || !Self.detectsScrolling {
+                    // 검색 결과에는 인덱스가 없다.
+                    if !pickerList.indexEntries.isEmpty, isIndexVisible || !Self.detectsScrolling {
                         FastScrollIndex(
                             labels: pickerList.indexEntries.map(\.label),
                             onLabelSelected: { label in
@@ -121,6 +164,38 @@ struct CurrencyPickerSheet: View {
             return
         }
         isIndexVisible = false
+    }
+}
+
+/// 통화 검색창. `.searchable`은 입력란에 테스트 id를 붙일 수 없어 직접 만든다 (Android `CurrencySearchField` 대응).
+private struct CurrencySearchField: View {
+    @Binding var text: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+
+            TextField(L("나라, 통화 이름, 코드로 검색"), text: $text)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+                .accessibilityIdentifier("currency.search")
+
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L("검색어 지우기"))
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 36)
+        .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 10))
     }
 }
 

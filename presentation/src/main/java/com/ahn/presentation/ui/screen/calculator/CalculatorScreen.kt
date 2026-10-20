@@ -298,7 +298,8 @@ private fun CalculatorDisplay(
                         visualTransformation = remember(calculatorAccent) {
                             ThousandSeparatorTransformation(calculatorAccent)
                         },
-                        cursorBrush = SolidColor(Color.White),
+                        // 계산 결과 숫자와 같은 강조색. 흰색으로 고정하면 라이트 모드 밝은 배경에서 커서가 보이지 않는다.
+                        cursorBrush = SolidColor(calculatorAccent),
                         modifier = Modifier
                             .fillMaxWidth()
                             .focusRequester(focusRequester),

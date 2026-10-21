@@ -188,13 +188,19 @@ private struct CurrencySearchField: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.secondary)
+                        // .plain 스타일은 여백을 더하지 않아 아이콘 크기가 그대로 탭 영역이 된다. 최소 44pt로 넓힌다.
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(L("검색어 지우기"))
             }
         }
-        .padding(.horizontal, 10)
-        .frame(height: 36)
+        // 지우기 버튼의 44pt 탭 영역이 오른쪽 여백을 대신한다.
+        .padding(.leading, 10)
+        .padding(.trailing, text.isEmpty ? 10 : 0)
+        // 지우기 버튼이 나타나도 높이가 바뀌지 않게 버튼 탭 영역과 같은 높이로 고정한다.
+        .frame(height: 44)
         .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 10))
     }
 }

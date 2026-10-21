@@ -11,13 +11,15 @@ struct CurrencySelectorView: View {
     let onCurrencySelected: (CurrencyInfo) -> Void
     let onToggleFavorite: (String) -> Void
 
-    @State private var showPicker = false
-    @State private var favoriteCodesSnapshot: [String] = []
+    /// 시트를 여는 순간의 즐겨찾기. 시트가 떠 있는 동안 하트를 눌러도 목록 순서가 튀지 않게 정렬에만 쓴다.
+    ///
+    /// `.sheet(isPresented:)`의 내용 클로저에서 따로 둔 `@State`를 읽으면, body가 그 값에 의존하지 않아
+    /// 시트가 탭하기 전 값(빈 배열)을 받는다. 스냅숏을 시트의 item으로 넘겨 탭한 순간의 값을 그대로 쓴다.
+    @State private var pickerSnapshot: FavoriteCodesSnapshot?
 
     var body: some View {
         Button {
-            favoriteCodesSnapshot = favoriteCurrencyCodes
-            showPicker = true
+            pickerSnapshot = FavoriteCodesSnapshot(codes: favoriteCurrencyCodes)
         } label: {
             HStack(spacing: compact ? 4 : 8) {
                 if let selectedCurrency {
@@ -52,11 +54,11 @@ struct CurrencySelectorView: View {
         }
         .accessibilityIdentifier("currency.selector")
         .disabled(availableCurrencies.isEmpty)
-        .sheet(isPresented: $showPicker) {
+        .sheet(item: $pickerSnapshot) { snapshot in
             CurrencyPickerSheet(
                 currencies: availableCurrencies,
                 selectedCurrency: selectedCurrency,
-                favoriteCurrencyCodesForSort: favoriteCodesSnapshot,
+                favoriteCurrencyCodesForSort: snapshot.codes,
                 favoriteCurrencyCodesForIcon: favoriteCurrencyCodes,
                 title: dialogTitle,
                 onCurrencySelected: onCurrencySelected,
@@ -64,4 +66,9 @@ struct CurrencySelectorView: View {
             )
         }
     }
+}
+
+private struct FavoriteCodesSnapshot: Identifiable {
+    let id = UUID()
+    let codes: [String]
 }

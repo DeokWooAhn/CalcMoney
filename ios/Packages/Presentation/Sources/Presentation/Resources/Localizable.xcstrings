@@ -31,6 +31,26 @@
         }
       }
     },
+    "검색 결과가 없습니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching currencies."
+          }
+        }
+      }
+    },
+    "검색어 지우기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear search"
+          }
+        }
+      }
+    },
     "계산 기록": {
       "localizations": {
         "en": {
@@ -137,6 +157,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rate date"
+          }
+        }
+      }
+    },
+    "나라, 통화 이름, 코드로 검색": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search country, currency or code"
           }
         }
       }

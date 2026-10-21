@@ -1,5 +1,6 @@
 package com.ahn.presentation.util
 
+import android.content.res.Resources
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
@@ -21,6 +22,16 @@ fun CurrencyInfo.localizedName(): String {
     if (resId != null) return stringResource(resId)
 
     val locale = LocalConfiguration.current.locales[0]
+    return platformCurrencyName(code, locale) ?: name
+}
+
+/**
+ * [localizedName]과 같은 규칙으로 이름을 만듭니다. Composable 밖에서 통화 목록 전체의 이름을 한 번에 만들 때 씁니다.
+ */
+internal fun CurrencyInfo.localizedName(resources: Resources, locale: Locale): String {
+    val resId = currencyNameResId(code)
+    if (resId != null) return resources.getString(resId)
+
     return platformCurrencyName(code, locale) ?: name
 }
 

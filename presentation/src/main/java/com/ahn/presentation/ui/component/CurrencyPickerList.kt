@@ -1,6 +1,7 @@
 package com.ahn.presentation.ui.component
 
 import com.ahn.domain.currency.model.CurrencyInfo
+import java.util.Locale
 
 /** 즐겨찾기 구간을 가리키는 빠른 이동 인덱스 라벨입니다. */
 internal const val FAVORITE_INDEX_LABEL = "★"
@@ -48,6 +49,60 @@ internal fun buildCurrencyPickerList(
 
     return CurrencyPickerList(currencies = favorites + others, indexPositions = indexPositions)
 }
+
+/**
+ * 검색어에 맞는 통화를 찾습니다.
+ *
+ * 통화 코드가 같은 것 → 코드가 검색어로 시작하는 것 → 이름이 검색어로 시작하는 것 → 이름에 검색어가 들어간 것
+ * 순으로 둡니다. 같은 순위에서는 즐겨찾기를 먼저, 그다음 통화 코드 알파벳순으로 둡니다.
+ * 대소문자와 공백은 무시해서 "미국달러"로도 "미국 달러"를 찾습니다.
+ *
+ * @param query 검색어입니다. 비어 있으면 빈 목록을 돌려주므로, 검색 중이 아닐 때는 [buildCurrencyPickerList]를 씁니다.
+ * @param favoriteCodesForSort 같은 순위 안에서 먼저 보여줄 즐겨찾기 코드입니다. 앞에 있을수록 위에 옵니다.
+ * @param namesOf 통화 하나에서 검색할 이름들입니다. 화면 언어 이름, 서버가 준 한국어 이름, 영어 이름을 넘깁니다.
+ */
+internal fun searchCurrencies(
+    currencies: List<CurrencyInfo>,
+    query: String,
+    favoriteCodesForSort: List<String>,
+    namesOf: (CurrencyInfo) -> List<String>,
+): List<CurrencyInfo> {
+    val normalizedQuery = query.normalizedForSearch()
+    if (normalizedQuery.isEmpty()) return emptyList()
+
+    val favoriteOrder = favoriteCodesForSort.distinct().withIndex().associate { it.value to it.index }
+
+    return currencies
+        .mapNotNull { currency ->
+            matchOf(currency, normalizedQuery, namesOf(currency))?.let { match -> currency to match }
+        }
+        .sortedWith(
+            compareBy(
+                { (_, match) -> match.ordinal },
+                { (currency, _) -> favoriteOrder[currency.code] ?: Int.MAX_VALUE },
+                { (currency, _) -> currency.code.uppercase() },
+            ),
+        )
+        .map { (currency, _) -> currency }
+}
+
+/** 검색어가 통화와 맞는 정도입니다. 앞에 있을수록 먼저 보여줍니다. */
+private enum class SearchMatch { EXACT_CODE, CODE_PREFIX, NAME_PREFIX, NAME_CONTAINS }
+
+private fun matchOf(currency: CurrencyInfo, normalizedQuery: String, names: List<String>): SearchMatch? {
+    val codes = listOf(currency.code, currency.displayCode).map { it.normalizedForSearch() }
+    val normalizedNames = names.map { it.normalizedForSearch() }
+
+    return when {
+        codes.any { it == normalizedQuery } -> SearchMatch.EXACT_CODE
+        codes.any { it.startsWith(normalizedQuery) } -> SearchMatch.CODE_PREFIX
+        normalizedNames.any { it.startsWith(normalizedQuery) } -> SearchMatch.NAME_PREFIX
+        normalizedNames.any { normalizedQuery in it } -> SearchMatch.NAME_CONTAINS
+        else -> null
+    }
+}
+
+private fun String.normalizedForSearch(): String = filterNot { it.isWhitespace() }.lowercase(Locale.ROOT)
 
 private fun indexLabelOf(code: String): String {
     val first = code.firstOrNull()?.uppercaseChar() ?: return OTHER_INDEX_LABEL

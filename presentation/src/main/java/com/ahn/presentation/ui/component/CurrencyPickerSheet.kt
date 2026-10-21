@@ -12,52 +12,79 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.R
 import com.ahn.presentation.util.localizedName
+import com.ahn.presentation.util.platformCurrencyName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 /** 스크롤과 인덱스 조작이 멈춘 뒤 인덱스를 숨기기까지 기다리는 시간입니다. */
 private const val INDEX_HIDE_DELAY_MS = 1_500L
 
+/** 검색창 바탕에 까는 글자색의 불투명도입니다. iOS `tertiarySystemFill`과 비슷한 짙기입니다. */
+private const val SEARCH_FIELD_CONTAINER_ALPHA = 0.07f
+
+/**
+ * 통화 선택 시트입니다 (iOS `CurrencyPickerSheet` 대응).
+ *
+ * 맨 위 검색창이 비어 있으면 즐겨찾기를 맨 위에 둔 전체 목록과 빠른 이동 인덱스를, 검색어가 있으면 맞는 통화만 보여줍니다.
+ * 키보드가 목록을 가리지 않도록 화면 가운데 대화상자 대신 거의 전체 높이의 바텀시트를 씁니다.
+ *
+ * 정렬용 즐겨찾기 스냅샷과 아이콘용 실시간 즐겨찾기를 분리해, 시트가 열려 있는 동안 하트를 눌러도 목록 순서가 튀지 않게 합니다.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CurrencyPickerDialog(
+fun CurrencyPickerSheet(
     currencies: List<CurrencyInfo>,
     selectedCurrency: CurrencyInfo?,
     favoriteCurrencyCodesForSort: List<String>,
@@ -67,34 +94,56 @@ fun CurrencyPickerDialog(
     onCurrencySelected: (CurrencyInfo) -> Unit,
     onToggleFavorite: (String) -> Unit,
 ) {
-    val pickerList = remember(currencies, favoriteCurrencyCodesForSort) {
-        buildCurrencyPickerList(currencies, favoriteCurrencyCodesForSort)
-    }
+    var query by rememberSaveable { mutableStateOf("") }
+    val pickerList = rememberCurrencyPickerList(currencies, favoriteCurrencyCodesForSort, query)
     val favoriteCurrencyCodeSet = remember(favoriteCurrencyCodesForIcon) {
         favoriteCurrencyCodesForIcon.toSet()
     }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        // 내용이 전체 높이를 채워도 시트가 상태 표시줄 아래에서 멈추게 해, iOS 시트처럼 위쪽에 뒤 화면이 조금 보이게 한다.
+        modifier = Modifier
+            .statusBarsPadding()
+            .padding(top = 8.dp),
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 500.dp)
-                // Dialog는 별도 창이라 MainScreen에서 켠 testTagsAsResourceId가 적용되지 않는다.
+                .fillMaxHeight()
+                // 바텀시트는 별도 창이라 MainScreen에서 켠 testTagsAsResourceId가 적용되지 않는다.
                 .semantics { testTagsAsResourceId = true },
         ) {
-            Column {
+            Text(
+                text = title,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp),
+            )
+
+            CurrencySearchField(
+                query = query,
+                onQueryChange = { query = it },
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+
+            HorizontalDivider(
+                color = Color.Gray.copy(alpha = 0.2f),
+                modifier = Modifier.padding(top = 12.dp),
+            )
+
+            if (pickerList.currencies.isEmpty() && query.isNotBlank()) {
                 Text(
-                    text = title,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(20.dp),
+                    text = stringResource(R.string.currency_search_no_result),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 48.dp),
+                    textAlign = TextAlign.Center,
                 )
-
-                HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
-
+            } else {
                 CurrencyPickerListWithIndex(
                     pickerList = pickerList,
                     selectedCurrency = selectedCurrency,
@@ -105,6 +154,86 @@ fun CurrencyPickerDialog(
             }
         }
     }
+}
+
+/**
+ * 검색어가 없으면 전체 목록과 인덱스를, 있으면 검색 결과만 담고 인덱스는 비운 목록을 만듭니다.
+ */
+@Composable
+private fun rememberCurrencyPickerList(
+    currencies: List<CurrencyInfo>,
+    favoriteCodesForSort: List<String>,
+    query: String,
+): CurrencyPickerList {
+    val resources = LocalResources.current
+    val locale = LocalConfiguration.current.locales[0]
+    // 검색어를 칠 때마다 통화 160여 개의 이름을 다시 만들지 않도록 한 번만 계산한다.
+    // 서버 이름은 한국어라, 화면 언어와 관계없이 "dollar"로도 찾을 수 있게 영어 이름을 더한다.
+    val searchNames = remember(currencies, resources, locale) {
+        currencies.associate { currency ->
+            currency.code to listOfNotNull(
+                currency.localizedName(resources, locale),
+                currency.name,
+                platformCurrencyName(currency.code, Locale.ENGLISH),
+            )
+        }
+    }
+
+    return remember(currencies, favoriteCodesForSort, query, searchNames) {
+        if (query.isBlank()) {
+            buildCurrencyPickerList(currencies, favoriteCodesForSort)
+        } else {
+            CurrencyPickerList(
+                currencies = searchCurrencies(currencies, query, favoriteCodesForSort) {
+                    searchNames[it.code].orEmpty()
+                },
+                indexPositions = emptyMap(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CurrencySearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    // 시트 바탕과 비슷한 회색은 라이트 모드에서 묻힌다. 글자색을 옅게 깔아 두 모드 모두 바탕보다 한 단계 짙게 보이게 한다.
+    val containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = SEARCH_FIELD_CONTAINER_ALPHA)
+
+    TextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("currency.search"),
+        placeholder = { Text(stringResource(R.string.currency_search_hint)) },
+        leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
+        trailingIcon = if (query.isNotEmpty()) {
+            {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.currency_search_clear),
+                    )
+                }
+            }
+        } else {
+            null
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = containerColor,
+            unfocusedContainerColor = containerColor,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+        ),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { keyboardController?.hide() }),
+    )
 }
 
 @Composable
@@ -122,6 +251,14 @@ private fun CurrencyPickerListWithIndex(
     var previewLabel by remember { mutableStateOf<String?>(null) }
     val isIndexVisible = rememberIndexVisibility(listState = listState, isTouchingIndex = isTouchingIndex)
     val indexLabels = remember(pickerList) { pickerList.indexPositions.keys.toList() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    // 검색어가 바뀌어 목록이 달라지면 맨 위 결과부터 보여준다.
+    LaunchedEffect(pickerList) { listState.scrollToItem(0) }
+    // 목록을 넘겨 보기 시작하면 키보드를 내려 목록을 넓게 보여준다 (iOS scrollDismissesKeyboard 대응).
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (listState.isScrollInProgress) keyboardController?.hide()
+    }
 
     Box {
         LazyColumn(state = listState) {
@@ -136,8 +273,9 @@ private fun CurrencyPickerListWithIndex(
             }
         }
 
+        // 검색 결과에는 인덱스가 없다.
         AnimatedVisibility(
-            visible = isIndexVisible,
+            visible = isIndexVisible && indexLabels.isNotEmpty(),
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier

@@ -4,7 +4,7 @@ import android.content.res.Resources
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalResources
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.R
 import java.util.Currency
@@ -17,23 +17,25 @@ import java.util.Locale
  * 플랫폼도 모르는 통화(ISO 4217 에 없는 지역 통화 등)는 서버가 준 이름을 그대로 씁니다.
  */
 @Composable
-fun CurrencyInfo.localizedName(): String {
-    val resId = currencyNameResId(code)
-    if (resId != null) return stringResource(resId)
-
-    val locale = LocalConfiguration.current.locales[0]
-    return platformCurrencyName(code, locale) ?: name
-}
+fun CurrencyInfo.localizedName(): String = localizedName(LocalResources.current, LocalConfiguration.current.locales[0])
 
 /**
  * [localizedName]과 같은 규칙으로 이름을 만듭니다. Composable 밖에서 통화 목록 전체의 이름을 한 번에 만들 때 씁니다.
+ *
+ * 직접 다듬은 번역은 한국어·영어에만 있습니다. 다른 언어 기기에서 이 번역을 쓰면 다듬은 통화만 영어로, 나머지는
+ * 기기 언어로 나와 목록 안에서 언어가 섞입니다. 그래서 그 밖의 언어에서는 모든 통화에 플랫폼 이름을 씁니다.
  */
 internal fun CurrencyInfo.localizedName(resources: Resources, locale: Locale): String {
     val resId = currencyNameResId(code)
-    if (resId != null) return resources.getString(resId)
+    if (resId != null && locale.language in curatedNameLanguages) return resources.getString(resId)
 
-    return platformCurrencyName(code, locale) ?: name
+    return platformCurrencyName(code, locale)
+        ?: resId?.let(resources::getString)
+        ?: name
 }
+
+/** 직접 다듬은 통화 이름이 있는 언어입니다 (`values`, `values-ko`). */
+private val curatedNameLanguages = setOf("ko", "en")
 
 /**
  * 플랫폼(ICU)에서 통화 이름을 찾습니다.

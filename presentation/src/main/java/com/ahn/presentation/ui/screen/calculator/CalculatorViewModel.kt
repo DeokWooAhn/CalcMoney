@@ -12,16 +12,15 @@ import com.ahn.domain.favorite.usecase.FavoriteUseCases
 import com.ahn.domain.review.usecase.ReviewPromptUseCases
 import com.ahn.presentation.R
 import com.ahn.presentation.util.UiText
+import com.ahn.presentation.util.deviceCurrencyCode
 import com.ahn.presentation.util.toExchangeRateErrorUiText
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.combine
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.container
-import java.util.Currency
-import java.util.Locale
-import javax.inject.Inject
 
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
@@ -269,7 +268,7 @@ class CalculatorViewModel @Inject constructor(
     private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.performLoadCurrencies() {
         try {
             val currencies = exchangeUseCases.getSupportedCurrencies()
-            val deviceCurrencyCode = getDeviceCurrencyCode()
+            val deviceCurrencyCode = deviceCurrencyCode()
             val savedSelection = getSavedCalculatorSelectionOrNull()
 
             val mainCurrency = resolveCalculatorMainCurrency(
@@ -457,12 +456,6 @@ class CalculatorViewModel @Inject constructor(
             }
         }
     }
-}
-
-private fun getDeviceCurrencyCode(): String {
-    return runCatching {
-        Currency.getInstance(Locale.getDefault()).currencyCode
-    }.getOrDefault("KRW")
 }
 
 private fun resolveCalculatorMainCurrency(

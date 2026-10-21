@@ -58,6 +58,7 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ahn.domain.currency.model.CurrencyInfo
@@ -209,7 +210,14 @@ private fun CurrencySearchField(
         modifier = modifier
             .fillMaxWidth()
             .testTag("currency.search"),
-        placeholder = { Text(stringResource(R.string.currency_search_hint)) },
+        // 좁은 화면이나 큰 글꼴에서 안내 문구가 두 줄이 되면 검색창이 커지므로 한 줄로 자른다.
+        placeholder = {
+            Text(
+                text = stringResource(R.string.currency_search_hint),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
         leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
         trailingIcon = if (query.isNotEmpty()) {
             {

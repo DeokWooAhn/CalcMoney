@@ -245,6 +245,74 @@ class ExchangeViewModelTest : BehaviorSpec({
             }
         }
 
+        When("기기 지역이 미국이고 도착 통화(유로)만 저장돼 있으면") {
+            Then("저장된 유로를 지키고 출발 통화는 겹치지 않는 미국 달러로 정해야 한다") {
+                runTest {
+                    val eur = CurrencyInfo("EUR", "EUR", "유로", "🇪🇺")
+                    val currencies = mockCurrencies + eur
+                    coEvery { getSupportedCurrenciesUseCase() } returns currencies
+                    coEvery { getExchangeSelectionUseCase() } returns ExchangeCurrencySelection(
+                        fromCode = null,
+                        toCode = "EUR",
+                    )
+                    Locale.setDefault(Locale.US)
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                availableCurrencies = currencies,
+                                fromCurrency = usd,
+                                toCurrency = eur,
+                            )
+                        }
+
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+
+        When("기기 지역이 미국이고 출발 통화(미국 달러)만 저장돼 있으면") {
+            Then("저장된 미국 달러를 지키고 도착 통화는 겹치지 않는 기본값(유로)으로 정해야 한다") {
+                runTest {
+                    val eur = CurrencyInfo("EUR", "EUR", "유로", "🇪🇺")
+                    val currencies = mockCurrencies + eur
+                    coEvery { getSupportedCurrenciesUseCase() } returns currencies
+                    coEvery { getExchangeSelectionUseCase() } returns ExchangeCurrencySelection(
+                        fromCode = "USD",
+                        toCode = null,
+                    )
+                    Locale.setDefault(Locale.US)
+
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+
+                        expectState { copy(isLoading = true) }
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                availableCurrencies = currencies,
+                                fromCurrency = usd,
+                                toCurrency = eur,
+                            )
+                        }
+
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+
         When("저장된 환율 화면 통화 코드가 있으면") {
             Then("저장된 from/to 통화로 초기화되어야 한다") {
                 runTest {

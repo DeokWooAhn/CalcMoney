@@ -151,56 +151,28 @@ class ExchangeViewModel @Inject constructor(
         currentFromCurrency: CurrencyInfo?,
         currentToCurrency: CurrencyInfo?,
     ): SelectedExchangeCurrencies {
+        // 화면에 있던 통화와 저장된 통화를 먼저 확정하고, 비어 있는 쪽만 기본값으로 채운다.
+        // 출발·도착 통화는 따로 저장되므로 한쪽만 저장돼 있을 수 있는데, 그 선택을 기본값이 밀어내면 안 된다.
+        val keptFrom = currencies.findByCode(currentFromCurrency?.code)
+            ?: currencies.findByCode(savedSelection?.fromCode)
+        val keptTo = currencies.findByCode(currentToCurrency?.code)
+            ?: currencies.findByCode(savedSelection?.toCode)?.takeIf { it.code != keptFrom?.code }
+
         // 처음 열면 '미국 달러 → 기기 지역 통화'로 시작한다. 기기 통화가 미국 달러면 유로에서 바꾼다.
         val deviceCurrency = currencies.findByCode(deviceCurrencyCode()) ?: currencies.findByCode("KRW")
         val defaultFrom = currencies.findByCode(if (deviceCurrency?.code == "USD") "EUR" else "USD")
-        val fromCurrency = resolveFromCurrency(
-            currencies = currencies,
-            savedSelection = savedSelection,
-            currentFromCurrency = currentFromCurrency,
-            defaultFrom = defaultFrom,
-        )
-        val toCurrency = resolveToCurrency(
-            currencies = currencies,
-            savedSelection = savedSelection,
-            currentToCurrency = currentToCurrency,
-            fromCurrency = fromCurrency,
-            defaultTo = deviceCurrency,
-        )
+
+        val fromCurrency = keptFrom
+            ?: (listOfNotNull(defaultFrom, deviceCurrency) + currencies).firstOrNull { it.code != keptTo?.code }
+            ?: currentFromCurrency
+        val toCurrency = keptTo
+            ?: (listOfNotNull(deviceCurrency, defaultFrom) + currencies).firstOrNull { it.code != fromCurrency?.code }
+            ?: currentToCurrency
 
         return SelectedExchangeCurrencies(
             from = fromCurrency,
             to = toCurrency,
         )
-    }
-
-    private fun resolveFromCurrency(
-        currencies: List<CurrencyInfo>,
-        savedSelection: ExchangeCurrencySelection?,
-        currentFromCurrency: CurrencyInfo?,
-        defaultFrom: CurrencyInfo?,
-    ): CurrencyInfo? {
-        return currencies.findByCode(currentFromCurrency?.code)
-            ?: currencies.findByCode(savedSelection?.fromCode)
-            ?: defaultFrom
-            ?: currencies.firstOrNull()
-            ?: currentFromCurrency
-    }
-
-    private fun resolveToCurrency(
-        currencies: List<CurrencyInfo>,
-        savedSelection: ExchangeCurrencySelection?,
-        currentToCurrency: CurrencyInfo?,
-        fromCurrency: CurrencyInfo?,
-        defaultTo: CurrencyInfo?,
-    ): CurrencyInfo? {
-        val fromCurrencyCode = fromCurrency?.code
-
-        return currencies.findByCode(currentToCurrency?.code)
-            ?: currencies.findByCode(savedSelection?.toCode)?.takeIf { it.code != fromCurrencyCode }
-            ?: defaultTo?.takeIf { it.code != fromCurrencyCode }
-            ?: currencies.firstOrNull { it.code != fromCurrencyCode }
-            ?: currentToCurrency
     }
 
     private fun List<CurrencyInfo>.findByCode(code: String?): CurrencyInfo? {

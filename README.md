@@ -231,4 +231,8 @@ Firebase Functions와 Firestore 규칙은 `functions/**`, `firebase.json`, `fire
 
 ## 라이선스
 
-라이선스는 아직 정의되지 않았습니다.
+Copyright (c) 2025-2026 DeokWooAhn. All rights reserved.
+
+오픈소스가 아닙니다. 코드는 열람할 수 있도록 공개했지만, 저작권자의 허락 없이 복제·수정·배포하거나 상업적으로 이용할 수 없습니다. 앱 이름·아이콘 등 브랜드 자산도 마찬가지입니다. 자세한 내용은 [LICENSE](LICENSE)를 참고하세요.
+
+GitHub 이용 약관에 따라 GitHub 안에서 저장소를 보고 포크하는 것은 가능합니다. 외부 라이브러리와 서비스(Firebase, Google Mobile Ads 등)는 각자의 라이선스와 약관을 따릅니다.

@@ -9,6 +9,7 @@ import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
 import com.ahn.presentation.R
 import com.ahn.presentation.util.UiText
+import com.ahn.presentation.util.deviceCurrencyCode
 import com.ahn.presentation.util.toExchangeRateErrorUiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -150,20 +151,21 @@ class ExchangeViewModel @Inject constructor(
         currentFromCurrency: CurrencyInfo?,
         currentToCurrency: CurrencyInfo?,
     ): SelectedExchangeCurrencies {
-        val krw = currencies.findByCode("KRW")
-        val usd = currencies.findByCode("USD")
+        // 처음 열면 '미국 달러 → 기기 지역 통화'로 시작한다. 기기 통화가 미국 달러면 유로에서 바꾼다.
+        val deviceCurrency = currencies.findByCode(deviceCurrencyCode()) ?: currencies.findByCode("KRW")
+        val defaultFrom = currencies.findByCode(if (deviceCurrency?.code == "USD") "EUR" else "USD")
         val fromCurrency = resolveFromCurrency(
             currencies = currencies,
             savedSelection = savedSelection,
             currentFromCurrency = currentFromCurrency,
-            usd = usd,
+            defaultFrom = defaultFrom,
         )
         val toCurrency = resolveToCurrency(
             currencies = currencies,
             savedSelection = savedSelection,
             currentToCurrency = currentToCurrency,
             fromCurrency = fromCurrency,
-            krw = krw,
+            defaultTo = deviceCurrency,
         )
 
         return SelectedExchangeCurrencies(
@@ -176,11 +178,11 @@ class ExchangeViewModel @Inject constructor(
         currencies: List<CurrencyInfo>,
         savedSelection: ExchangeCurrencySelection?,
         currentFromCurrency: CurrencyInfo?,
-        usd: CurrencyInfo?,
+        defaultFrom: CurrencyInfo?,
     ): CurrencyInfo? {
         return currencies.findByCode(currentFromCurrency?.code)
             ?: currencies.findByCode(savedSelection?.fromCode)
-            ?: usd
+            ?: defaultFrom
             ?: currencies.firstOrNull()
             ?: currentFromCurrency
     }
@@ -190,13 +192,13 @@ class ExchangeViewModel @Inject constructor(
         savedSelection: ExchangeCurrencySelection?,
         currentToCurrency: CurrencyInfo?,
         fromCurrency: CurrencyInfo?,
-        krw: CurrencyInfo?,
+        defaultTo: CurrencyInfo?,
     ): CurrencyInfo? {
         val fromCurrencyCode = fromCurrency?.code
 
         return currencies.findByCode(currentToCurrency?.code)
             ?: currencies.findByCode(savedSelection?.toCode)?.takeIf { it.code != fromCurrencyCode }
-            ?: krw?.takeIf { it.code != fromCurrencyCode }
+            ?: defaultTo?.takeIf { it.code != fromCurrencyCode }
             ?: currencies.firstOrNull { it.code != fromCurrencyCode }
             ?: currentToCurrency
     }

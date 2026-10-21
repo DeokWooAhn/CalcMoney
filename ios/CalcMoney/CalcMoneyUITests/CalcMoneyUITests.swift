@@ -95,8 +95,10 @@ final class CalcMoneyUITests: XCTestCase {
 
         closeButton.tap()
 
-        XCTAssertFalse(
-            panelTitle.waitForExistence(timeout: 2),
+        // waitForExistence는 요소가 있으면 바로 true를 돌려준다. 패널이 0.2초 애니메이션으로 사라지는 동안
+        // 조회하면 아직 남아 있어 실패하므로, 사라질 때까지 기다린다.
+        XCTAssertTrue(
+            panelTitle.waitForNonExistence(timeout: 5),
             "닫기 버튼을 누르면 계산 기록 패널이 사라져야 한다",
         )
     }

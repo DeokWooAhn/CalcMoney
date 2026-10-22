@@ -65,8 +65,10 @@ public actor ExchangeRateRepositoryImpl: ExchangeRateRepository {
     ///
     /// 원격 조회에 실패해도 캐시가 있으면 캐시를 반환하고, 캐시가 없으면 원래 오류를 던진다.
     private func fetchRatesIfNeeded() async throws -> [ExchangeRateData] {
+        // 진행 중인 갱신이 있으면 끝나길 기다린 뒤 캐시부터 다시 본다(Android의 refreshMutex와 같은 순서).
+        // 갱신의 오류를 그대로 던지면 유효한 캐시가 있어도 조회가 실패하므로 여기서는 삼킨다.
         if let inFlightRefresh {
-            return try await inFlightRefresh.value
+            _ = try? await inFlightRefresh.value
         }
 
         let cached = try await localDataSource.cachedRates()

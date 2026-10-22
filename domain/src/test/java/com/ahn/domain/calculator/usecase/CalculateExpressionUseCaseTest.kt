@@ -62,4 +62,30 @@ class CalculateExpressionUseCaseTest :
                 engine.calculate("999999999999999×10") shouldBe "1.0000000000E+16"
             }
         }
+
+        describe("E 표기법 결과를 다시 계산할 때") {
+            it("큰 수 결과에 계속 연산할 수 있다") {
+                engine.calculate("1.0000000000E+16×10") shouldBe "1.0000000000E+17"
+                engine.calculate("1.0000000000E+16÷1.0000000000E+15") shouldBe "10"
+            }
+
+            it("음수 지수도 숫자로 읽는다") {
+                engine.calculate("1.5000000000E-11×1000000000000") shouldBe "15"
+            }
+
+            it("지수부 숫자가 없으면 Error를 반환한다") {
+                engine.calculate("1.0000000000E+") shouldBe "Error"
+            }
+        }
+
+        describe("유한한 수가 아닌 결과") {
+            it("0으로 나누면 Error를 반환한다") {
+                engine.calculate("1÷0") shouldBe "Error"
+                engine.calculate("0÷0") shouldBe "Error"
+            }
+
+            it("Double 범위를 넘으면 Error를 반환한다") {
+                engine.calculate("1.0000000000E+308×10") shouldBe "Error"
+            }
+        }
     })

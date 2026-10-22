@@ -84,4 +84,41 @@ struct CalculateExpressionUseCaseTests {
             #expect(engine.calculate("999999999999999×10") == "1.0000000000E+16")
         }
     }
+
+    @Suite("E 표기법 결과를 다시 계산할 때")
+    struct E표기법재계산 {
+        private let engine = CalculateExpressionUseCase()
+
+        @Test("큰 수 결과에 계속 연산할 수 있다")
+        func 큰_수_결과에_계속_연산() {
+            #expect(engine.calculate("1.0000000000E+16×10") == "1.0000000000E+17")
+            #expect(engine.calculate("1.0000000000E+16÷1.0000000000E+15") == "10")
+        }
+
+        @Test("음수 지수도 숫자로 읽는다")
+        func 음수_지수() {
+            #expect(engine.calculate("1.5000000000E-11×1000000000000") == "15")
+        }
+
+        @Test("지수부 숫자가 없으면 Error를 반환한다")
+        func 지수부_숫자_없음() {
+            #expect(engine.calculate("1.0000000000E+") == "Error")
+        }
+    }
+
+    @Suite("유한한 수가 아닌 결과")
+    struct 유한하지않은결과 {
+        private let engine = CalculateExpressionUseCase()
+
+        @Test("0으로 나누면 Error를 반환한다")
+        func 영으로_나누기() {
+            #expect(engine.calculate("1÷0") == "Error")
+            #expect(engine.calculate("0÷0") == "Error")
+        }
+
+        @Test("Double 범위를 넘으면 Error를 반환한다")
+        func 범위_초과() {
+            #expect(engine.calculate("1.0000000000E+308×10") == "Error")
+        }
+    }
 }

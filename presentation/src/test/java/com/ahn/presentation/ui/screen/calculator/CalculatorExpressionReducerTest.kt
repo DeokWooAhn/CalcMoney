@@ -113,4 +113,16 @@ class CalculatorExpressionReducerTest : BehaviorSpec({
             }
         }
     }
+
+    given("계산 결과가 E 표기법일 때") {
+        `when`("이항 연산자가 있는지 보면") {
+            then("지수 부호는 연산자로 세지 않고 그 뒤에 붙인 연산자만 세야 한다") {
+                val reducer = createReducer()
+
+                reducer.hasBinaryOperator("1.0000000000E+16") shouldBe false
+                reducer.hasBinaryOperator("1.0000000000E-11") shouldBe false
+                reducer.hasBinaryOperator("1.0000000000E+16+5") shouldBe true
+            }
+        }
+    }
 })

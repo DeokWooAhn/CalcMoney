@@ -36,7 +36,8 @@ public struct ExtractRepeatOperationUseCase: Sendable {
 
             let previous = chars[index - 1]
 
-            if !Self.operators.contains(previous), previous != "(" {
+            // 1.0000000000E+16의 +처럼 지수 표기 안의 부호는 연산자가 아니다.
+            if !Self.operators.contains(previous), previous != "(", previous != "E" {
                 return index
             }
         }

@@ -15,10 +15,11 @@ class CalculateExpressionUseCase @Inject constructor() {
      * @param expression 계산할 산술 표현식입니다.
      *                   숫자, `.`, `+`, `-`, `*`, `/`, 괄호를 포함할 수 있으며,
      *                   지역화된 연산자 기호(`×`, `÷`, `−`)와 공백 또는 줄바꿈도 포함될 수 있습니다.
+     *                   이 함수가 돌려준 지수 표기 결과(`1.0000000000E+16`)도 숫자로 읽습니다.
      *
      * @return 계산 결과를 다음과 같은 문자열로 반환합니다.
      *         - 정규화 후 표현식이 비어 있으면 `"0"`
-     *         - 계산에 실패하면 `"Error"`
+     *         - 계산에 실패하거나 결과가 유한한 수가 아니면(0으로 나누기, 범위 초과) `"Error"`
      *         - 그 외에는 숫자 문자열
      *           결과가 정수이면 정수 형태로 포맷하고,
      *           일반적인 크기의 소수이면 소수점 이하 최대 10자리까지 표시하되 뒤의 0은 제거합니다.
@@ -45,6 +46,7 @@ class CalculateExpressionUseCase @Inject constructor() {
             }
 
             val result = eval(finalExpression)
+            if (!result.isFinite()) return "Error"
 
             // 15자리를 넘어가거나(10^15), 너무 작으면(10^-10) E 표기법 사용
             val absResult = abs(result)
@@ -124,14 +126,27 @@ class CalculateExpressionUseCase @Inject constructor() {
                 if (eat('('.code)) {
                     x = parseExpression()
                     eat(')'.code)
-                } else if ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) {
-                    while ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) nextChar()
+                } else if (isDigit() || ch == '.'.code) {
+                    while (isDigit() || ch == '.'.code) nextChar()
+                    parseExponent()
                     x = expr.substring(startPos, pos).toDouble()
                 } else {
                     throw IllegalArgumentException("Unexpected: " + ch.toChar())
                 }
 
                 return x
+            }
+
+            fun isDigit() = ch >= '0'.code && ch <= '9'.code
+
+            // 큰 결과(1.0000000000E+16)를 다음 계산에 그대로 쓸 수 있게 지수부까지 한 숫자로 읽는다.
+            fun parseExponent() {
+                if (ch != 'E'.code) return
+
+                nextChar()
+                if (ch == '+'.code || ch == '-'.code) nextChar()
+                if (!isDigit()) throw IllegalArgumentException("Missing exponent digits")
+                while (isDigit()) nextChar()
             }
         }.parse()
     }

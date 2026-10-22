@@ -178,6 +178,68 @@ struct ExchangeRateRepositoryImplTests {
         #expect(await remote.fetchCallCount == 1)
         #expect(try await repository.latestFetchedAt() == 1000)
     }
+
+    @Test("갱신 중에 조회하면 갱신을 기다리지 않고 유효한 캐시를 반환한다", .timeLimit(.minutes(1)))
+    func 갱신_중_조회는_갱신을_기다리지_않고_유효한_캐시를_반환한다() async throws {
+        let remote = HeldFailingRemoteDataSource()
+        let local = try ExchangeRateLocalDataSource.make(inMemory: true)
+        try await local.replaceRates([Self.usd])
+        let repository = ExchangeRateRepositoryImpl(
+            remoteDataSource: remote,
+            localDataSource: local,
+            now: { Date(timeIntervalSince1970: Double(1000 + 11 * 60 * 60 * 1000) / 1000) },
+        )
+
+        let refresh = Task { try await repository.refreshExchangeRates() }
+        await remote.waitUntilFetchStarted()
+
+        // 갱신을 붙잡아 둔 채로 조회한다. 조회가 갱신을 기다리면 시간 제한에 걸려 취소될 때 갱신을 풀어
+        // 테스트가 멈추지 않고 갱신의 오류로 실패하게 한다.
+        let rate = try await withTaskCancellationHandler {
+            try await repository.exchangeRate(from: "USD", to: "KRW")
+        } onCancel: {
+            Task { await remote.release() }
+        }
+        await remote.release()
+
+        #expect(rate == 1441.1)
+        await #expect(throws: ExchangeRateError.self) {
+            try await refresh.value
+        }
+        #expect(await remote.fetchCallCount == 1)
+    }
+}
+
+/// 풀어 줄 때까지 원격 조회를 붙잡아 두었다가 오류를 던지는 스텁. 갱신이 진행 중인 상황을 만든다.
+private actor HeldFailingRemoteDataSource: ExchangeRateRemoteDataSource {
+    private var isReleased = false
+    private var heldFetches: [CheckedContinuation<Void, Never>] = []
+    private var fetchStartWaiters: [CheckedContinuation<Void, Never>] = []
+    private(set) var fetchCallCount = 0
+
+    func fetchExchangeRates() async throws -> [ExchangeRateData] {
+        fetchCallCount += 1
+        fetchStartWaiters.forEach { $0.resume() }
+        fetchStartWaiters.removeAll()
+
+        if !isReleased {
+            await withCheckedContinuation { heldFetches.append($0) }
+        }
+
+        throw ExchangeRateError.networkUnavailable()
+    }
+
+    func waitUntilFetchStarted() async {
+        guard fetchCallCount == 0 else { return }
+
+        await withCheckedContinuation { fetchStartWaiters.append($0) }
+    }
+
+    func release() {
+        isReleased = true
+        heldFetches.forEach { $0.resume() }
+        heldFetches.removeAll()
+    }
 }
 
 /// 원격 호출 횟수를 기록하는 스텁. result가 nil이면 오류를 던진다.

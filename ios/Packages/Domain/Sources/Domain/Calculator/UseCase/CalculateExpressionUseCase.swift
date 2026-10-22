@@ -12,10 +12,11 @@ public struct CalculateExpressionUseCase: Sendable {
     /// - Parameter expression: 계산할 산술 표현식입니다.
     ///   숫자, `.`, `+`, `-`, `*`, `/`, 괄호를 포함할 수 있으며,
     ///   지역화된 연산자 기호(`×`, `÷`, `−`)와 공백 또는 줄바꿈도 포함될 수 있습니다.
+    ///   이 함수가 돌려준 지수 표기 결과(`1.0000000000E+16`)도 숫자로 읽습니다.
     ///
     /// - Returns: 계산 결과를 다음과 같은 문자열로 반환합니다.
     ///   - 정규화 후 표현식이 비어 있으면 `"0"`
-    ///   - 계산에 실패하면 `"Error"`
+    ///   - 계산에 실패하거나 결과가 유한한 수가 아니면(0으로 나누기, 범위 초과) `"Error"`
     ///   - 그 외에는 숫자 문자열
     ///     결과가 정수이면 정수 형태로 포맷하고,
     ///     일반적인 크기의 소수이면 소수점 이하 최대 10자리까지 표시하되 뒤의 0은 제거합니다.
@@ -38,7 +39,7 @@ public struct CalculateExpressionUseCase: Sendable {
             normalized
         }
 
-        guard let result = Self.evaluate(finalExpression) else { return "Error" }
+        guard let result = Self.evaluate(finalExpression), result.isFinite else { return "Error" }
 
         // 15자리를 넘어가거나(10^15), 너무 작으면(10^-10) E 표기법 사용
         let absResult = abs(result)
@@ -82,6 +83,21 @@ public struct CalculateExpressionUseCase: Sendable {
             return false
         }
 
+        func isDigit() -> Bool {
+            guard let current = ch else { return false }
+            return current.isASCII && current.isNumber
+        }
+
+        /// 큰 결과(1.0000000000E+16)를 다음 계산에 그대로 쓸 수 있게 지수부까지 한 숫자로 읽는다.
+        func parseExponent() throws {
+            guard ch == "E" else { return }
+
+            nextChar()
+            if ch == "+" || ch == "-" { nextChar() }
+            guard isDigit() else { throw ParseError() }
+            while isDigit() { nextChar() }
+        }
+
         func parseExpression() throws -> Double {
             var x = try parseTerm()
             while true {
@@ -118,10 +134,11 @@ public struct CalculateExpressionUseCase: Sendable {
                 _ = eat(")")
                 return x
             }
-            if let current = ch, current.isASCII, current.isNumber || current == "." {
-                while let current = ch, current.isASCII, current.isNumber || current == "." {
+            if isDigit() || ch == "." {
+                while isDigit() || ch == "." {
                     nextChar()
                 }
+                try parseExponent()
                 guard let value = Double(String(chars[startPos..<pos])) else { throw ParseError() }
                 return value
             }

@@ -127,7 +127,9 @@ internal class CalculatorExpressionReducer(
     fun hasBinaryOperator(expression: String): Boolean {
         return expression.indices.any { index ->
             val char = expression[index]
-            char.toString() in OPERATORS && !expression.isUnaryMinusOperator(index)
+            char.toString() in OPERATORS &&
+                !expression.isUnaryMinusOperator(index) &&
+                !expression.isExponentSign(index)
         }
     }
 
@@ -175,6 +177,11 @@ internal class CalculatorExpressionReducer(
 
         val previousChar = getOrNull(index - 1)
         return index == 0 || previousChar == '(' || previousChar.toString() in OPERATORS
+    }
+
+    // 계산 결과 1.0000000000E+16의 +는 숫자의 일부라 이항 연산자로 세지 않는다.
+    private fun String.isExponentSign(index: Int): Boolean {
+        return this[index] in "+-" && getOrNull(index - 1) == 'E'
     }
 
     private fun canInsertNumber(expression: String, cursorPos: Int): Boolean {

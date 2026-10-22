@@ -159,7 +159,9 @@ struct CalculatorExpressionReducer {
         let chars = Array(expression)
 
         return chars.indices.contains { index in
-            Self.operators.contains(chars[index]) && !isUnaryMinusOperator(chars, index: index)
+            Self.operators.contains(chars[index])
+                && !isUnaryMinusOperator(chars, index: index)
+                && !isExponentSign(chars, index: index)
         }
     }
 
@@ -209,6 +211,13 @@ struct CalculatorExpressionReducer {
         let previousChar = chars[index - 1]
 
         return previousChar == "(" || Self.operators.contains(previousChar)
+    }
+
+    /// 계산 결과 1.0000000000E+16의 +는 숫자의 일부라 이항 연산자로 세지 않는다.
+    private func isExponentSign(_ chars: [Character], index: Int) -> Bool {
+        guard chars[index] == "+" || chars[index] == "-", index > 0 else { return false }
+
+        return chars[index - 1] == "E"
     }
 
     private func canInsertNumber(_ expression: String, cursorPosition: Int) -> Bool {

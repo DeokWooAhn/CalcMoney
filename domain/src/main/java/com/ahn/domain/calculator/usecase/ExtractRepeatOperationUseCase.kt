@@ -40,7 +40,8 @@ class ExtractRepeatOperationUseCase @Inject constructor() {
 
             val previous = expression[index - 1]
 
-            previous !in operators && previous != '('
+            // 1.0000000000E+16의 +처럼 지수 표기 안의 부호는 연산자가 아니다.
+            previous !in operators && previous != '(' && previous != 'E'
         } ?: -1
     }
 }

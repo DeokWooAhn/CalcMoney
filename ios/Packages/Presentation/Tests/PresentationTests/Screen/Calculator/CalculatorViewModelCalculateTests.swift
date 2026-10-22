@@ -55,4 +55,42 @@ struct CalculatorViewModelCalculateTests {
         // 1+2=3, 이어서 반복 연산 +2 가 적용되어 5 가 된다.
         #expect(viewModel.state.expression == "5")
     }
+
+    @Test("큰 수 결과에서 = 를 다시 누르면 E 표기법 결과에 반복 연산이 이어진다")
+    func 큰_수_결과에서_등호를_다시_누르면_반복_연산이_이어진다() async {
+        let recorder = CalculatorTestRecorder()
+        let viewModel = Self.makeViewModel(recorder: recorder)
+
+        for _ in 0..<15 {
+            viewModel.send(.input(.number("9")))
+        }
+        viewModel.send(.input(.operator("×")))
+        viewModel.send(.input(.number("1")))
+        viewModel.send(.input(.number("0")))
+
+        viewModel.send(.calculate)
+        viewModel.send(.calculate)
+
+        await Self.waitForCalculations(viewModel, count: 2)
+
+        #expect(viewModel.state.expression == "1.0000000000E+17")
+        #expect(!viewModel.state.isError)
+    }
+
+    @Test("0으로 나누면 오류로 처리하고 기록에 남기지 않는다")
+    func 영으로_나누면_오류로_처리하고_기록에_남기지_않는다() async {
+        let recorder = CalculatorTestRecorder()
+        let viewModel = Self.makeViewModel(recorder: recorder)
+
+        viewModel.send(.input(.number("1")))
+        viewModel.send(.input(.operator("÷")))
+        viewModel.send(.input(.number("0")))
+        viewModel.send(.calculate)
+
+        await waitUntil { viewModel.state.isError }
+
+        #expect(viewModel.state.expression == "1÷0")
+        #expect(viewModel.state.histories.isEmpty)
+        #expect(await recorder.savedHistories.isEmpty)
+    }
 }

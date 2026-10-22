@@ -52,5 +52,14 @@ class ExtractRepeatOperationUseCaseTest :
             it("첫 글자가 유니코드 음수인 단일 음수는 null을 반환한다") {
                 useCase("−10") shouldBe null
             }
+
+            it("지수 표기 안의 부호는 연산자로 보지 않는다") {
+                useCase("1.0000000000E+16") shouldBe null
+                useCase("1.0000000000E+16×10") shouldBe "×10"
+            }
+
+            it("지수 표기 피연산자도 반복 연산에 통째로 포함한다") {
+                useCase("5×1.0000000000E+16") shouldBe "×1.0000000000E+16"
+            }
         }
     })

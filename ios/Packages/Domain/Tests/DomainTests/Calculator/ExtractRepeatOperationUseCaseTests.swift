@@ -59,4 +59,15 @@ struct ExtractRepeatOperationUseCaseTests {
     func 유니코드_단일_음수() {
         #expect(useCase("−10") == nil)
     }
+
+    @Test("지수 표기 안의 부호는 연산자로 보지 않는다")
+    func 지수_부호는_연산자_아님() {
+        #expect(useCase("1.0000000000E+16") == nil)
+        #expect(useCase("1.0000000000E+16×10") == "×10")
+    }
+
+    @Test("지수 표기 피연산자도 반복 연산에 통째로 포함한다")
+    func 지수_표기_피연산자() {
+        #expect(useCase("5×1.0000000000E+16") == "×1.0000000000E+16")
+    }
 }

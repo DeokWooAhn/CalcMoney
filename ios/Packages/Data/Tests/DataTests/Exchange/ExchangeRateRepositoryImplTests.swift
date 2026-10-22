@@ -179,8 +179,8 @@ struct ExchangeRateRepositoryImplTests {
         #expect(try await repository.latestFetchedAt() == 1000)
     }
 
-    @Test("갱신 중에 조회해도 갱신이 실패하면 유효한 캐시를 반환한다")
-    func 갱신_중_조회는_갱신이_실패해도_유효한_캐시를_반환한다() async throws {
+    @Test("갱신 중에 조회하면 갱신을 기다리지 않고 유효한 캐시를 반환한다", .timeLimit(.minutes(1)))
+    func 갱신_중_조회는_갱신을_기다리지_않고_유효한_캐시를_반환한다() async throws {
         let remote = HeldFailingRemoteDataSource()
         let local = try ExchangeRateLocalDataSource.make(inMemory: true)
         try await local.replaceRates([Self.usd])
@@ -192,15 +192,20 @@ struct ExchangeRateRepositoryImplTests {
 
         let refresh = Task { try await repository.refreshExchangeRates() }
         await remote.waitUntilFetchStarted()
-        let rate = Task { try await repository.exchangeRate(from: "USD", to: "KRW") }
-        // 조회가 진행 중인 갱신을 기다리기 시작한 뒤에 갱신을 실패시킨다.
-        try await Task.sleep(for: .milliseconds(100))
+
+        // 갱신을 붙잡아 둔 채로 조회한다. 조회가 갱신을 기다리면 시간 제한에 걸려 취소될 때 갱신을 풀어
+        // 테스트가 멈추지 않고 갱신의 오류로 실패하게 한다.
+        let rate = try await withTaskCancellationHandler {
+            try await repository.exchangeRate(from: "USD", to: "KRW")
+        } onCancel: {
+            Task { await remote.release() }
+        }
         await remote.release()
 
+        #expect(rate == 1441.1)
         await #expect(throws: ExchangeRateError.self) {
             try await refresh.value
         }
-        #expect(try await rate.value == 1441.1)
         #expect(await remote.fetchCallCount == 1)
     }
 }

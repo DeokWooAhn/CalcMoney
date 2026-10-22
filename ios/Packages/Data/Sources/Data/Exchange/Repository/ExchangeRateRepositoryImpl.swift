@@ -64,13 +64,8 @@ public actor ExchangeRateRepositoryImpl: ExchangeRateRepository {
     /// 캐시가 유효하면 캐시를, 만료됐으면 원격 데이터를 가져와 캐시를 갱신해 반환한다.
     ///
     /// 원격 조회에 실패해도 캐시가 있으면 캐시를 반환하고, 캐시가 없으면 원래 오류를 던진다.
+    /// 진행 중인 갱신이 있어도 캐시부터 본다. 유효하면 갱신을 기다리지 않고, 만료됐으면 그 갱신을 함께 기다린다.
     private func fetchRatesIfNeeded() async throws -> [ExchangeRateData] {
-        // 진행 중인 갱신이 있으면 끝나길 기다린 뒤 캐시부터 다시 본다(Android의 refreshMutex와 같은 순서).
-        // 갱신의 오류를 그대로 던지면 유효한 캐시가 있어도 조회가 실패하므로 여기서는 삼킨다.
-        if let inFlightRefresh {
-            _ = try? await inFlightRefresh.value
-        }
-
         let cached = try await localDataSource.cachedRates()
         let fetchedAt = try await localDataSource.latestFetchedAt()
         let nowMillis = Int(now().timeIntervalSince1970 * 1000)

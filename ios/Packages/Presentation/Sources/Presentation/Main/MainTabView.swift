@@ -82,6 +82,8 @@ public struct MainTabView: View {
 
         Task {
             guard await mainViewModel.shouldShowInterstitialAd() else { return }
+            // 기록을 읽는 사이 계산기로 돌아왔거나 광고 동의를 철회했으면 띄우지 않는다.
+            guard selectedTab != .calculator, adConsentManager.canRequestAds else { return }
 
             interstitialAd.present(onShown: mainViewModel.recordInterstitialAdShown)
         }

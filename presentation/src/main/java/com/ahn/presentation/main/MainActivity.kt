@@ -101,8 +101,10 @@ class MainActivity : ComponentActivity() {
      *
      * 화면은 이미 넘어간 뒤라 광고를 닫으면 고른 탭이 보인다. 광고 동의 전이나 UI 테스트에서는
      * canRequestAds가 false라 광고를 받지도 보여 주지도 않는다.
+     *
+     * @param isAwayFromCalculator 지금도 계산기가 아닌 탭에 있는지 알려 준다. 기록을 읽은 뒤 다시 확인한다.
      */
-    private fun showInterstitialAdIfDue() {
+    private fun showInterstitialAdIfDue(isAwayFromCalculator: () -> Boolean) {
         if (!adConsentState.canRequestAds) return
 
         if (!interstitialAdController.isReady) {
@@ -112,7 +114,11 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             val shouldShow = viewModel.shouldShowInterstitialAd()
-            if (shouldShow && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            // 기록을 읽는 사이 계산기로 돌아왔거나, 광고 동의를 철회했거나, 앱이 뒤로 갔으면 띄우지 않는다.
+            val canShowNow = adConsentState.canRequestAds &&
+                isAwayFromCalculator() &&
+                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+            if (shouldShow && canShowNow) {
                 interstitialAdController.show(onShown = viewModel::recordInterstitialAdShown)
             }
         }

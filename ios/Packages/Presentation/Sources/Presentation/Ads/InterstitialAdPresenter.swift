@@ -43,9 +43,10 @@ final class InterstitialAdPresenter: NSObject {
 
     /// 받아 둔 광고를 보여 준다. 광고가 화면에 뜨면 `onShown`을 부르고, 닫히면 다음 광고를 받아 둔다.
     ///
-    /// 받아 둔 광고가 없거나 띄울 화면이 없으면 아무것도 하지 않는다.
+    /// 받아 둔 광고가 없거나, 앱이 화면 앞에 있지 않거나, 띄울 화면이 없으면 아무것도 하지 않는다.
     func present(onShown: @escaping () -> Void) {
         guard let interstitialAd, !isPresenting else { return }
+        guard UIApplication.shared.applicationState == .active else { return }
         guard let rootViewController = Self.topViewController() else {
             logger.warning("No view controller available; interstitial ad was not presented")
             return

@@ -2,6 +2,7 @@ package com.ahn.presentation.ui.screen.calculator
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.ahn.domain.ads.usecase.InterstitialAdUseCases
 import com.ahn.domain.calculator.model.CalculatorHistory
 import com.ahn.domain.calculator.usecase.CalculatorUseCases
 import com.ahn.domain.currency.model.CalculatorCurrencySelection
@@ -29,6 +30,7 @@ class CalculatorViewModel @Inject constructor(
     private val favoriteUseCases: FavoriteUseCases,
     private val currencySelectionUseCases: CurrencySelectionUseCases,
     private val reviewPromptUseCases: ReviewPromptUseCases,
+    private val interstitialAdUseCases: InterstitialAdUseCases,
 ) : ViewModel(), ContainerHost<CalculatorContract.State, CalculatorContract.SideEffect> {
     override val container = container(
         initialState = CalculatorContract.State(),
@@ -241,16 +243,17 @@ class CalculatorViewModel @Inject constructor(
             )
         }
 
-        performReviewPrompt()
+        recordCalculationSuccess()
     }
 
     /**
-     * 계산 성공을 기록하고, 리뷰를 요청할 때가 되면 [CalculatorContract.SideEffect.RequestReview]를 보냅니다.
+     * 계산 성공을 인앱 리뷰·전면 광고 기록에 세고, 리뷰를 요청할 때가 되면 [CalculatorContract.SideEffect.RequestReview]를 보냅니다.
      *
-     * 결과를 화면에 반영한 뒤에 호출해 작업을 하나 끝낸 순간에 창이 뜨게 합니다.
+     * 결과를 화면에 반영한 뒤에 호출해 작업을 하나 끝낸 순간에 창이 뜨게 합니다. 전면 광고는 계산기를 떠날 때
+     * [com.ahn.presentation.main.MainViewModel]이 정하므로 여기서는 횟수만 셉니다.
      * 기록 저장에 실패해도 계산 흐름에는 영향을 주지 않습니다.
      */
-    private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.performReviewPrompt() {
+    private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.recordCalculationSuccess() {
         val shouldRequestReview = try {
             reviewPromptUseCases.recordCalculationSuccess()
         } catch (e: CancellationException) {
@@ -262,6 +265,14 @@ class CalculatorViewModel @Inject constructor(
 
         if (shouldRequestReview) {
             postSideEffect(CalculatorContract.SideEffect.RequestReview)
+        }
+
+        try {
+            interstitialAdUseCases.recordCalculation()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("CalculatorViewModel", "Failed to record calculation for interstitial ad.", e)
         }
     }
 

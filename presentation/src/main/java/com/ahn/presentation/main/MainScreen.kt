@@ -50,6 +50,7 @@ fun MainScreen(
     adConsentState: AdConsentState = AdConsentState(),
     onPrivacyOptionsClick: () -> Unit = {},
     onRequestReview: () -> Unit = {},
+    onLeaveCalculator: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val backPressExitMessage = stringResource(R.string.back_press_exit)
@@ -90,6 +91,9 @@ fun MainScreen(
         selectedRoute = currentDestination?.route,
         statusBarPadding = statusBarPadding,
         onItemClick = { item ->
+            val isLeavingCalculator =
+                currentDestination?.route == BottomNavItem.Calculator.route && item != BottomNavItem.Calculator
+
             navController.navigate(item.route) {
                 popUpTo(navController.graph.findStartDestination().id) {
                     saveState = true
@@ -97,6 +101,9 @@ fun MainScreen(
                 launchSingleTop = true
                 restoreState = true
             }
+
+            // 계산을 마치고 다른 탭으로 넘어가는 순간에만 전면 광고를 고려한다. 넘어간 뒤에 띄워 닫으면 고른 탭이 보인다.
+            if (isLeavingCalculator) onLeaveCalculator()
         },
     ) { innerPadding ->
         MainNavGraph(

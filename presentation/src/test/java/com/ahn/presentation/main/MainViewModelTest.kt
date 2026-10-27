@@ -1,6 +1,10 @@
 package com.ahn.presentation.main
 
 import android.util.Log
+import com.ahn.domain.ads.usecase.InterstitialAdUseCases
+import com.ahn.domain.ads.usecase.RecordInterstitialAdCalculationUseCase
+import com.ahn.domain.ads.usecase.RecordInterstitialAdShownUseCase
+import com.ahn.domain.ads.usecase.ShouldShowInterstitialAdUseCase
 import com.ahn.domain.review.usecase.RecordAppOpenUseCase
 import com.ahn.domain.review.usecase.RecordCalculationSuccessUseCase
 import com.ahn.domain.review.usecase.ReviewPromptUseCases
@@ -39,6 +43,9 @@ class MainViewModelTest : BehaviorSpec({
     val saveThemeModeUseCase = mockk<SaveThemeModeUseCase>()
     val recordAppOpenUseCase = mockk<RecordAppOpenUseCase>()
     val recordCalculationSuccessUseCase = mockk<RecordCalculationSuccessUseCase>()
+    val recordInterstitialAdCalculationUseCase = mockk<RecordInterstitialAdCalculationUseCase>()
+    val shouldShowInterstitialAdUseCase = mockk<ShouldShowInterstitialAdUseCase>()
+    val recordInterstitialAdShownUseCase = mockk<RecordInterstitialAdShownUseCase>()
 
     fun createViewModel() = MainViewModel(
         themeUseCases = ThemeUseCases(
@@ -48,6 +55,11 @@ class MainViewModelTest : BehaviorSpec({
         reviewPromptUseCases = ReviewPromptUseCases(
             recordAppOpen = recordAppOpenUseCase,
             recordCalculationSuccess = recordCalculationSuccessUseCase,
+        ),
+        interstitialAdUseCases = InterstitialAdUseCases(
+            recordCalculation = recordInterstitialAdCalculationUseCase,
+            shouldShow = shouldShowInterstitialAdUseCase,
+            recordShown = recordInterstitialAdShownUseCase,
         ),
     )
 
@@ -67,6 +79,8 @@ class MainViewModelTest : BehaviorSpec({
         every { getThemeModeUseCase() } returns emptyFlow()
         coEvery { saveThemeModeUseCase(any()) } returns Unit
         coEvery { recordAppOpenUseCase() } returns Unit
+        coEvery { shouldShowInterstitialAdUseCase() } returns true
+        coEvery { recordInterstitialAdShownUseCase() } returns Unit
     }
 
     Given("메인 ViewModel에서") {
@@ -152,6 +166,63 @@ class MainViewModelTest : BehaviorSpec({
 
                 verify(exactly = 1) {
                     Log.w("MainViewModel", "Failed to record app open.", any<Throwable>())
+                }
+            }
+        }
+    }
+
+    Given("계산기를 떠날 때 전면 광고를 확인하면") {
+        When("광고 조건을 채웠으면") {
+            Then("광고를 보여 줄 차례라고 알려야 한다") {
+                runTest {
+                    createViewModel().shouldShowInterstitialAd() shouldBe true
+                }
+            }
+        }
+
+        When("이번 실행에서 인앱 리뷰를 요청했으면") {
+            Then("광고 조건과 관계없이 보여 주지 않아야 한다") {
+                runTest {
+                    val viewModel = createViewModel()
+
+                    viewModel.markReviewRequested()
+
+                    viewModel.shouldShowInterstitialAd() shouldBe false
+                    coVerify(exactly = 0) { shouldShowInterstitialAdUseCase() }
+                }
+            }
+        }
+
+        When("광고 기록을 읽다가 일반 예외가 발생하면") {
+            Then("광고를 건너뛰고 로그로 남겨야 한다") {
+                runTest {
+                    coEvery { shouldShowInterstitialAdUseCase() } throws IllegalStateException("read failed")
+
+                    createViewModel().shouldShowInterstitialAd() shouldBe false
+
+                    verify(exactly = 1) {
+                        Log.w("MainViewModel", "Failed to check interstitial ad record.", any<Throwable>())
+                    }
+                }
+            }
+        }
+
+        When("광고를 보여 줬다고 기록하면") {
+            Then("기록 UseCase를 호출해야 한다") {
+                createViewModel().recordInterstitialAdShown()
+
+                coVerify(exactly = 1) { recordInterstitialAdShownUseCase() }
+            }
+        }
+
+        When("광고를 보여 줬다는 기록 중 일반 예외가 발생하면") {
+            Then("예외를 전파하지 않고 로그로 처리해야 한다") {
+                coEvery { recordInterstitialAdShownUseCase() } throws IllegalStateException("save failed")
+
+                createViewModel().recordInterstitialAdShown()
+
+                verify(exactly = 1) {
+                    Log.w("MainViewModel", "Failed to record interstitial ad shown.", any<Throwable>())
                 }
             }
         }

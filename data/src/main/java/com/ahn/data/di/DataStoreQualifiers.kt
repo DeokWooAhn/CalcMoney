@@ -21,3 +21,7 @@ annotation class ThemePreferencesDataStore
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class ReviewPromptPreferencesDataStore
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class InterstitialAdPreferencesDataStore

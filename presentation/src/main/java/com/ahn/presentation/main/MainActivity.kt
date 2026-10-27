@@ -11,12 +11,15 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.ahn.domain.setting.model.ThemeMode
+import com.ahn.presentation.R
 import com.ahn.presentation.ads.AdConsentManager
 import com.ahn.presentation.ads.AdConsentState
+import com.ahn.presentation.ads.InterstitialAdController
 import com.ahn.presentation.review.InAppReviewLauncher
 import com.ahn.presentation.ui.theme.CalcMoneyTheme
 import com.google.android.gms.ads.MobileAds
@@ -30,6 +33,9 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
     private lateinit var adConsentManager: AdConsentManager
     private val inAppReviewLauncher by lazy { InAppReviewLauncher(this) }
+    private val interstitialAdController by lazy {
+        InterstitialAdController(this, getString(R.string.admob_calculator_interstitial_id))
+    }
     private var adConsentState by mutableStateOf(AdConsentState())
     private var isMobileAdsInitialized = false
     private var isMobileAdsInitializing = false
@@ -63,6 +69,7 @@ class MainActivity : ComponentActivity() {
                     adConsentState = adConsentState,
                     onPrivacyOptionsClick = ::showPrivacyOptionsForm,
                     onRequestReview = ::requestInAppReview,
+                    onLeaveCalculator = ::showInterstitialAdIfDue,
                 )
             }
         }
@@ -85,7 +92,30 @@ class MainActivity : ComponentActivity() {
             return
         }
 
+        viewModel.markReviewRequested()
         inAppReviewLauncher.launch()
+    }
+
+    /**
+     * 계산기에서 다른 탭으로 넘어갈 때 부른다. 광고를 보여 줄 차례이고 받아 둔 광고가 있으면 보여 준다.
+     *
+     * 화면은 이미 넘어간 뒤라 광고를 닫으면 고른 탭이 보인다. 광고 동의 전이나 UI 테스트에서는
+     * canRequestAds가 false라 광고를 받지도 보여 주지도 않는다.
+     */
+    private fun showInterstitialAdIfDue() {
+        if (!adConsentState.canRequestAds) return
+
+        if (!interstitialAdController.isReady) {
+            interstitialAdController.preload()
+            return
+        }
+
+        lifecycleScope.launch {
+            val shouldShow = viewModel.shouldShowInterstitialAd()
+            if (shouldShow && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                interstitialAdController.show(onShown = viewModel::recordInterstitialAdShown)
+            }
+        }
     }
 
     private fun requestAdConsent() {
@@ -120,6 +150,7 @@ class MainActivity : ComponentActivity() {
                     isMobileAdsInitialized = true
                     isMobileAdsInitializing = false
                     adConsentState = adConsentState.copy(canRequestAds = canRequestAds)
+                    if (canRequestAds) interstitialAdController.preload()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to initialize Mobile Ads SDK.", e)

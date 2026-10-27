@@ -60,6 +60,15 @@ object DataStoreModule {
         return createPreferencesDataStore(context, "review_prompt")
     }
 
+    @Provides
+    @Singleton
+    @InterstitialAdPreferencesDataStore
+    fun provideInterstitialAdDataStore(
+        @ApplicationContext context: Context,
+    ): DataStore<Preferences> {
+        return createPreferencesDataStore(context, "interstitial_ad")
+    }
+
     private fun createPreferencesDataStore(
         context: Context,
         name: String,

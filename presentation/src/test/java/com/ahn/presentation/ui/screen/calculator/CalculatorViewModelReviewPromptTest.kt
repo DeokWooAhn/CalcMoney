@@ -1,6 +1,8 @@
 package com.ahn.presentation.ui.screen.calculator
 
 import android.util.Log
+import com.ahn.domain.ads.usecase.InterstitialAdUseCases
+import com.ahn.domain.ads.usecase.RecordInterstitialAdCalculationUseCase
 import com.ahn.domain.calculator.usecase.CalculateExpressionUseCase
 import com.ahn.domain.calculator.usecase.CalculatorUseCases
 import com.ahn.domain.calculator.usecase.ExtractRepeatOperationUseCase
@@ -37,7 +39,7 @@ import org.orbitmvi.orbit.test.OrbitTestContext
 import org.orbitmvi.orbit.test.test
 
 /**
- * 계산기에서 인앱 리뷰를 요청하는 흐름만 본다. 나머지 계산기 동작은 [CalculatorViewModelTest]가 맡는다.
+ * 계산 성공을 인앱 리뷰 요청·전면 광고 기록에 세는 흐름만 본다. 나머지 계산기 동작은 [CalculatorViewModelTest]가 맡는다.
  *
  * 이 흐름에 쓰이지 않는 UseCase는 relaxed mock으로 둔다.
  */
@@ -54,6 +56,7 @@ class CalculatorViewModelReviewPromptTest :
         val getFavoriteCurrenciesUseCase = mockk<GetFavoriteCurrenciesUseCase>()
         val getCalculatorSelectionUseCase = mockk<GetCalculatorSelectionUseCase>()
         val recordCalculationSuccessUseCase = mockk<RecordCalculationSuccessUseCase>()
+        val recordInterstitialAdCalculationUseCase = mockk<RecordInterstitialAdCalculationUseCase>()
 
         fun createViewModel() = CalculatorViewModel(
             calculatorUseCases = CalculatorUseCases(
@@ -90,6 +93,11 @@ class CalculatorViewModelReviewPromptTest :
             reviewPromptUseCases = ReviewPromptUseCases(
                 recordAppOpen = mockk(relaxed = true),
                 recordCalculationSuccess = recordCalculationSuccessUseCase,
+            ),
+            interstitialAdUseCases = InterstitialAdUseCases(
+                recordCalculation = recordInterstitialAdCalculationUseCase,
+                shouldShow = mockk(relaxed = true),
+                recordShown = mockk(relaxed = true),
             ),
         )
 
@@ -139,6 +147,7 @@ class CalculatorViewModelReviewPromptTest :
                 subCode = null,
             )
             coEvery { recordCalculationSuccessUseCase() } returns false
+            coEvery { recordInterstitialAdCalculationUseCase() } returns Unit
         }
 
         Given("리뷰 요청 조건을 만족한 상태에서") {
@@ -161,7 +170,7 @@ class CalculatorViewModelReviewPromptTest :
 
         Given("리뷰 요청 조건을 만족하지 못한 상태에서") {
             When("계산에 성공하면") {
-                Then("계산 성공은 기록하되 리뷰 요청 SideEffect는 없어야 한다") {
+                Then("계산 성공을 리뷰·전면 광고 기록에 세되 리뷰 요청 SideEffect는 없어야 한다") {
                     runTest {
                         // 남은 SideEffect가 있으면 orbit-test가 실패시킨다.
                         createViewModel().test(this) {
@@ -169,6 +178,7 @@ class CalculatorViewModelReviewPromptTest :
                         }
 
                         coVerify(exactly = 1) { recordCalculationSuccessUseCase() }
+                        coVerify(exactly = 1) { recordInterstitialAdCalculationUseCase() }
                     }
                 }
             }
@@ -176,7 +186,7 @@ class CalculatorViewModelReviewPromptTest :
 
         Given("계산 결과가 에러일 때") {
             When("=을 누르면") {
-                Then("실패한 계산은 리뷰 요청 조건에 세지 않아야 한다") {
+                Then("실패한 계산은 리뷰 요청·전면 광고 조건에 세지 않아야 한다") {
                     runTest {
                         every { calculateExpressionUseCase.calculate(any()) } returns "Error"
 
@@ -201,6 +211,7 @@ class CalculatorViewModelReviewPromptTest :
                         }
 
                         coVerify(exactly = 0) { recordCalculationSuccessUseCase() }
+                        coVerify(exactly = 0) { recordInterstitialAdCalculationUseCase() }
                     }
                 }
             }
@@ -223,6 +234,36 @@ class CalculatorViewModelReviewPromptTest :
                                 Log.w(
                                     "CalculatorViewModel",
                                     "Failed to record calculation for review prompt.",
+                                    any<Throwable>(),
+                                )
+                            }
+                        } finally {
+                            unmockkStatic(Log::class)
+                        }
+                    }
+                }
+            }
+        }
+
+        Given("전면 광고 기록 저장이 실패하는 상태에서") {
+            When("계산에 성공하면") {
+                Then("계산 결과는 그대로 반영되고 실패를 로그로 남겨야 한다") {
+                    runTest {
+                        mockkStatic(Log::class)
+                        try {
+                            every { Log.w(any<String>(), any<String>(), any<Throwable>()) } returns 0
+                            coEvery {
+                                recordInterstitialAdCalculationUseCase()
+                            } throws IllegalStateException("save failed")
+
+                            createViewModel().test(this) {
+                                calculateOnePlusOne()
+                            }
+
+                            verify(exactly = 1) {
+                                Log.w(
+                                    "CalculatorViewModel",
+                                    "Failed to record calculation for interstitial ad.",
                                     any<Throwable>(),
                                 )
                             }

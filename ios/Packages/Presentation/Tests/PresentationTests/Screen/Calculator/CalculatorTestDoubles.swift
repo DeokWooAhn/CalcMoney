@@ -188,6 +188,38 @@ actor FakeReviewPromptRepository: ReviewPromptRepository {
     }
 }
 
+/// 메모리에 전면 광고 기록을 들고 있는 테스트용 저장소
+actor FakeInterstitialAdRepository: InterstitialAdRepository {
+    private(set) var current: InterstitialAdRecord
+
+    /// 기록이 바뀔 때마다 신호를 보낸다. `waitUntil(_:)`이 이 신호를 받을 때마다 조건을 다시 확인한다.
+    private let changes: AsyncStream<Void>
+    private let changesContinuation: AsyncStream<Void>.Continuation
+
+    init(record: InterstitialAdRecord = InterstitialAdRecord()) {
+        current = record
+        (changes, changesContinuation) = AsyncStream.makeStream(bufferingPolicy: .bufferingNewest(1))
+    }
+
+    func record() async -> InterstitialAdRecord {
+        current
+    }
+
+    func updateRecord(_ transform: @Sendable (inout InterstitialAdRecord) -> Void) async {
+        transform(&current)
+        changesContinuation.yield()
+    }
+
+    /// 기록이 조건을 만족할 때까지 기다린다. `FakeReviewPromptRepository.waitUntil(_:)`과 같은 방식이다.
+    func waitUntil(_ condition: @Sendable (InterstitialAdRecord) -> Bool) async {
+        guard !condition(current) else { return }
+
+        for await _ in changes where condition(current) {
+            return
+        }
+    }
+}
+
 @MainActor
 enum CalculatorTestEnvironment {
     static func makeViewModel(
@@ -195,6 +227,7 @@ enum CalculatorTestEnvironment {
         exchangeRate: FakeExchangeRateRepository,
         currencySelection: FakeCurrencySelectionRepository,
         reviewPrompt: FakeReviewPromptRepository = FakeReviewPromptRepository(),
+        interstitialAd: FakeInterstitialAdRepository = FakeInterstitialAdRepository(),
     ) -> CalculatorViewModel {
         let favorite = FakeFavoriteCurrencyRepository()
         let calculateExpression = CalculateExpressionUseCase()
@@ -234,6 +267,11 @@ enum CalculatorTestEnvironment {
             reviewPromptUseCases: ReviewPromptUseCases(
                 recordAppOpen: RecordAppOpenUseCase(repository: reviewPrompt),
                 recordCalculationSuccess: RecordCalculationSuccessUseCase(repository: reviewPrompt),
+            ),
+            interstitialAdUseCases: InterstitialAdUseCases(
+                recordCalculation: RecordInterstitialAdCalculationUseCase(repository: interstitialAd),
+                shouldShow: ShouldShowInterstitialAdUseCase(repository: interstitialAd),
+                recordShown: RecordInterstitialAdShownUseCase(repository: interstitialAd),
             ),
         )
     }

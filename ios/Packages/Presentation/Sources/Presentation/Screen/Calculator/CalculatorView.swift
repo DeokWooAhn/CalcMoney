@@ -5,6 +5,8 @@ import SwiftUI
 /// 계산기 화면 (Android `CalculatorScreen` 대응)
 struct CalculatorView: View {
     let viewModel: CalculatorViewModel
+    /// 인앱 리뷰를 요청했을 때 부른다. 리뷰를 부탁한 직후에는 전면 광고를 띄우지 않도록 알린다.
+    var onReviewRequested: () -> Void = {}
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.requestReview) private var requestReview
@@ -60,6 +62,7 @@ struct CalculatorView: View {
                     // 개발 빌드는 요청할 때마다 창이 떠서 XCUITest·Maestro Flow를 막는다.
                     if !UITestingLaunch.isActive {
                         requestReview()
+                        onReviewRequested()
                     }
                 }
             }

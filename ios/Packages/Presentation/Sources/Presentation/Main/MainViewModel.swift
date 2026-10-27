@@ -3,7 +3,7 @@ import Foundation
 import Observation
 import SwiftUI
 
-/// 앱 전역 테마 상태를 관리하는 ViewModel (Android `MainViewModel` 대응)
+/// 앱 전역 테마 상태와 전면 광고를 띄울 차례인지를 관리하는 ViewModel (Android `MainViewModel` 대응)
 @MainActor
 @Observable
 public final class MainViewModel {
@@ -11,11 +11,19 @@ public final class MainViewModel {
 
     @ObservationIgnored private let themeUseCases: ThemeUseCases
     @ObservationIgnored private let reviewPromptUseCases: ReviewPromptUseCases
+    @ObservationIgnored private let interstitialAdUseCases: InterstitialAdUseCases
+    /// 이번 실행에서 인앱 리뷰를 요청했는지. 리뷰를 부탁한 직후에는 전면 광고를 띄우지 않는다.
+    @ObservationIgnored private var hasRequestedReviewThisSession = false
     @ObservationIgnored private var observeTask: Task<Void, Never>?
 
-    public init(themeUseCases: ThemeUseCases, reviewPromptUseCases: ReviewPromptUseCases) {
+    public init(
+        themeUseCases: ThemeUseCases,
+        reviewPromptUseCases: ReviewPromptUseCases,
+        interstitialAdUseCases: InterstitialAdUseCases,
+    ) {
         self.themeUseCases = themeUseCases
         self.reviewPromptUseCases = reviewPromptUseCases
+        self.interstitialAdUseCases = interstitialAdUseCases
 
         let themeModeStream = themeUseCases.getThemeMode()
         observeTask = Task { [weak self] in
@@ -43,6 +51,26 @@ public final class MainViewModel {
     public func recordAppOpen() {
         Task {
             await reviewPromptUseCases.recordAppOpen()
+        }
+    }
+
+    /// 인앱 리뷰를 요청했다고 남긴다. 이번 실행에서는 전면 광고를 띄우지 않는다.
+    public func markReviewRequested() {
+        hasRequestedReviewThisSession = true
+    }
+
+    /// 계산기를 떠나는 지금 전면 광고를 보여 줄 차례인지 알려 준다.
+    ///
+    /// 광고를 실제로 보여 줬으면 `recordInterstitialAdShown()`을 부른다.
+    public func shouldShowInterstitialAd() async -> Bool {
+        if hasRequestedReviewThisSession { return false }
+
+        return await interstitialAdUseCases.shouldShow()
+    }
+
+    public func recordInterstitialAdShown() {
+        Task {
+            await interstitialAdUseCases.recordShown()
         }
     }
 }

@@ -1,3 +1,4 @@
+import AppTrackingTransparency
 import GoogleMobileAds
 import Observation
 import OSLog
@@ -8,6 +9,7 @@ import UserMessagingPlatform
 ///
 /// Google 정책에 따라 앱 시작 시마다 동의 상태를 갱신하고,
 /// 필요하면 동의 양식을 띄우며, 개인정보 옵션 진입점 노출 여부를 제공한다.
+/// iOS에서는 이어서 앱 추적 투명성(ATT) 동의 창도 한 번 띄운다 (Android에는 없는 단계).
 @MainActor
 @Observable
 public final class AdConsentManager {
@@ -19,7 +21,7 @@ public final class AdConsentManager {
 
     public init() {}
 
-    /// 앱 시작 시 호출: 동의 상태 갱신 → 필요 시 동의 양식 표시 → 광고 SDK 시작.
+    /// 앱 시작 시 호출: 동의 상태 갱신 → 필요 시 동의 양식 표시 → 필요 시 ATT 동의 창 → 광고 SDK 시작.
     public func gatherConsent() async {
         // UI 테스트가 UMP의 지역 판정에 좌우되면 안 된다. EEA로 판정되면 동의 양식이 화면을
         // 덮어 테스트가 통째로 막히고, 그 전에도 실행마다 네트워크 왕복이 붙는다.
@@ -43,6 +45,8 @@ public final class AdConsentManager {
         } catch {
             logger.warning("Failed to gather ad consent: \(error.localizedDescription)")
         }
+
+        await requestTrackingAuthorizationIfNeeded()
 
         updateConsentState()
         startMobileAdsIfNeeded()
@@ -101,6 +105,24 @@ public final class AdConsentManager {
         }
     }
 
+    /// 앱 추적 투명성(ATT) 동의 창을 띄운다. 시스템이 설치당 한 번만 띄우므로 이미 답했으면 건너뛴다.
+    ///
+    /// Google 권장 순서대로 UMP 동의 양식을 마친 뒤 묻고, 광고를 받을 수 없는 상태
+    /// (EEA에서 동의하지 않음)면 묻지 않는다. 답을 받은 뒤에 광고 SDK를 시작해야
+    /// 첫 광고 요청부터 IDFA 허용 여부가 반영된다.
+    private func requestTrackingAuthorizationIfNeeded() async {
+        guard ConsentInformation.shared.canRequestAds,
+              ATTrackingManager.trackingAuthorizationStatus == .notDetermined else { return }
+
+        // 앱이 활성 상태가 아니면 시스템이 창을 띄우지 않고 거절과 같은 결과를 바로 돌려준다.
+        // 콜드 스타트 직후나 UMP 양식이 막 닫힌 순간에 생길 수 있어 활성이 될 때까지 잠깐 기다린다.
+        await Self.awaitApplicationActive()
+
+        // 완료 핸들러 버전은 백그라운드 스레드에서 불려 MainActor 격리 검사에 걸린다. async 버전만 쓴다.
+        let status = await ATTrackingManager.requestTrackingAuthorization()
+        logger.info("Tracking authorization status: \(status.rawValue)")
+    }
+
     private func updateConsentState() {
         canRequestAds = ConsentInformation.shared.canRequestAds
         isPrivacyOptionsRequired =
@@ -131,6 +153,18 @@ public final class AdConsentManager {
         }
 
         return rootViewController()
+    }
+
+    /// 앱이 활성 상태가 될 때까지 최대 2초 기다린다. 그래도 아니면 그냥 돌아간다.
+    private static func awaitApplicationActive(
+        retryCount: Int = 10,
+        retryInterval: Duration = .milliseconds(200),
+    ) async {
+        for _ in 0..<retryCount {
+            if UIApplication.shared.applicationState == .active { return }
+
+            try? await Task.sleep(for: retryInterval)
+        }
     }
 
     private static func rootViewController() -> UIViewController? {

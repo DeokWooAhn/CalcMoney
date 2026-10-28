@@ -49,6 +49,7 @@ struct ExchangeView: View {
             }
             .padding(.horizontal, 10)
             .padding(.top, 8)
+            .readableContentWidth()
         }
         .background(AppColors.background)
         .refreshable {

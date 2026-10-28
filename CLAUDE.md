@@ -73,6 +73,9 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 - Presentation 패키지 전체가 `.defaultIsolation(MainActor.self)`라 기본이 MainActor. **동적 색상 클로저(`Color.dynamic` 등)처럼 UIKit이 백그라운드 스레드에서 부르는 클로저는 반드시 `nonisolated`** — 안 그러면 Swift 6 런타임이 SIGTRAP으로 크래시한다 (`1b268fe` 참조).
 - 테스트 함수명은 **한글 + 언더스코어**가 이 프로젝트 컨벤션 (`func 등호_연타는_기록을_중복_저장하지_않는다()`). 영어나 raw identifier로 바꾸지 말 것 — `.swiftformat`/`.swiftlint.yml`이 이를 보존하도록 이미 설정돼 있음.
 - 앱은 환율 API를 직접 호출하지 않는다 (Android와 동일). Firestore `exchangeRates/latest` 문서 구조를 바꾸면 Cloud Functions와 Android `:data` 모듈도 함께 확인할 것.
+- **Release 빌드는 실제 AdMob ID를 넣기 전까지 컴파일되지 않는다.** `AdConfig.swift`의 `#error`가 테스트 광고 ID로 출시되는 것을 막는다(Android 릴리스 시크릿 검증과 같은 역할). 광고 단위 ID 4개와 앱 타깃 빌드 설정 `GAD_APPLICATION_IDENTIFIER`(Release → Info.plist `GADApplicationIdentifier`)를 함께 바꿀 것. CI는 Debug만 빌드한다.
+- **iPad는 네 방향을 모두 지원한다.** iPadOS 26부터 `UIRequiresFullScreen`으로 화면을 고정할 수 없어 창 크기가 자유롭게 바뀐다. 넓은 화면에서는 계산기 폭을 `CalculatorLayout`이, 나머지 화면 폭을 `readableContentWidth()`가 줄인다. 화면을 새로 만들면 iPad 가로에서도 확인할 것.
+- ATT(앱 추적 투명성) 동의 창은 `AdConsentManager`가 UMP 동의 뒤에 한 번 띄운다. UMP에 IDFA 안내 메시지가 설정돼 있으면 UMP가 먼저 띄우고 앱 쪽은 건너뛴다. `UI_TESTING` 실행에서는 동의 흐름 전체를 건너뛴다.
 
 ## 공통 주의사항
 

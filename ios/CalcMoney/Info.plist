@@ -13,9 +13,16 @@
 	<!-- 앱 표시 이름. 언어별 값은 CalcMoney/InfoPlist.xcstrings에 있고, 여기 값은 그 파일에 없는 언어의 기본값이다. -->
 	<key>CFBundleDisplayName</key>
 	<string>심플 환율 계산기</string>
-	<!-- AdMob 앱 ID — 현재는 Google 공식 테스트 ID. 릴리스 전에 실제 AdMob 앱 ID로 교체할 것. -->
+	<!-- AdMob 앱 ID. 값은 빌드 설정 GAD_APPLICATION_IDENTIFIER에서 온다: Debug는 Google 공식 테스트 ID,
+	     Release는 AdMob 콘솔에서 발급한 iOS 앱 ID (AdConfig.swift의 광고 단위 ID와 함께 바꾼다). -->
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>$(GAD_APPLICATION_IDENTIFIER)</string>
+	<!-- 앱 추적 투명성(ATT) 동의 창 문구. 언어별 값은 CalcMoney/InfoPlist.xcstrings에 있다. -->
+	<key>NSUserTrackingUsageDescription</key>
+	<string>나에게 더 맞는 광고를 보여 주는 데 사용합니다. 허용하지 않아도 앱의 모든 기능을 그대로 쓸 수 있습니다.</string>
+	<!-- HTTPS 외의 암호화를 쓰지 않아 수출 규정 면제 대상이다. 업로드할 때마다 묻는 질문을 건너뛴다. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<!-- Google Mobile Ads 권장 SKAdNetwork 목록 (developers.google.com/admob/ios/quick-start) -->
 	<key>SKAdNetworkItems</key>
 	<array>

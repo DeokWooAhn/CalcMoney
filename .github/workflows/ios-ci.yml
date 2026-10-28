@@ -96,6 +96,24 @@ jobs:
             -scheme CalcMoney \
             -destination "$DESTINATION"
 
+      # xcodebuild test가 시뮬레이터를 그 자리에서 켜면 첫 UI 테스트가 부팅과 겹쳐 앱 실행·자동화 준비가 느려지고,
+      # 실행 시간 초과나 화면 대기 초과로 실패했다. DESTINATION과 같은 기기(최신 iOS의 iPhone 17 Pro)를
+      # 미리 켜고 부팅이 끝날 때까지 기다린다. 기기를 못 찾으면 이 단계만 건너뛰고 xcodebuild에 맡긴다.
+      - name: Boot simulator
+        run: |
+          UDID=$(xcrun simctl list devices available -j | jq -r '
+            [.devices | to_entries[]
+             | select(.key | test("SimRuntime\\.iOS-"))
+             | {ver: (.key | capture("iOS-(?<v>[0-9-]+)$").v | split("-") | map(tonumber)),
+                dev: (.value[] | select(.name == "iPhone 17 Pro"))}]
+            | sort_by(.ver) | last | .dev.udid // empty')
+          if [ -z "$UDID" ]; then
+            echo "::warning::iPhone 17 Pro simulator not found; xcodebuild will boot it"
+            exit 0
+          fi
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+
       # CalcMoney.xctestplan 하나가 앱 타깃 2개 + 패키지 테스트 3개를 모두 포함한다.
       # 워크스페이스로 실행해야 패키지 테스트 타깃이 플랜에서 해석된다.
       - name: Test

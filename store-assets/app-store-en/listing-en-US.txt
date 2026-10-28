@@ -1,0 +1,55 @@
+=== NAME (max 30) ===
+Simple Currency Calculator
+
+=== SUBTITLE (max 30) ===
+Convert while you calculate
+
+=== PROMOTIONAL TEXT (max 170, editable anytime without review) ===
+Check price tags as you shop. Type (1,980 + 2,480) × 0.8 and see the total and its converted value side by side. Rates are saved on your device, so it works offline.
+
+=== KEYWORDS (max 100, comma-separated, no spaces) ===
+exchange,rate,converter,money,forex,fx,travel,dollar,euro,yen,won,krw,usd,jpy,eur,offline,shopping
+
+=== DESCRIPTION (max 4000) ===
+Simple Currency Calculator does one thing well: it converts while you calculate.
+
+CALCULATE AND CONVERT AT ONCE
+Type an expression like 1,980 + 2,480 and watch both the running total and its converted value update as you go. Add up several prices or apply a discount and see what it costs in your own currency, with no switching apps and no copying numbers between them. Pick your two currencies at the top, or flip their order with one tap.
+
+CALCULATION HISTORY
+Your expressions and results are kept in the history, so you can look back at earlier totals.
+
+A DEDICATED CONVERTER
+Enter an amount, pick your two currencies, and read the result together with the exact rate used and the date it was published.
+
+FAVORITES AT A GLANCE
+Star the currencies you check often and see them all against a single base amount on one screen.
+
+FIND ANY CURRENCY FAST
+Search by country, currency name, or code. Your favorites sit at the top of the list, and the ★ and A–Z index on the right jumps straight to where you want to go.
+
+WORKS WITHOUT A CONNECTION
+Rates are cached on your device, so the app keeps working on a plane or in a dead zone. It always shows the date of the rates you are looking at, so you know how fresh they are.
+
+IPHONE AND IPAD
+On iPad, the layout keeps a comfortable width in portrait, landscape, and any window size.
+
+LIGHT AND DARK
+Follows your system theme, or pick one yourself in Settings.
+
+WHERE THE RATES COME FROM
+Exchange rates come from ExchangeRate-API and are quoted against the Korean won. They are market rates updated once a day, so they barely change on weekends when currency markets are closed. Conversions between two non-KRW currencies are calculated through the won.
+
+This is a good fit if your currency pairs involve the Korean won. If you need intraday rates, this may not be the right tool for you.
+
+SUPPORTED CURRENCIES (160+)
+Major currencies such as KRW, USD, JPY, EUR, CNY, GBP, HKD, TWD, VND, THB, SGD, PHP, AUD, CAD, CHF and NZD, plus more than 140 others.
+
+Rates are provided for reference only and will differ from the rate your bank or card issuer applies.
+
+Available in English and Korean.
+
+=== OTHER FIELDS ===
+Privacy Policy URL: https://deokwooahn.github.io/CalcMoney/privacy-policy.html
+Support URL: https://deokwooahn.github.io/CalcMoney/support.html
+Category: primary Utilities, secondary Travel

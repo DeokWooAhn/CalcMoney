@@ -156,7 +156,6 @@ Firebase 설정 파일(`app/google-services.json`, `ios/CalcMoney/CalcMoney/Goog
 ```bash
 ./gradlew :domain:test
 ./gradlew :presentation:detekt
-./gradlew :data:connectedDebugAndroidTest  # 에뮬레이터 또는 기기 필요
 ```
 
 > `build`, `bundleRelease` 같은 릴리스 계열 태스크는 서명·AdMob 환경 변수를 강제 검증하므로 로컬에서 실패합니다. 일반적인 로컬 검증에는 위의 `detekt`, `test`, `assembleDebug`를 사용하세요.

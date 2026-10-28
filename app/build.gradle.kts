@@ -75,7 +75,6 @@ android {
         versionCode = releaseVersionCode()
         versionName = releaseVersionName()
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -148,8 +147,4 @@ dependencies {
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.core)
-
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
 }

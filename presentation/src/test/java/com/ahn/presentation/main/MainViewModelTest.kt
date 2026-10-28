@@ -193,6 +193,20 @@ class MainViewModelTest : BehaviorSpec({
             }
         }
 
+        When("광고 기록을 읽는 사이 인앱 리뷰를 요청하면") {
+            Then("기록을 다 읽은 뒤 다시 확인해 보여 주지 않아야 한다") {
+                runTest {
+                    val viewModel = createViewModel()
+                    coEvery { shouldShowInterstitialAdUseCase() } coAnswers {
+                        viewModel.markReviewRequested()
+                        true
+                    }
+
+                    viewModel.shouldShowInterstitialAd() shouldBe false
+                }
+            }
+        }
+
         When("광고 기록을 읽다가 일반 예외가 발생하면") {
             Then("광고를 건너뛰고 로그로 남겨야 한다") {
                 runTest {

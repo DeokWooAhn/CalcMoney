@@ -12,6 +12,30 @@ private struct IdleThemeRepository: ThemeRepository {
     func saveThemeMode(_: ThemeMode) async throws {}
 }
 
+/// 기록을 읽는 도중에 `onRecord`를 실행해, 조회 사이에 다른 일이 끼어드는 상황을 만든다.
+private actor InterruptedInterstitialAdRepository: InterstitialAdRepository {
+    private let current: InterstitialAdRecord
+    private var onRecord: (@MainActor @Sendable () -> Void)?
+
+    init(record: InterstitialAdRecord) {
+        current = record
+    }
+
+    func setOnRecord(_ action: @escaping @MainActor @Sendable () -> Void) {
+        onRecord = action
+    }
+
+    func record() async -> InterstitialAdRecord {
+        if let onRecord {
+            await onRecord()
+        }
+
+        return current
+    }
+
+    func updateRecord(_: @Sendable (inout InterstitialAdRecord) -> Void) async {}
+}
+
 @MainActor
 @Suite("MainViewModel — 전면 광고", .timeLimit(.minutes(1)))
 struct MainViewModelInterstitialAdTests {
@@ -25,7 +49,7 @@ struct MainViewModelInterstitialAdTests {
         )
     }
 
-    private static func makeViewModel(interstitialAd: FakeInterstitialAdRepository) -> MainViewModel {
+    private static func makeViewModel(interstitialAd: any InterstitialAdRepository) -> MainViewModel {
         let theme = IdleThemeRepository()
         let reviewPrompt = FakeReviewPromptRepository()
 
@@ -58,6 +82,15 @@ struct MainViewModelInterstitialAdTests {
         let viewModel = Self.makeViewModel(interstitialAd: FakeInterstitialAdRepository(record: Self.eligibleRecord()))
 
         viewModel.markReviewRequested()
+
+        #expect(await !viewModel.shouldShowInterstitialAd())
+    }
+
+    @Test("광고 기록을 읽는 사이 인앱 리뷰를 요청하면 다 읽은 뒤 다시 확인해 보여 주지 않는다")
+    func 기록을_읽는_사이_리뷰를_요청하면_보여_주지_않는다() async {
+        let interstitialAd = InterruptedInterstitialAdRepository(record: Self.eligibleRecord())
+        let viewModel = Self.makeViewModel(interstitialAd: interstitialAd)
+        await interstitialAd.setOnRecord { viewModel.markReviewRequested() }
 
         #expect(await !viewModel.shouldShowInterstitialAd())
     }

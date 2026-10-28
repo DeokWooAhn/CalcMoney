@@ -62,7 +62,9 @@ class MainViewModel @Inject constructor(
         if (hasRequestedReviewThisSession) return false
 
         return try {
-            interstitialAdUseCases.shouldShow()
+            val shouldShow = interstitialAdUseCases.shouldShow()
+            // 기록을 읽는 사이 리뷰를 요청했을 수 있어 다시 확인한다.
+            shouldShow && !hasRequestedReviewThisSession
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

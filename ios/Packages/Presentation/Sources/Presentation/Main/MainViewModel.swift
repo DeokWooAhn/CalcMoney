@@ -65,7 +65,9 @@ public final class MainViewModel {
     public func shouldShowInterstitialAd() async -> Bool {
         if hasRequestedReviewThisSession { return false }
 
-        return await interstitialAdUseCases.shouldShow()
+        let shouldShow = await interstitialAdUseCases.shouldShow()
+        // 기록을 읽는 사이 리뷰를 요청했을 수 있어 다시 확인한다.
+        return shouldShow && !hasRequestedReviewThisSession
     }
 
     public func recordInterstitialAdShown() {

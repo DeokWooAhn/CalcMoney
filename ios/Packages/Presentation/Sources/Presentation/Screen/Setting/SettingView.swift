@@ -67,6 +67,7 @@ struct SettingView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
+            .readableContentWidth()
         }
         .background(AppColors.background)
         .snackbarOverlay(snackbar)

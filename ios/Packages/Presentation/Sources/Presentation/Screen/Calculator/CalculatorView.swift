@@ -16,6 +16,34 @@ struct CalculatorView: View {
     var body: some View {
         let colors = CalculatorColors.palette(for: colorScheme)
 
+        // iPad·가로 화면에서 정사각 키가 화면 폭만큼 커지지 않게 내용 폭을 정해 가운데에 둔다. iPhone은 화면 폭 그대로다.
+        GeometryReader { geometry in
+            calculatorContent(colors: colors)
+                .frame(width: CalculatorLayout.contentWidth(for: geometry.size))
+                .frame(maxWidth: .infinity)
+        }
+        .padding(.horizontal, 16)
+        .background(colors.background.ignoresSafeArea())
+        .snackbarOverlay(snackbar)
+        .task {
+            for await sideEffect in viewModel.sideEffects() {
+                switch sideEffect {
+                case let .showSnackbar(message):
+                    snackbar.show(message)
+
+                case .requestReview:
+                    // 개발 빌드는 요청할 때마다 창이 떠서 XCUITest·Maestro Flow를 막는다.
+                    if !UITestingLaunch.isActive {
+                        requestReview()
+                        onReviewRequested()
+                    }
+                }
+            }
+        }
+        .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private func calculatorContent(colors: CalculatorColors) -> some View {
         VStack(spacing: 0) {
             CalculatorCurrencySelectorRow(
                 state: viewModel.state,
@@ -49,25 +77,6 @@ struct CalculatorView: View {
             // padding보다 바깥에 둬야 한다. 안쪽에 두면 padding이 만든 바깥 뷰는 우선순위가 없어 같은 문제가 난다.
             .layoutPriority(1)
         }
-        .padding(.horizontal, 16)
-        .background(colors.background.ignoresSafeArea())
-        .snackbarOverlay(snackbar)
-        .task {
-            for await sideEffect in viewModel.sideEffects() {
-                switch sideEffect {
-                case let .showSnackbar(message):
-                    snackbar.show(message)
-
-                case .requestReview:
-                    // 개발 빌드는 요청할 때마다 창이 떠서 XCUITest·Maestro Flow를 막는다.
-                    if !UITestingLaunch.isActive {
-                        requestReview()
-                        onReviewRequested()
-                    }
-                }
-            }
-        }
-        .toolbar(.hidden, for: .navigationBar)
     }
 }
 

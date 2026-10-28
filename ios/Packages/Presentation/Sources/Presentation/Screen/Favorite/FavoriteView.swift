@@ -36,7 +36,8 @@ struct FavoriteView: View {
         }
         .padding(.horizontal, 10)
         .padding(.top, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .readableContentWidth()
+        .frame(maxHeight: .infinity, alignment: .top)
         .background(AppColors.background)
         .snackbarOverlay(snackbar)
         .task {

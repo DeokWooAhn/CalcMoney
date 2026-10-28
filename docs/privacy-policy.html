@@ -97,7 +97,7 @@
 <body>
 <main>
   <h1>심플 환율 계산기 개인정보처리방침</h1>
-  <p class="meta">시행일: 2026년 9월 28일</p>
+  <p class="meta">시행일: 2026년 10월 28일</p>
   <p>
     심플 환율 계산기(Simple Currency Calculator, 이하 “앱”)는 환율 계산, 즐겨찾기 통화 관리,
     계산 기록 저장, 광고 표시, 앱 품질 개선을 위해 아래와 같이 정보를 처리합니다.
@@ -118,7 +118,7 @@
     <ul>
       <li>계산 기록: 사용자가 계산한 식과 결과는 기기 내에 저장됩니다.</li>
       <li>즐겨찾기 통화, 선택한 통화, 테마 설정: 기기 내에 저장됩니다.</li>
-      <li>환율 캐시: 환율 표시를 위해 기기 내 Room 데이터베이스에 저장됩니다.</li>
+      <li>환율 캐시: 환율 표시를 위해 기기 내 데이터베이스(Android는 Room, iOS는 SwiftData)에 저장됩니다.</li>
       <li>광고 관련 정보: Google AdMob이 광고 식별자, 기기 정보, 대략적인 위치, 광고 상호작용 정보를 처리할 수 있습니다.</li>
       <li>분석 정보: Firebase Analytics가 앱 실행, 화면 조회, 사용 이벤트, 기기 및 앱 버전 정보를 처리할 수 있습니다.</li>
       <li>크래시 정보: Firebase Crashlytics가 오류 로그, 기기 모델, OS 버전, 앱 버전, 진단 정보를 처리할 수 있습니다.</li>
@@ -155,6 +155,11 @@
       광고 제공 과정에서 Google 및 Google의 광고 파트너가 쿠키에 준하는 모바일 식별자,
       광고 ID, 기기 정보, 대략적인 위치, 광고 조회 및 클릭 정보를 처리할 수 있습니다.
     </p>
+    <p>
+      iOS에서는 Apple의 앱 추적 투명성(ATT) 정책에 따라 광고 식별자(IDFA)를 사용하기 전에 허용 여부를
+      묻습니다. 허용하지 않으면 IDFA 없이 광고가 표시되며, 앱의 모든 기능은 그대로 쓸 수 있습니다.
+      선택은 기기의 설정 &gt; 개인정보 보호 및 보안 &gt; 추적에서 언제든 바꿀 수 있습니다.
+    </p>
 
     <h2>5. 제3자 서비스</h2>
     <p>앱은 다음 제3자 서비스를 사용합니다.</p>
@@ -170,6 +175,7 @@
       계산 기록과 환율 캐시는 사용자의 기기에 저장되며, 사용자가 앱 데이터를 삭제하거나 앱을
       삭제하면 제거될 수 있습니다. 즐겨찾기 통화, 선택한 통화, 테마 설정은 Android 백업 기능이
       켜져 있는 경우 Google 백업 및 기기 이전 과정에서 복원될 수 있습니다.
+      iOS에서는 기기의 iCloud 백업이나 기기 이전에 앱 데이터가 포함될 수 있습니다.
     </p>
 
     <h2>7. 보관 기간</h2>
@@ -183,7 +189,7 @@
       <li>계산 기록은 앱 안에서 삭제할 수 있습니다.</li>
       <li>즐겨찾기 통화는 앱 안에서 추가하거나 제거할 수 있습니다.</li>
       <li>앱 설정에서 테마를 변경할 수 있습니다.</li>
-      <li>기기 설정에서 광고 ID 재설정 또는 맞춤 광고 제한을 설정할 수 있습니다.</li>
+      <li>기기 설정에서 광고 ID 재설정 또는 맞춤 광고 제한을 설정할 수 있습니다. iOS에서는 설정 &gt; 개인정보 보호 및 보안 &gt; 추적에서 앱의 추적 허용 여부를 바꿀 수 있습니다.</li>
       <li>규정상 필요한 지역에서는 앱 안의 개인정보 및 광고 설정을 통해 광고 동의 선택을 관리할 수 있습니다.</li>
     </ul>
 
@@ -200,14 +206,14 @@
 
     <h2>11. 문의</h2>
     <p>
-      개인정보처리방침에 대한 문의는 Google Play 스토어에 표시된 개발자 연락처 또는
+      개인정보처리방침에 대한 문의는 Google Play 스토어 또는 App Store에 표시된 개발자 연락처 또는
       <a href="mailto:dwahndev@gmail.com">dwahndev@gmail.com</a>으로 연락해 주세요.
     </p>
   </section>
 
   <section id="en" lang="en">
     <h2>Privacy Policy</h2>
-    <p class="meta">Effective date: September 28, 2026</p>
+    <p class="meta">Effective date: October 28, 2026</p>
     <p>
       Simple Currency Calculator (“the app”) provides currency conversion, favorite currency
       management, calculation history, advertising, analytics, and crash reporting features.
@@ -222,7 +228,7 @@
     <ul>
       <li>Calculation history is stored locally on your device.</li>
       <li>Favorite currencies, selected currencies, and theme preference are stored locally on your device.</li>
-      <li>Exchange rate cache is stored locally in the app database.</li>
+      <li>Exchange rate cache is stored locally in the app database (Room on Android, SwiftData on iOS).</li>
       <li>Google AdMob may process advertising identifiers, device information, approximate location, and ad interaction data.</li>
       <li>Firebase Analytics may process app usage events, screen views, device information, and app version information.</li>
       <li>Firebase Crashlytics may process crash logs, device model, OS version, app version, and diagnostic information.</li>
@@ -260,6 +266,12 @@
       Google and its ad partners may process mobile identifiers, advertising IDs, device information,
       approximate location, and ad impression or click data when serving ads.
     </p>
+    <p>
+      On iOS, the app asks for your permission under Apple's App Tracking Transparency (ATT) before the
+      advertising identifier (IDFA) is used. If you do not allow it, ads are shown without the IDFA and
+      every feature of the app remains available. You can change this at any time in Settings &gt;
+      Privacy &amp; Security &gt; Tracking on your device.
+    </p>
 
     <h3>5. Third-Party Services</h3>
     <ul>
@@ -275,6 +287,7 @@
       you clear app data or uninstall the app. Favorite currencies, selected currencies, and theme
       preference may be restored through Google backup or device transfer if Android backup is enabled
       on your device.
+      On iOS, app data may be included in your device's iCloud backup or device transfer.
     </p>
 
     <h3>7. Retention</h3>
@@ -289,7 +302,7 @@
       <li>You can delete calculation history in the app.</li>
       <li>You can add or remove favorite currencies in the app.</li>
       <li>You can change the app theme in settings.</li>
-      <li>You can reset your advertising ID or limit ad personalization in your device settings.</li>
+      <li>You can reset your advertising ID or limit ad personalization in your device settings. On iOS, you can change whether the app may track you in Settings &gt; Privacy &amp; Security &gt; Tracking.</li>
       <li>Where required by regulation, you can manage ad consent choices through the app's privacy and ad settings.</li>
     </ul>
 
@@ -308,7 +321,7 @@
     <h3>11. Contact</h3>
     <p>
       If you have questions about this Privacy Policy, please contact us through the developer contact
-      listed on Google Play or at <a href="mailto:dwahndev@gmail.com">dwahndev@gmail.com</a>.
+      listed on Google Play or the App Store, or at <a href="mailto:dwahndev@gmail.com">dwahndev@gmail.com</a>.
     </p>
   </section>
 </main>

@@ -36,6 +36,20 @@ struct CurrencyNameTests {
         #expect(name != "저지 파운드(서버)")
     }
 
+    /// 위 테스트의 기대값은 테스트를 돌리는 언어의 번들에서 오므로, 영어 번역이 빠져도 한국어 환경에서는 통과한다.
+    /// 그래서 영어 번들을 직접 열어 번역이 있는지 따로 본다.
+    @Test("예비 이름은 모두 영어 번역이 있다")
+    func 예비_이름은_모두_영어_번역이_있다() throws {
+        let path = try #require(Bundle.module.path(forResource: "en", ofType: "lproj"))
+        let englishBundle = try #require(Bundle(path: path))
+
+        for key in fallbackCurrencyNameKeys.values {
+            let translated = englishBundle.localizedString(forKey: key, value: nil, table: nil)
+            #expect(translated != key, "\(key)의 영어 번역이 없다")
+        }
+        #expect(englishBundle.localizedString(forKey: "저지 파운드", value: nil, table: nil) == "Jersey Pound")
+    }
+
     @Test("예비 이름이 있어도 플랫폼이 아는 통화는 플랫폼 이름을 쓴다")
     func 플랫폼이_아는_통화는_예비_이름보다_플랫폼_이름을_쓴다() {
         let mru = CurrencyInfo(code: "MRU", displayCode: "MRU", name: "모리타니 우기야(서버)", flagEmoji: "🇲🇷")

@@ -36,7 +36,8 @@ private let currencyNameKeys: [String: String] = [
 ///
 /// ISO 4217에 없는 지역 통화와, 최소 지원 OS가 아직 모르는 최근 통화다(iOS 18은 XCG·ZWG를 모른다).
 /// 플랫폼 이름이 있으면 그쪽을 먼저 쓴다. 한국어는 서버의 이름과 같다.
-private let fallbackCurrencyNameKeys: [String: String] = [
+/// 영어 번역이 모두 있는지 테스트가 확인하므로 `private`이 아니다.
+let fallbackCurrencyNameKeys: [String: String] = [
     "FOK": "페로 제도 크로나",
     "GGP": "건지 파운드",
     "IMP": "맨섬 파운드",

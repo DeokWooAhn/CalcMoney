@@ -33,7 +33,7 @@ description: 새 화면 추가, ViewModel/Contract 작성, Orbit MVI 패턴을 �
 - 구조: `local/{dao,entity,datasource}` + `remote/datasource` + `mapper/` + `repository/`
 - 정석 레퍼런스: `data/src/main/java/com/ahn/data/exchange/repository/ExchangeRateRepositoryImpl.kt` (Mutex 가드, 12h TTL, 원격 실패 시 stale 캐시 폴백)
 - 테스트 용이성 관례: `internal constructor(..., clock: Clock)` + `@Inject` 보조 생성자가 `Clock.systemDefaultZone()` 공급
-- Room 스키마 변경 시: `CalcMoneyDatabase.kt` 버전 올리고 `MIGRATION_N_M` 추가, `data/schemas/` JSON 커밋
+- Room 스키마 변경 시: `CalcMoneyDatabase.kt` 버전 올리고 `MIGRATION_N_M` 추가, `data/schemas/` JSON 커밋. 마이그레이션이 빠져도 크래시 대신 캐시를 비우지만(`fallbackToDestructiveMigration`), 업데이트 직후 오프라인 사용자는 환율을 못 보니 마이그레이션은 계속 쓴다. 사용자 데이터를 이 DB에 넣게 되면 그 대체 동작부터 다시 검토
 
 ## DI 배선 (`data/src/main/java/com/ahn/data/di/`)
 

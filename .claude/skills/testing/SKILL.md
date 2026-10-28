@@ -1,6 +1,6 @@
 ---
 name: testing
-description: 유닛 테스트·ViewModel 테스트·DAO 테스트를 작성하거나 수정할 때 사용. Kotest BehaviorSpec 한국어 컨벤션과 MockK 규칙.
+description: 유닛 테스트·ViewModel 테스트를 작성하거나 수정할 때 사용. Kotest BehaviorSpec 한국어 컨벤션과 MockK 규칙.
 ---
 
 # 테스트 작성 규칙
@@ -36,7 +36,6 @@ Given("선택한 통화가 즐겨찾기에 없는 상태에서") {
 ```bash
 ./gradlew test                        # 전체
 ./gradlew :domain:test                # 모듈별
-./gradlew :data:connectedDebugAndroidTest   # DAO 등 instrumented (에뮬레이터 필요)
 ./gradlew :koverHtmlReportUnit        # 병합 커버리지 (build/reports/kover/htmlUnit/index.html)
 ./gradlew :koverVerifyUnit            # CI 커버리지 게이트
 ```
@@ -47,4 +46,4 @@ Given("선택한 통화가 즐겨찾기에 없는 상태에서") {
 
 - JUnit5 플랫폼 필수 — 각 모듈 gradle에 이미 `useJUnitPlatform()` 설정돼 있음. 새 모듈 추가 시 빼먹지 말 것.
 - DataStore 테스트 헬퍼: `data/src/test/java/com/ahn/data/common/datastore/TestPreferenceDataStore.kt`
-- `:data` mapper/datasource 일부는 레거시 JUnit4 `@Test` 스타일 — 새 테스트는 BehaviorSpec으로 통일
+- 계측 테스트(`src/androidTest`)는 두지 않는다. CI가 돌리지 않아 방치되던 DAO·Compose 테스트를 지웠다. 화면은 Maestro가 맡고, Room DB는 환율 캐시뿐이라 마이그레이션이 빠져도 `DatabaseModule`의 `fallbackToDestructiveMigration`이 캐시를 비우고 다시 받는다.

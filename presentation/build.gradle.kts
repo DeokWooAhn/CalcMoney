@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 private val ADMOB_TEST_APP_ID = "ca-app-pub-3940256099942544~3347511713"
 private val ADMOB_TEST_BANNER_ID = "ca-app-pub-3940256099942544/9214589741"
+private val ADMOB_TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"
 
 private fun isReleaseBuildRequested(): Boolean =
     gradle.startParameter.taskNames.any { taskName ->
@@ -56,6 +57,7 @@ android {
             resValue("string", "admob_exchange_banner_id", ADMOB_TEST_BANNER_ID)
             resValue("string", "admob_favorite_banner_id", ADMOB_TEST_BANNER_ID)
             resValue("string", "admob_settings_banner_id", ADMOB_TEST_BANNER_ID)
+            resValue("string", "admob_calculator_interstitial_id", ADMOB_TEST_INTERSTITIAL_ID)
         }
         release {
             isMinifyEnabled = false
@@ -73,6 +75,11 @@ android {
                 "string",
                 "admob_settings_banner_id",
                 adMobValueStrict("ADMOB_SETTINGS_BANNER_ID"),
+            )
+            resValue(
+                "string",
+                "admob_calculator_interstitial_id",
+                adMobValueStrict("ADMOB_CALCULATOR_INTERSTITIAL_ID"),
             )
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

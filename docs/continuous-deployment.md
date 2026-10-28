@@ -31,6 +31,7 @@ GitHub Actions 실행 번호를 `10000 + 실행 번호` 규칙으로 변환해 A
 - `ADMOB_EXCHANGE_BANNER_ID`
 - `ADMOB_FAVORITE_BANNER_ID`
 - `ADMOB_SETTINGS_BANNER_ID`
+- `ADMOB_CALCULATOR_INTERSTITIAL_ID`: 계산기를 떠날 때 보여 주는 전면 광고 단위 ID입니다.
 - `PLAY_SERVICE_ACCOUNT_JSON`: Play Console의 API 액세스 페이지에 등록되어 있고, 내부 테스트 트랙에 앱을 릴리스할 권한을 가진 서비스 계정의 JSON 키입니다.
 
 앱은 Play Console에 한 번 생성해 두어야 하며, 패키지명은 `com.ahn.calcmoney`로 고정입니다.

@@ -1,5 +1,6 @@
 package com.ahn.presentation.ui.screen.calculator
 
+import com.ahn.domain.ads.usecase.InterstitialAdUseCases
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.domain.currency.model.CalculatorCurrencySelection
 import com.ahn.domain.calculator.usecase.AddCalculatorHistoryUseCase
@@ -120,6 +121,11 @@ class CalculatorViewModelTest : BehaviorSpec({
         reviewPromptUseCases = ReviewPromptUseCases(
             recordAppOpen = recordAppOpenUseCase,
             recordCalculationSuccess = recordCalculationSuccessUseCase,
+        ),
+        interstitialAdUseCases = InterstitialAdUseCases(
+            recordCalculation = mockk(relaxed = true),
+            shouldShow = mockk(relaxed = true),
+            recordShown = mockk(relaxed = true),
         ),
     )
 

@@ -1,11 +1,13 @@
 package com.ahn.data.di
 
+import com.ahn.data.ads.repository.InterstitialAdRepositoryImpl
 import com.ahn.data.calculator.repository.CalculatorHistoryRepositoryImpl
 import com.ahn.data.currency.repository.CurrencySelectionRepositoryImpl
 import com.ahn.data.exchange.repository.ExchangeRateRepositoryImpl
 import com.ahn.data.favorite.repository.FavoriteCurrencyRepositoryImpl
 import com.ahn.data.review.repository.ReviewPromptRepositoryImpl
 import com.ahn.data.setting.repository.ThemeRepositoryImpl
+import com.ahn.domain.ads.repository.InterstitialAdRepository
 import com.ahn.domain.calculator.repository.CalculatorHistoryRepository
 import com.ahn.domain.currency.repository.CurrencySelectionRepository
 import com.ahn.domain.exchange.repository.ExchangeRateRepository
@@ -49,4 +51,9 @@ abstract class RepositoryModule {
     abstract fun bindReviewPromptRepository(
         impl: ReviewPromptRepositoryImpl,
     ): ReviewPromptRepository
+
+    @Binds
+    abstract fun bindInterstitialAdRepository(
+        impl: InterstitialAdRepositoryImpl,
+    ): InterstitialAdRepository
 }

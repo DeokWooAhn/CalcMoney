@@ -3,6 +3,7 @@ package com.ahn.presentation.main
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ahn.domain.ads.usecase.InterstitialAdUseCases
 import com.ahn.domain.review.usecase.ReviewPromptUseCases
 import com.ahn.domain.setting.model.ThemeMode
 import com.ahn.domain.setting.usecase.ThemeUseCases
@@ -18,7 +19,11 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val themeUseCases: ThemeUseCases,
     private val reviewPromptUseCases: ReviewPromptUseCases,
+    private val interstitialAdUseCases: InterstitialAdUseCases,
 ) : ViewModel() {
+    /** 이번 실행에서 인앱 리뷰를 요청했는지. 리뷰를 부탁한 직후에는 전면 광고를 띄우지 않는다. */
+    private var hasRequestedReviewThisSession = false
+
     val themeMode: StateFlow<ThemeMode> = themeUseCases.getThemeMode()
         .stateIn(
             scope = viewModelScope,
@@ -39,6 +44,43 @@ class MainViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 Log.w("MainViewModel", "Failed to record app open.", e)
+            }
+        }
+    }
+
+    /** 인앱 리뷰를 요청했다고 남긴다. 이번 실행에서는 전면 광고를 띄우지 않는다. */
+    fun markReviewRequested() {
+        hasRequestedReviewThisSession = true
+    }
+
+    /**
+     * 계산기를 떠나는 지금 전면 광고를 보여 줄 차례인지 알려 준다.
+     *
+     * 기록을 읽지 못하면 광고를 건너뛴다. 광고를 실제로 보여 줬으면 [recordInterstitialAdShown]을 부른다.
+     */
+    suspend fun shouldShowInterstitialAd(): Boolean {
+        if (hasRequestedReviewThisSession) return false
+
+        return try {
+            val shouldShow = interstitialAdUseCases.shouldShow()
+            // 기록을 읽는 사이 리뷰를 요청했을 수 있어 다시 확인한다.
+            shouldShow && !hasRequestedReviewThisSession
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("MainViewModel", "Failed to check interstitial ad record.", e)
+            false
+        }
+    }
+
+    fun recordInterstitialAdShown() {
+        viewModelScope.launch {
+            try {
+                interstitialAdUseCases.recordShown()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w("MainViewModel", "Failed to record interstitial ad shown.", e)
             }
         }
     }

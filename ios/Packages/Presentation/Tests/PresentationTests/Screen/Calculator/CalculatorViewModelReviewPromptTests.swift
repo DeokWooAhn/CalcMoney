@@ -4,7 +4,7 @@ import Testing
 @testable import Presentation
 
 @MainActor
-@Suite("CalculatorViewModel — 인앱 리뷰 요청", .timeLimit(.minutes(1)))
+@Suite("CalculatorViewModel — 인앱 리뷰 요청·전면 광고 기록", .timeLimit(.minutes(1)))
 struct CalculatorViewModelReviewPromptTests {
     private static let day: TimeInterval = 24 * 60 * 60
 
@@ -79,5 +79,25 @@ struct CalculatorViewModelReviewPromptTests {
         // 실패한 계산은 스낵바만 보내고 리뷰 요청 기록은 건드리지 않는다.
         #expect(await sideEffects.next() == .showSnackbar(message: L("계산할 수 없는 수식입니다.")))
         #expect(await reviewPrompt.record.calculationSuccessCount == 4)
+    }
+
+    @Test("계산에 성공하면 전면 광고 기록에도 센다")
+    func 계산_성공은_전면_광고_기록에도_센다() async {
+        let recorder = CalculatorTestRecorder()
+        let interstitialAd = FakeInterstitialAdRepository()
+        let viewModel = CalculatorTestEnvironment.makeViewModel(
+            history: FakeCalculatorHistoryRepository(recorder: recorder),
+            exchangeRate: FakeExchangeRateRepository(recorder: recorder),
+            currencySelection: FakeCurrencySelectionRepository(recorder: recorder),
+            interstitialAd: interstitialAd,
+        )
+
+        await Self.calculateOnePlusTwo(viewModel)
+        // 리뷰 기록 다음에 전면 광고 기록이 남으므로 기록이 늘 때까지 기다린다.
+        await interstitialAd.waitUntil { $0.calculationCountSinceLastAd >= 1 }
+
+        let record = await interstitialAd.current
+        #expect(record.calculationCountSinceLastAd == 1)
+        #expect(record.firstCalculatedAt != nil)
     }
 }

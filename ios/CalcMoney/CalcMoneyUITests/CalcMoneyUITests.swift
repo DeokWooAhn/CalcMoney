@@ -4,6 +4,10 @@ import XCTest
 ///
 /// 지역화와 무관하게 동작하도록 한국어를 강제해 실행한다.
 final class CalcMoneyUITests: XCTestCase {
+    /// 요소가 나타나거나 사라지기를 기다리는 시간. 조건을 채우면 바로 끝나므로 통과하는 경우에는 더 걸리지 않는다.
+    /// CI에서 막 켠 시뮬레이터의 첫 테스트는 앱 반응이 느려 5초로는 패널이 뜨기 전에 실패한 적이 있다.
+    private static let waitTimeout: TimeInterval = 10
+
     override func setUpWithError() throws {
         continueAfterFailure = false
     }
@@ -30,7 +34,7 @@ final class CalcMoneyUITests: XCTestCase {
         app.buttons["keypad.equals"].tap()
 
         XCTAssertTrue(
-            app.staticTexts["14"].waitForExistence(timeout: 5),
+            app.staticTexts["14"].waitForExistence(timeout: Self.waitTimeout),
             "7+7 계산 결과 14가 표시되어야 한다",
         )
     }
@@ -45,20 +49,20 @@ final class CalcMoneyUITests: XCTestCase {
         app.buttons["keypad.8"].tap()
 
         XCTAssertTrue(
-            app.staticTexts["78"].waitForExistence(timeout: 5),
+            app.staticTexts["78"].waitForExistence(timeout: Self.waitTimeout),
             "수식 78이 표시되어야 한다",
         )
 
         let deleteKey = app.buttons["지우기"]
         XCTAssertTrue(
-            deleteKey.waitForExistence(timeout: 5),
+            deleteKey.waitForExistence(timeout: Self.waitTimeout),
             "지우기 키가 접근성 트리에 버튼으로 노출되어야 한다",
         )
 
         deleteKey.tap()
 
         XCTAssertTrue(
-            app.staticTexts["7"].waitForExistence(timeout: 5),
+            app.staticTexts["7"].waitForExistence(timeout: Self.waitTimeout),
             "한 글자가 지워져 수식이 7이 되어야 한다",
         )
         XCTAssertFalse(
@@ -74,7 +78,7 @@ final class CalcMoneyUITests: XCTestCase {
         app.buttons["계산 기록"].tap()
 
         XCTAssertTrue(
-            app.staticTexts["계산 기록"].waitForExistence(timeout: 5),
+            app.staticTexts["계산 기록"].waitForExistence(timeout: Self.waitTimeout),
             "계산 기록 패널이 표시되어야 한다",
         )
     }
@@ -88,17 +92,17 @@ final class CalcMoneyUITests: XCTestCase {
         app.buttons["계산 기록"].tap()
 
         let panelTitle = app.staticTexts["계산 기록"]
-        XCTAssertTrue(panelTitle.waitForExistence(timeout: 5), "계산 기록 패널이 표시되어야 한다")
+        XCTAssertTrue(panelTitle.waitForExistence(timeout: Self.waitTimeout), "계산 기록 패널이 표시되어야 한다")
 
         let closeButton = app.buttons["계산 기록 닫기"]
-        XCTAssertTrue(closeButton.waitForExistence(timeout: 5), "닫기 버튼이 이름을 가진 버튼으로 노출되어야 한다")
+        XCTAssertTrue(closeButton.waitForExistence(timeout: Self.waitTimeout), "닫기 버튼이 이름을 가진 버튼으로 노출되어야 한다")
 
         closeButton.tap()
 
         // waitForExistence는 요소가 있으면 바로 true를 돌려준다. 패널이 0.2초 애니메이션으로 사라지는 동안
         // 조회하면 아직 남아 있어 실패하므로, 사라질 때까지 기다린다.
         XCTAssertTrue(
-            panelTitle.waitForNonExistence(timeout: 5),
+            panelTitle.waitForNonExistence(timeout: Self.waitTimeout),
             "닫기 버튼을 누르면 계산 기록 패널이 사라져야 한다",
         )
     }
@@ -110,7 +114,7 @@ final class CalcMoneyUITests: XCTestCase {
         app.tabBars.buttons["환율"].tap()
 
         XCTAssertTrue(
-            app.staticTexts["기준 금액"].waitForExistence(timeout: 10),
+            app.staticTexts["기준 금액"].waitForExistence(timeout: Self.waitTimeout),
             "환율 화면의 기준 금액 라벨이 표시되어야 한다",
         )
         XCTAssertTrue(
@@ -126,7 +130,7 @@ final class CalcMoneyUITests: XCTestCase {
         app.tabBars.buttons["설정"].tap()
 
         XCTAssertTrue(
-            app.staticTexts["테마"].waitForExistence(timeout: 5),
+            app.staticTexts["테마"].waitForExistence(timeout: Self.waitTimeout),
             "설정 화면의 테마 카드가 표시되어야 한다",
         )
         XCTAssertTrue(

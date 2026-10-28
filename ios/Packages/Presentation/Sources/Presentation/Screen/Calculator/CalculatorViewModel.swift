@@ -17,6 +17,7 @@ public final class CalculatorViewModel {
     @ObservationIgnored private let favoriteUseCases: FavoriteUseCases
     @ObservationIgnored private let currencySelectionUseCases: CurrencySelectionUseCases
     @ObservationIgnored private let reviewPromptUseCases: ReviewPromptUseCases
+    @ObservationIgnored private let interstitialAdUseCases: InterstitialAdUseCases
     @ObservationIgnored private let reducer: CalculatorExpressionReducer
     @ObservationIgnored private let sideEffectBus = SideEffectBus<CalculatorSideEffect>()
     @ObservationIgnored private var observeHistoriesTask: Task<Void, Never>?
@@ -29,12 +30,14 @@ public final class CalculatorViewModel {
         favoriteUseCases: FavoriteUseCases,
         currencySelectionUseCases: CurrencySelectionUseCases,
         reviewPromptUseCases: ReviewPromptUseCases,
+        interstitialAdUseCases: InterstitialAdUseCases,
     ) {
         self.calculatorUseCases = calculatorUseCases
         self.exchangeUseCases = exchangeUseCases
         self.favoriteUseCases = favoriteUseCases
         self.currencySelectionUseCases = currencySelectionUseCases
         self.reviewPromptUseCases = reviewPromptUseCases
+        self.interstitialAdUseCases = interstitialAdUseCases
         reducer = CalculatorExpressionReducer(
             calculateExpression: calculatorUseCases.calculateExpression,
             convertExchangeAmount: exchangeUseCases.convertExchangeAmount,
@@ -233,6 +236,9 @@ public final class CalculatorViewModel {
         if await reviewPromptUseCases.recordCalculationSuccess() {
             sideEffectBus.send(.requestReview)
         }
+
+        // 전면 광고는 계산기를 떠날 때 MainViewModel이 정한다. 여기서는 계산 성공만 센다.
+        await interstitialAdUseCases.recordCalculation()
     }
 
     private func handleClearHistory() async {
@@ -369,31 +375,4 @@ extension CalculatorViewModel {
 
         await performFetchExchangeRate()
     }
-}
-
-private func resolveCalculatorMainCurrency(
-    currencies: [CurrencyInfo],
-    currentCurrency: CurrencyInfo?,
-    savedSelection: CalculatorCurrencySelection?,
-    deviceCurrencyCode: String,
-) -> CurrencyInfo? {
-    currencies.first { $0.code == currentCurrency?.code }
-        ?? currencies.first { $0.code == savedSelection?.mainCode }
-        ?? currencies.first { $0.code == deviceCurrencyCode }
-        ?? currencies.first { $0.code == "KRW" }
-        ?? currencies.first
-}
-
-private func resolveCalculatorSubCurrency(
-    currencies: [CurrencyInfo],
-    currentCurrency: CurrencyInfo?,
-    savedSelection: CalculatorCurrencySelection?,
-    mainCurrency: CurrencyInfo?,
-) -> CurrencyInfo? {
-    let mainCurrencyCode = mainCurrency?.code
-
-    return currencies.first { $0.code == currentCurrency?.code && $0.code != mainCurrencyCode }
-        ?? currencies.first { $0.code == savedSelection?.subCode && $0.code != mainCurrencyCode }
-        ?? currencies.first { $0.code == "USD" && $0.code != mainCurrencyCode }
-        ?? currencies.first { $0.code != mainCurrencyCode }
 }

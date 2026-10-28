@@ -6,6 +6,7 @@ import SwiftUI
 /// Exchange·Favorite·Setting 탭이 함께 쓴다.
 public struct MainTabView: View {
     @State private var selectedTab: MainTab = .calculator
+    @State private var interstitialAd = InterstitialAdPresenter(adUnitID: AdConfig.calculatorInterstitialUnitID)
     @Environment(\.scenePhase) private var scenePhase
 
     private let calculatorViewModel: CalculatorViewModel
@@ -56,13 +57,43 @@ public struct MainTabView: View {
                 mainViewModel.recordAppOpen()
             }
         }
+        .onChange(of: adConsentManager.canRequestAds, initial: true) { _, canRequestAds in
+            if canRequestAds {
+                interstitialAd.preload()
+            }
+        }
+        // 계산을 마치고 다른 탭으로 넘어가는 순간에만 전면 광고를 고려한다 (Android `MainScreen.onLeaveCalculator` 대응).
+        .onChange(of: selectedTab) { oldTab, newTab in
+            if oldTab == .calculator, newTab != .calculator {
+                showInterstitialAdIfDue()
+            }
+        }
+    }
+
+    /// 광고를 보여 줄 차례이고 받아 둔 광고가 있으면 보여 준다. 탭은 이미 넘어간 뒤라 광고를 닫으면 고른 탭이 보인다.
+    ///
+    /// 광고 동의 전이나 UI 테스트에서는 canRequestAds가 false라 광고를 받지도 보여 주지도 않는다.
+    private func showInterstitialAdIfDue() {
+        guard adConsentManager.canRequestAds else { return }
+        guard interstitialAd.isReady else {
+            interstitialAd.preload()
+            return
+        }
+
+        Task {
+            guard await mainViewModel.shouldShowInterstitialAd() else { return }
+            // 기록을 읽는 사이 계산기로 돌아왔거나 광고 동의를 철회했으면 띄우지 않는다.
+            guard selectedTab != .calculator, adConsentManager.canRequestAds else { return }
+
+            interstitialAd.present(onShown: mainViewModel.recordInterstitialAdShown)
+        }
     }
 
     @ViewBuilder
     private func rootScreen(for tab: MainTab) -> some View {
         switch tab {
         case .calculator:
-            CalculatorView(viewModel: calculatorViewModel)
+            CalculatorView(viewModel: calculatorViewModel, onReviewRequested: mainViewModel.markReviewRequested)
 
         case .exchange:
             ExchangeView(

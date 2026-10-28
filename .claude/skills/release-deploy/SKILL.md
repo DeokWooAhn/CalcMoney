@@ -37,7 +37,7 @@ description: 릴리스, 배포, 버전 관리, CI/CD 워크플로, Firebase Func
 ## 릴리스 빌드에 필요한 시크릿 (GitHub Secrets)
 
 - 키스토어: `RELEASE_KEYSTORE_BASE64`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`
-- AdMob: `ADMOB_APP_ID`, `ADMOB_EXCHANGE_BANNER_ID`, `ADMOB_FAVORITE_BANNER_ID`, `ADMOB_SETTINGS_BANNER_ID`
+- AdMob: `ADMOB_APP_ID`, `ADMOB_EXCHANGE_BANNER_ID`, `ADMOB_FAVORITE_BANNER_ID`, `ADMOB_SETTINGS_BANNER_ID`, `ADMOB_CALCULATOR_INTERSTITIAL_ID`
 - Play 업로드: `PLAY_SERVICE_ACCOUNT_JSON` / Firebase: `FIREBASE_SERVICE_ACCOUNT`
 
 이 시크릿 검증 로직(`adMobValueStrict` 등)이 `app/build.gradle.kts`·`presentation/build.gradle.kts`에 있어서, 로컬에서 Release/build/bundle 계열 태스크를 돌리면 즉시 `error()`로 실패한다.

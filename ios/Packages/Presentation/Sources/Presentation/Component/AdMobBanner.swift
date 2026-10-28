@@ -25,7 +25,9 @@ struct AdMobBanner: View {
                         .id(adSize.size.width)
                 }
             }
-            .frame(maxWidth: .infinity)
+            // 최대 폭만 주면 부모가 더 좁은 폭을 제안해도 자식(이전 크기의 배너) 폭에 머문다.
+            // 최소 폭 0을 함께 줘야 창이 줄 때도 제안받은 폭을 따르고, 그 폭을 재서 배너를 다시 만든다.
+            .frame(minWidth: 0, maxWidth: .infinity)
             .onGeometryChange(for: CGFloat.self) { proxy in
                 proxy.size.width
             } action: { width in

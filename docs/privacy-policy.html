@@ -35,6 +35,7 @@
     }
 
     main {
+      box-sizing: border-box;
       width: min(920px, calc(100% - 32px));
       margin: 40px auto;
       padding: 32px;
@@ -91,6 +92,13 @@
 
     ul {
       padding-left: 22px;
+    }
+
+    @media (max-width: 600px) {
+      main {
+        margin: 16px auto;
+        padding: 20px;
+      }
     }
   </style>
 </head>

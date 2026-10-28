@@ -31,6 +31,16 @@
         }
       }
     },
+    "건지 파운드": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guernsey Pound"
+          }
+        }
+      }
+    },
     "검색 결과가 없습니다.": {
       "localizations": {
         "en": {
@@ -271,12 +281,32 @@
         }
       }
     },
+    "맨섬 파운드": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manx Pound"
+          }
+        }
+      }
+    },
     "메인 환율 선택": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Select primary currency"
+          }
+        }
+      }
+    },
+    "모리타니 우기야": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mauritanian Ouguiya"
           }
         }
       }
@@ -321,6 +351,16 @@
         }
       }
     },
+    "베네수엘라 볼리바르": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Venezuelan Bolívar"
+          }
+        }
+      }
+    },
     "보조 환율 선택": {
       "localizations": {
         "en": {
@@ -357,6 +397,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Saudi riyal"
+          }
+        }
+      }
+    },
+    "상투메 프린시페 도브라": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "São Tomé & Príncipe Dobra"
           }
         }
       }
@@ -417,6 +467,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "System"
+          }
+        }
+      }
+    },
+    "시에라리온 리온": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sierra Leonean Leone"
           }
         }
       }
@@ -507,6 +567,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Japanese yen"
+          }
+        }
+      }
+    },
+    "저지 파운드": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jersey Pound"
           }
         }
       }
@@ -621,6 +691,16 @@
         }
       }
     },
+    "짐바브웨 골드": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zimbabwean Gold"
+          }
+        }
+      }
+    },
     "친구에게 이 앱을 추천해 보세요": {
       "localizations": {
         "en": {
@@ -641,6 +721,16 @@
         }
       }
     },
+    "카리브 길더": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caribbean guilder"
+          }
+        }
+      }
+    },
     "캐나다 달러": {
       "localizations": {
         "en": {
@@ -657,6 +747,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kuwaiti dinar"
+          }
+        }
+      }
+    },
+    "키리바시 달러": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiribati Dollar"
           }
         }
       }
@@ -697,6 +797,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Select currency"
+          }
+        }
+      }
+    },
+    "투발루 달러": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuvaluan Dollar"
+          }
+        }
+      }
+    },
+    "페로 제도 크로나": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faroese Króna"
           }
         }
       }

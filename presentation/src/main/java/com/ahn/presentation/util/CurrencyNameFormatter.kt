@@ -14,7 +14,8 @@ import java.util.Locale
  * 화면 언어에 맞는 통화 이름을 반환합니다.
  *
  * 직접 다듬은 번역이 있는 통화는 문자열 리소스를, 그 밖의 통화는 플랫폼이 제공하는 현지화 이름을 씁니다.
- * 플랫폼도 모르는 통화(ISO 4217 에 없는 지역 통화 등)는 서버가 준 이름을 그대로 씁니다.
+ * 플랫폼이 모르는 통화(ISO 4217 에 없는 지역 통화, 기기 OS 가 아직 모르는 최근 통화)는 예비 이름을 씁니다.
+ * 예비 이름도 없으면 서버가 준 이름을 쓰는데, 서버 이름은 한국어라 다른 언어 기기에서는 통화 코드를 씁니다.
  */
 @Composable
 fun CurrencyInfo.localizedName(): String = localizedName(LocalResources.current, LocalConfiguration.current.locales[0])
@@ -31,11 +32,19 @@ internal fun CurrencyInfo.localizedName(resources: Resources, locale: Locale): S
 
     return platformCurrencyName(code, locale)
         ?: resId?.let(resources::getString)
-        ?: name
+        ?: fallbackCurrencyNameResIds[code.uppercase(Locale.ROOT)]?.let(resources::getString)
+        ?: serverNameOrCode(locale)
 }
 
 /** 직접 다듬은 통화 이름이 있는 언어입니다 (`values`, `values-ko`). */
 private val curatedNameLanguages = setOf("ko", "en")
+
+/** 서버가 준 통화 이름의 언어입니다. */
+private const val SERVER_NAME_LANGUAGE = "ko"
+
+/** 서버 이름은 한국어라 한국어 기기에서만 씁니다. 다른 언어에서는 목록에 한국어가 섞이지 않게 통화 코드를 씁니다. */
+private fun CurrencyInfo.serverNameOrCode(locale: Locale): String =
+    if (locale.language == SERVER_NAME_LANGUAGE) name else displayCode
 
 /**
  * 플랫폼(ICU)에서 통화 이름을 찾습니다.
@@ -74,6 +83,27 @@ private val currencyNameResIds = mapOf(
     "SEK" to R.string.currency_name_sek,
     "SGD" to R.string.currency_name_sgd,
     "THB" to R.string.currency_name_thb,
+)
+
+/**
+ * 플랫폼이 이름을 모를 수 있는 통화의 예비 이름입니다 (iOS `fallbackCurrencyNameKeys` 대응).
+ *
+ * ISO 4217 에 없는 지역 통화와, 최소 지원 버전(Android 9)의 ICU 가 아직 모르는 최근 통화입니다.
+ * 플랫폼 이름이 있으면 그쪽을 먼저 씁니다. 한국어는 서버의 이름과 같습니다.
+ */
+private val fallbackCurrencyNameResIds = mapOf(
+    "FOK" to R.string.currency_name_fok,
+    "GGP" to R.string.currency_name_ggp,
+    "IMP" to R.string.currency_name_imp,
+    "JEP" to R.string.currency_name_jep,
+    "KID" to R.string.currency_name_kid,
+    "TVD" to R.string.currency_name_tvd,
+    "MRU" to R.string.currency_name_mru,
+    "SLE" to R.string.currency_name_sle,
+    "STN" to R.string.currency_name_stn,
+    "VES" to R.string.currency_name_ves,
+    "XCG" to R.string.currency_name_xcg,
+    "ZWG" to R.string.currency_name_zwg,
 )
 
 @StringRes

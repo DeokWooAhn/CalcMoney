@@ -6,9 +6,10 @@
 /// 실제 ID를 넣을 때는 앱 타깃 빌드 설정 `GAD_APPLICATION_IDENTIFIER`(Release)도 함께 바꾼다.
 enum AdConfig {
     #if DEBUG
-        static let exchangeBannerUnitID = "ca-app-pub-3940256099942544/2934735716"
-        static let favoriteBannerUnitID = "ca-app-pub-3940256099942544/2934735716"
-        static let settingsBannerUnitID = "ca-app-pub-3940256099942544/2934735716"
+        // 배너는 앵커 적응형이라 Google의 적응형 배너 테스트 ID를 쓴다 (Android 디버그 배너 ID와 같은 종류).
+        static let exchangeBannerUnitID = "ca-app-pub-3940256099942544/2435281174"
+        static let favoriteBannerUnitID = "ca-app-pub-3940256099942544/2435281174"
+        static let settingsBannerUnitID = "ca-app-pub-3940256099942544/2435281174"
         /// 계산기를 떠날 때 보여 주는 전면 광고
         static let calculatorInterstitialUnitID = "ca-app-pub-3940256099942544/4411468910"
     #else

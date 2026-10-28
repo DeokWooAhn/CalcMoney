@@ -80,7 +80,7 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 ## 공통 주의사항
 
 - 기본 브랜치는 `main`이 아니라 **`master`**.
-- **통화 목록을 앱에 하드코딩하지 말 것.** 통화 목록은 서버가 정하고, 통화 선택 화면은 즐겨찾기를 맨 위에 둔 뒤 나머지를 통화 코드 알파벳순으로 앱에서 직접 정렬한다(오른쪽 ★·A~Z 빠른 이동 인덱스가 이 순서에 의존). 서버도 구버전 앱을 위해 알파벳순으로 저장한다. 정렬 로직은 Android `CurrencyPickerList.kt`, iOS `CurrencyPickerList.swift`. 앱은 국기를 통화 코드 앞 두 글자로 만들고(예외는 `EUR`, `ANG`·`XCG`→퀴라소, 여러 나라 공용인 `X`로 시작하는 통화는 🌐), 이름은 직접 다듬은 22개 번역 → 플랫폼 현지화 이름 → 서버 이름 순으로 쓴다. Android는 `ExchangeRateMapper.kt`·`CurrencyNameFormatter.kt`, iOS는 `CurrencyInfoMapper.swift`·`CurrencyName.swift`.
+- **통화 목록을 앱에 하드코딩하지 말 것.** 통화 목록은 서버가 정하고, 통화 선택 화면은 즐겨찾기를 맨 위에 둔 뒤 나머지를 통화 코드 알파벳순으로 앱에서 직접 정렬한다(오른쪽 ★·A~Z 빠른 이동 인덱스가 이 순서에 의존). 서버도 구버전 앱을 위해 알파벳순으로 저장한다. 정렬 로직은 Android `CurrencyPickerList.kt`, iOS `CurrencyPickerList.swift`. 앱은 국기를 통화 코드 앞 두 글자로 만들고(예외는 `EUR`, `ANG`·`XCG`→퀴라소, 여러 나라 공용인 `X`로 시작하는 통화는 🌐), 이름은 직접 다듬은 22개 번역 → 플랫폼 현지화 이름 → 예비 이름 12개 → 서버 이름 순으로 쓴다. 예비 이름은 플랫폼이 모를 수 있는 통화(ISO에 없는 `FOK`·`GGP`·`IMP`·`JEP`·`KID`·`TVD`, 오래된 OS가 모르는 `MRU`·`SLE`·`STN`·`VES`·`XCG`·`ZWG`)의 한국어·영어 이름이고, 서버가 새 통화를 주면 여기에 더한다. 서버 이름은 늘 한국어라 다른 언어 화면에서는 대신 통화 코드를 보여 준다. Android는 `ExchangeRateMapper.kt`·`CurrencyNameFormatter.kt`, iOS는 `CurrencyInfoMapper.swift`·`CurrencyName.swift`.
 - 환율 값은 **외화 1단위당 원**(`baseRate`)이다. API는 1원당 외화로 주므로 서버가 역수로 저장한다. 앱 쪽에서 다시 뒤집지 말 것.
 - 주석·KDoc·테스트 설명·커밋 메시지는 **한국어**, 코드 식별자·로그는 영어.
 - **App Check는 provider가 빌드 타입별로 갈린다.** 디버그는 debug provider, 릴리스는 Play Integrity(Android) / App Attest(iOS). Android는 `app/src/debug`·`app/src/release`의 `AppCheckInstaller.kt` 두 파일로, iOS는 `FirebaseBootstrap.swift`의 `#if DEBUG`로 분기한다. iOS는 반드시 `FirebaseApp.configure()` **이전에** factory를 지정해야 한다.

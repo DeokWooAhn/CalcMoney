@@ -30,7 +30,7 @@ class PlatformCurrencyNameTest :
 
         Given("ISO 4217에 없는 지역 통화일 때") {
             When("이름을 찾으면") {
-                Then("서버 이름을 쓰도록 null을 반환해야 한다") {
+                Then("예비 이름을 쓰도록 null을 반환해야 한다") {
                     platformCurrencyName("GGP", Locale.KOREAN).shouldBeNull()
                 }
             }

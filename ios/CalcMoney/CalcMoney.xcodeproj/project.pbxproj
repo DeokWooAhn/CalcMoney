@@ -33,6 +33,8 @@
 		D4E052AD301F21EF001231E2 /* CalcMoney.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CalcMoney.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D4E052BA301F21F0001231E2 /* CalcMoneyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CalcMoneyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D4E052C4301F21F0001231E2 /* CalcMoneyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CalcMoneyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D4E052F3301F21F0001231E2 /* AdMob.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AdMob.example.xcconfig; sourceTree = "<group>"; };
+		D4E052F2301F21F0001231E2 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -87,6 +89,7 @@
 				D4E052AF301F21EF001231E2 /* CalcMoney */,
 				D4E052BD301F21F0001231E2 /* CalcMoneyTests */,
 				D4E052C7301F21F0001231E2 /* CalcMoneyUITests */,
+				D4E052F1301F21F0001231E2 /* Config */,
 				D4E052AE301F21EF001231E2 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -101,6 +104,15 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		D4E052F1301F21F0001231E2 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				D4E052F2301F21F0001231E2 /* Release.xcconfig */,
+				D4E052F3301F21F0001231E2 /* AdMob.example.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -108,6 +120,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D4E052CE301F21F0001231E2 /* Build configuration list for PBXNativeTarget "CalcMoney" */;
 			buildPhases = (
+				D4E052F4301F21F0001231E2 /* Check AdMob IDs */,
 				D4E052A9301F21EF001231E2 /* Sources */,
 				D4E052AA301F21EF001231E2 /* Frameworks */,
 				D4E052AB301F21EF001231E2 /* Resources */,
@@ -251,6 +264,26 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		D4E052F4301F21F0001231E2 /* Check AdMob IDs */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Check AdMob IDs";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Release 빌드는 실제 AdMob ID가 있어야 한다. 값은 git이 무시하는 Config/AdMob.xcconfig에서 온다.\n# 테스트 광고 ID로 출시되는 것을 막는다(Android 릴리스 시크릿 검증과 같은 역할).\n[ \"$CONFIGURATION\" = \"Release\" ] || exit 0\n\nstatus=0\ncheck() {\n  case \"$2\" in\n    \"\" | ca-app-pub-3940256099942544*)\n      echo \"error: $1: 실제 AdMob ID가 없습니다. ios/CalcMoney/Config/AdMob.example.xcconfig를 AdMob.xcconfig로 복사해 채우세요.\"\n      status=1 ;;\n    *)\n      if ! printf '%s\\n' \"$2\" | grep -Eq \"^$3\\$\"; then\n        echo \"error: $1: AdMob ID 형식($3)이 아닙니다.\"\n        status=1\n      fi ;;\n  esac\n}\n\n# 앱 ID는 가운데가 ~, 광고 단위 ID는 /다.\ncheck GAD_APPLICATION_IDENTIFIER \"$GAD_APPLICATION_IDENTIFIER\" 'ca-app-pub-[0-9]+~[0-9]+'\ncheck ADMOB_EXCHANGE_BANNER_ID \"$ADMOB_EXCHANGE_BANNER_ID\" 'ca-app-pub-[0-9]+/[0-9]+'\ncheck ADMOB_FAVORITE_BANNER_ID \"$ADMOB_FAVORITE_BANNER_ID\" 'ca-app-pub-[0-9]+/[0-9]+'\ncheck ADMOB_SETTINGS_BANNER_ID \"$ADMOB_SETTINGS_BANNER_ID\" 'ca-app-pub-[0-9]+/[0-9]+'\ncheck ADMOB_CALCULATOR_INTERSTITIAL_ID \"$ADMOB_CALCULATOR_INTERSTITIAL_ID\" 'ca-app-pub-[0-9]+/[0-9]+'\nexit $status\n";
+			showEnvVarsInLog = 0;
+		};
 		D4E052ED301F21F0001231E2 /* Crashlytics dSYM Upload */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -471,6 +504,7 @@
 		};
 		D4E052D0301F21F0001231E2 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = D4E052F2301F21F0001231E2 /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -480,7 +514,6 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				GAD_APPLICATION_IDENTIFIER = "ca-app-pub-0000000000000000~0000000000";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

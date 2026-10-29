@@ -45,3 +45,5 @@ ios/**/.build/
 *.cer
 *.certSigningRequest
 AuthKey_*.p8
+# iOS 실제 AdMob ID (저장소가 공개라 커밋하지 않는다. 견본은 AdMob.example.xcconfig)
+/ios/CalcMoney/Config/AdMob.xcconfig

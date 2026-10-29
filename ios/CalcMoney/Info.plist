@@ -14,9 +14,19 @@
 	<key>CFBundleDisplayName</key>
 	<string>심플 환율 계산기</string>
 	<!-- AdMob 앱 ID. 값은 빌드 설정 GAD_APPLICATION_IDENTIFIER에서 온다: Debug는 Google 공식 테스트 ID,
-	     Release는 AdMob 콘솔에서 발급한 iOS 앱 ID (AdConfig.swift의 광고 단위 ID와 함께 바꾼다). -->
+	     Release는 git이 무시하는 Config/AdMob.xcconfig의 실제 iOS 앱 ID. -->
 	<key>GADApplicationIdentifier</key>
 	<string>$(GAD_APPLICATION_IDENTIFIER)</string>
+	<!-- AdMob 광고 단위 ID. Release 빌드의 AdConfig.swift가 읽는다(Debug는 코드의 테스트 ID를 쓰므로 비어 있다).
+	     값은 Config/AdMob.xcconfig에서 오고, 없으면 "Check AdMob IDs" 빌드 단계가 Release 빌드를 멈춘다. -->
+	<key>AdMobExchangeBannerID</key>
+	<string>$(ADMOB_EXCHANGE_BANNER_ID)</string>
+	<key>AdMobFavoriteBannerID</key>
+	<string>$(ADMOB_FAVORITE_BANNER_ID)</string>
+	<key>AdMobSettingsBannerID</key>
+	<string>$(ADMOB_SETTINGS_BANNER_ID)</string>
+	<key>AdMobCalculatorInterstitialID</key>
+	<string>$(ADMOB_CALCULATOR_INTERSTITIAL_ID)</string>
 	<!-- 앱 추적 투명성(ATT) 동의 창 문구. 언어별 값은 CalcMoney/InfoPlist.xcstrings에 있다. -->
 	<key>NSUserTrackingUsageDescription</key>
 	<string>나에게 더 맞는 광고를 보여 주는 데 사용합니다. 허용하지 않아도 앱의 모든 기능을 그대로 쓸 수 있습니다.</string>

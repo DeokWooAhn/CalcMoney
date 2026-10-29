@@ -1,0 +1,5 @@
+// 앱 타깃 Release 구성의 기본 설정 파일
+//
+// 저장소가 공개라 실제 AdMob ID는 커밋하지 않고, git이 무시하는 AdMob.xcconfig에 둔다(AdMob.example.xcconfig 참고).
+// 파일이 없거나 값이 비어 있으면 앱 타깃의 "Check AdMob IDs" 빌드 단계가 Release 빌드를 멈춘다.
+#include? "AdMob.xcconfig"

@@ -136,7 +136,7 @@ Firebase 설정 파일(`app/google-services.json`, `ios/CalcMoney/CalcMoney/Goog
 1. **`ios/CalcMoney.xcworkspace`를 엽니다.** `ios/CalcMoney/CalcMoney.xcodeproj`만 열면 앱은 빌드되지만 `Domain`/`Data`/`Presentation` 패키지 테스트가 테스트 플랜에서 빠집니다.
 2. `CalcMoney` 스킴으로 실행합니다. SPM 의존성은 Xcode가 자동으로 내려받습니다.
 
-현재 iOS는 `Info.plist`의 `GADApplicationIdentifier`가 Google 테스트 AdMob ID입니다. 스토어 배포 전에 실제 ID로 교체해야 합니다.
+Debug 빌드는 Google 테스트 AdMob ID를 사용합니다. Release 빌드(Archive)를 하려면 `ios/CalcMoney/Config/AdMob.example.xcconfig`를 같은 폴더에 `AdMob.xcconfig`로 복사해 실제 AdMob ID를 채웁니다. 이 파일은 저장소에 넣지 않으며, 없으면 Release 빌드가 멈춥니다.
 
 ## 검증
 
@@ -210,7 +210,7 @@ git push origin android-v1.0.2
 
 첫 출시 전에 채워야 하는 값이 있습니다.
 
-- `ios/CalcMoney/Info.plist`의 `GADApplicationIdentifier`와 `AdConfig.swift`의 배너 ID: 지금은 Google 테스트 ID입니다.
+- 실제 AdMob ID: 저장소 밖의 `ios/CalcMoney/Config/AdMob.xcconfig`에 둡니다. 배포 파이프라인을 만들면 Android처럼 GitHub 시크릿에서 이 파일을 만들게 합니다.
 - `AppStoreLink.appID`: App Store Connect의 앱 Apple ID(숫자)입니다. 비어 있으면 설정의 "친구에게 추천하기"가 숨겨집니다.
 
 ### Firebase

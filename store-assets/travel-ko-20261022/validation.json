@@ -1,0 +1,61 @@
+{
+  "app_name_chars": 17,
+  "short_description_chars": 54,
+  "full_description_chars": 1116,
+  "screenshots": [
+    {
+      "file": "01-price-conversion.png",
+      "width": 1080,
+      "height": 1920,
+      "source": "raw/01-price.png"
+    },
+    {
+      "file": "02-shopping-discount.png",
+      "width": 1080,
+      "height": 1920,
+      "source": "raw/02-discount-result.png"
+    },
+    {
+      "file": "03-currency-search.png",
+      "width": 1080,
+      "height": 1920,
+      "source": "raw/03-currency-search-list.png"
+    },
+    {
+      "file": "04-offline.png",
+      "width": 1080,
+      "height": 1920,
+      "source": "raw/04-offline.png"
+    }
+  ],
+  "feature_graphic": {
+    "file": "feature-graphic-ko.png",
+    "width": 1024,
+    "height": 500
+  },
+  "platform": "Android",
+  "external_publication": false,
+  "source": "실제 연결 Android 기기의 CalcMoney 앱 화면. UI·환산 금액 합성 없음.",
+  "image_dimensions_verified": true,
+  "visual_review": "스크린샷 3장과 피처 그래픽을 직접 확인함. 제목, 설명, 실제 화면, 하단 고지의 잘림 없음.",
+  "recorded_on": "2026-10-22 Asia/Seoul",
+  "video_deliverable": "영상 파일은 포함하지 않음. 영상 제작·게시용 문구를 제공함.",
+  "source_amounts": {
+    "01-price-conversion.png": {
+      "JPY": 1980,
+      "KRW": 16610.74
+    },
+    "02-shopping-discount.png": {
+      "expression": "(1980+2480)*0.8",
+      "JPY": 3568,
+      "KRW": 29932.89
+    },
+    "04-offline.png": {
+      "VND": 150000,
+      "KRW": 7694.64,
+      "airplane_mode": true,
+      "rate_date": "2026.10.22",
+      "recorded_on": "2026-10-29 Asia/Seoul"
+    }
+  }
+}

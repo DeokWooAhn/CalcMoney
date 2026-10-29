@@ -52,7 +52,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 스크린샷 | iPhone 6.9형: `iphone-0{1,2,3}.png`, iPad 13형: `ipad-0{1,2,3}.png` (영어는 `../app-store-en/`) |
+| 스크린샷 | iPhone 6.9형: `iphone-0{1,2,3,4}.png`, iPad 13형: `ipad-0{1,2,3,4}.png` (영어는 `../app-store-en/`) |
 | 프로모션 텍스트·설명·키워드 | 언어별 listing 파일 |
 | 지원 URL | https://deokwooahn.github.io/CalcMoney/support.html |
 | 마케팅 URL | 비워 둔다 |

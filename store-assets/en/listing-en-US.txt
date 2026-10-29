@@ -2,7 +2,7 @@
 Simple Currency Calculator
 
 === SHORT DESCRIPTION (max 80) ===
-Type a calculation, see it converted instantly. 160+ currencies, works offline.
+Convert as you calculate. 160+ currencies. Works offline once rates are saved.
 
 === FULL DESCRIPTION (max 4000) ===
 Simple Currency Calculator does one thing well: it converts while you calculate.
@@ -16,8 +16,8 @@ Enter an amount, pick your two currencies, and read the result together with the
 FAVORITES AT A GLANCE
 Star the currencies you check often and see them all against a single base amount in one grid.
 
-WORKS WITHOUT A CONNECTION
-Rates are cached on your device, so the app keeps working on a plane or in a dead zone. It always shows the date of the rates you are looking at, so you know how fresh they are.
+WORKS OFFLINE ONCE RATES ARE SAVED
+Open the app once while you are online and the rates are saved on your device. After that it keeps converting on a plane or in a dead zone, using the last rates it downloaded. The first download needs an internet connection, so open the app before you fly. The converter and favorites screens show the date of the rates, so you know how fresh they are.
 
 LIGHT AND DARK
 Follows your system theme, or pick one yourself in Settings.

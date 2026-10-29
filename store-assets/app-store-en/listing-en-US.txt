@@ -5,7 +5,7 @@ Simple Currency Calculator
 Convert while you calculate
 
 === PROMOTIONAL TEXT (max 170, editable anytime without review) ===
-Check price tags as you shop. Type (1,980 + 2,480) × 0.8 and see the total and its converted value side by side. Rates are saved on your device, so it works offline.
+Check price tags as you shop. Type any calculation, like (1,980 + 2,480) × 0.8, and see the result and its converted value together. Works offline once rates are saved.
 
 === KEYWORDS (max 100, comma-separated, no spaces) ===
 exchange,rate,converter,money,forex,fx,travel,dollar,euro,yen,won,krw,usd,jpy,eur,offline,shopping
@@ -14,7 +14,7 @@ exchange,rate,converter,money,forex,fx,travel,dollar,euro,yen,won,krw,usd,jpy,eu
 Simple Currency Calculator does one thing well: it converts while you calculate.
 
 CALCULATE AND CONVERT AT ONCE
-Type an expression like 1,980 + 2,480 and watch both the running total and its converted value update as you go. Add up several prices or apply a discount and see what it costs in your own currency, with no switching apps and no copying numbers between them. Pick your two currencies at the top, or flip their order with one tap.
+Type an expression like 1,980 + 2,480 and watch both the running total and its converted value update as you go. Add up several prices or multiply and divide, and see what it costs in your own currency, with no switching apps and no copying numbers between them. Pick your two currencies at the top, or flip their order with one tap.
 
 CALCULATION HISTORY
 Your expressions and results are kept in the history, so you can look back at earlier totals.
@@ -28,8 +28,8 @@ Star the currencies you check often and see them all against a single base amoun
 FIND ANY CURRENCY FAST
 Search by country, currency name, or code. Your favorites sit at the top of the list, and the ★ and A–Z index on the right jumps straight to where you want to go.
 
-WORKS WITHOUT A CONNECTION
-Rates are cached on your device, so the app keeps working on a plane or in a dead zone. It always shows the date of the rates you are looking at, so you know how fresh they are.
+WORKS OFFLINE ONCE RATES ARE SAVED
+Open the app once while you are online and the rates are saved on your device. After that it keeps converting on a plane or in a dead zone, using the last rates it downloaded. The first download needs an internet connection, so open the app before you fly. The converter and favorites screens show the date of the rates, so you know how fresh they are.
 
 IPHONE AND IPAD
 On iPad, the layout keeps a comfortable width in portrait, landscape, and any window size.

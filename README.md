@@ -183,10 +183,10 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
 | 워크플로 | 러너 | 실행 조건 |
 | --- | --- | --- |
 | `android-ci.yml` | `ubuntu-latest` | `ios/**` **밖을** 건드린 PR, `master` 푸시, `android-v*` 태그 |
-| `ios-ci.yml` | `macos-26` | `ios/**`를 건드린 PR과 `master` 푸시 |
+| `ios-ci.yml` | `macos-26` | `ios/**`·`.maestro/**`를 건드린 PR과 `master` 푸시 |
 | `firebase-deploy.yml` | `ubuntu-latest` | `functions/**`, `firebase.json`, `firestore.rules`, `.firebaserc`를 건드린 `master` 푸시 |
 
-Android CI는 detekt → 단위 테스트(커버리지 리포트 포함) → Android Lint → 디버그 APK 빌드 → 커버리지 하한 검사 순으로 실행합니다. iOS CI는 SwiftFormat·SwiftLint 검사와 `xcodebuild analyze` + 테스트 플랜 실행으로 구성되며, 시뮬레이터만 사용하므로 서명 시크릿이 필요 없습니다.
+Android CI는 detekt → 단위 테스트(커버리지 리포트 포함) → Android Lint → 디버그 APK 빌드 → 커버리지 하한 검사 순으로 실행합니다. iOS CI는 SwiftFormat·SwiftLint 검사, `xcodebuild analyze` + 테스트 플랜 실행, 시뮬레이터 Maestro smoke로 구성되며, 시뮬레이터만 사용하므로 서명 시크릿이 필요 없습니다.
 
 ### Android 릴리스
 

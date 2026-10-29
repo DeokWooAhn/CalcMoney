@@ -67,7 +67,8 @@ maestro --device <udid> test .maestro -e APP_ID=com.ahn.CalcMoney
 
 - debug 빌드는 App Check debug provider를 쓴다. Firestore가 App Check를 강제하면 기기의 디버그 토큰을
   Firebase 콘솔에 등록해야 `release` Flow가 통과한다(첫 실행 시 Logcat/Xcode 콘솔에 토큰이 찍힌다).
-- CI(`android-ci.yml`의 `e2e_smoke`)는 Android 에뮬레이터(API 34, 영어)에서 `smoke`만 돌린다. iOS는 아직 CI에 없다.
+- CI는 `smoke`만 돌린다. Android는 `android-ci.yml`의 `e2e_smoke`(에뮬레이터 API 34, 영어), iOS는 `ios-ci.yml`의 `e2e_smoke`
+  (iPhone 17 Pro 시뮬레이터, 최신 iOS)다. Flow를 고치면 두 job이 모두 돈다.
   `release`는 릴리스 전에 실기기에서 태그 커밋의 debug 빌드로 돌린다(`docs/continuous-deployment.md`의 "릴리스 전 실기기 확인").
 - `e2e_smoke`는 태그 릴리스의 관문이다. `release_bundle`과 `firebase_app_distribution`이 이 job을 기다리므로
   smoke Flow가 불안정하면 릴리스가 막힌다. 새 `smoke` Flow는 CI 에뮬레이터에서 여러 번 통과하는지 확인하고 넣는다.

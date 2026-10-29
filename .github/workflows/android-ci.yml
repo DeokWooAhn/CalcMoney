@@ -173,6 +173,7 @@ jobs:
             | grep -vE '^(docs|functions|store-assets|ios|\.claude)/' \
             | grep -vE '\.md$' \
             | grep -vE '^(firebase\.json|firestore\.rules|\.firebaserc|\.coderabbit\.yaml|\.mcp\.json)$' \
+            | grep -vE '^\.github/(workflows/ios-ci\.yml|scripts/(ios-simulator-udid|maestro-ios-smoke)\.sh)$' \
             || true)
 
           if [ -n "$RELEVANT" ]; then

@@ -5,7 +5,7 @@ description: iOS 린트(SwiftLint/SwiftFormat), 빌드, CI 워크플로 작업 �
 
 # iOS 린트 / 빌드 / CI 규칙
 
-Android와 달리 **iOS는 아직 릴리스 자동화가 없다.** CI(`​.github/workflows/ios-ci.yml`)는 lint + test까지만 하고, App Store/TestFlight 업로드 파이프라인은 구축돼 있지 않음. 이 스킬은 그 범위(린트·빌드·CI)만 다룬다.
+Android와 달리 **iOS는 아직 릴리스 자동화가 없다.** CI(`​.github/workflows/ios-ci.yml`)는 lint + test + 시뮬레이터 Maestro smoke(`e2e_smoke`)까지만 하고, App Store/TestFlight 업로드 파이프라인은 구축돼 있지 않음. 이 스킬은 그 범위(린트·빌드·CI)만 다룬다.
 
 ## 로컬 검증 명령 (모두 `ios/`에서 실행)
 

@@ -5,7 +5,7 @@
 | 워크플로 | 러너 | 실행 범위 |
 | --- | --- | --- |
 | `android-ci.yml` | `ubuntu-latest` | `ios/**` **밖을** 건드린 PR, `master`로의 모든 푸시, `android-v*` 태그 |
-| `ios-ci.yml` | `macos-26` | `ios/**`를 건드린 PR과 `master` 푸시 |
+| `ios-ci.yml` | `macos-26` | `ios/**`·`.maestro/**`를 건드린 PR과 `master` 푸시 |
 | `firebase-deploy.yml` | `ubuntu-latest` | `functions/**`, `firebase.json`, `firestore.rules`, `.firebaserc`를 건드린 `master` 푸시 |
 
 릴리스 태그는 플랫폼별로 접두사를 붙입니다. Play 스토어는 `android-v*`, App Store는 `ios-v*`를 예약해 두었습니다. 접두사 없는 `v*` 태그는 더 이상 아무 것도 트리거하지 않으며, `android-v` 도입 이전의 `v1.0.1` 태그는 이력 보존용으로만 남겨 둡니다.
@@ -89,7 +89,7 @@ maestro --device <serial> test .maestro --include-tags=release -e APP_ID=com.ahn
 
 `ios/CalcMoney/CalcMoney.xcodeproj`가 **아니라** `ios/CalcMoney.xcworkspace`를 열어야 합니다. 워크스페이스가 앱 프로젝트와 로컬 패키지 3개를 함께 묶습니다. 프로젝트만 열어도 앱 빌드와 실행은 되지만, 패키지 테스트 타깃이 테스트 플랜에서 보이지 않습니다.
 
-`ios-ci.yml`에는 job이 두 개 있고 둘 다 `macos-26`에서 실행됩니다. 모두 시뮬레이터를 대상으로 하므로 시크릿이나 서명이 필요 없습니다.
+`ios-ci.yml`에는 job이 세 개(`lint`, `test`, `e2e_smoke`) 있고 모두 `macos-26`에서 실행됩니다. 모두 시뮬레이터를 대상으로 하므로 시크릿이나 서명이 필요 없습니다.
 
 ### `lint`
 
@@ -115,6 +115,14 @@ cd ios && swiftformat --lint . && swiftlint lint --strict
 테스트는 `ios/CalcMoney/CalcMoney.xctestplan` 하나로 한 번에 실행되며, 테스트 타깃 5개(`CalcMoneyTests`, `CalcMoneyUITests`, `DomainTests`, `DataTests`, `PresentationTests`)를 모두 포함합니다. 이 플랜은 반드시 워크스페이스를 통해 실행해야 합니다. 프로젝트만으로 실행하면 패키지 타깃 3개가 아무 경고 없이 플랜에서 빠집니다.
 
 테스트 플랜에서 UI 테스트 2개를 스킵합니다. `CalcMoneyUITests/testLaunchPerformance`와 `CalcMoneyUITestsLaunchTests/testLaunch`로, 둘 다 앱을 다섯 번 재실행하는 `measure` 블록이라 공유 러너에서는 느리고 불안정합니다.
+
+### `e2e_smoke`
+
+Android `e2e_smoke`와 같은 `.maestro/` smoke Flow를 iPhone 17 Pro 시뮬레이터(최신 iOS)에서 돌립니다. Debug 앱을 빌드해 설치하고 `.github/scripts/maestro-ios-smoke.sh`로 실행하며, 결과와 앱 로그는 `ios-maestro-smoke-results` artifact에 남습니다. 네트워크가 필요한 `release` Flow는 돌리지 않습니다.
+
+- Maestro는 Android와 같은 `MAESTRO_VERSION`으로 고정합니다.
+- 첫 Flow에서 Maestro가 시뮬레이터에 XCTest 드라이버를 설치하므로 `MAESTRO_DRIVER_STARTUP_TIMEOUT`을 넉넉히 둡니다.
+- 아직 이 job을 기다리는 배포 job은 없습니다. `ios-v*` 배포 job을 만들면 `needs`에 넣어 Android처럼 릴리스 관문으로 씁니다.
 
 러너는 `macos-latest`가 아니라 `macos-26`으로 고정했습니다. 로컬 패키지가 `swift-tools-version: 6.2`를 선언하고 `.defaultIsolation(MainActor.self)`를 사용하는데, 둘 다 Xcode 26 이상을 요구합니다. `macos-15` 이미지는 Xcode 16.x를 담고 있어서 빌드할 수 없습니다.
 

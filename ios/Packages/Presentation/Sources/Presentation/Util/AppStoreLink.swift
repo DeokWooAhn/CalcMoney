@@ -2,10 +2,11 @@ import Foundation
 
 /// 설정의 "친구에게 추천하기"가 공유하는 App Store 링크 (Android `playStoreRecommendUrl` 대응)
 enum AppStoreLink {
-    /// App Store Connect의 앱 Apple ID(숫자). 아직 App Store에 출시하지 않아 없다.
+    /// App Store Connect의 앱 Apple ID(숫자). 앱 정보 → 일반 정보의 "Apple ID"다.
     ///
-    /// 출시 후 채우면 설정 화면에 "친구에게 추천하기"가 나타난다. 그 전에는 공유할 링크가 없어 항목을 숨긴다.
-    static let appID: String? = nil
+    /// 값이 있으면 설정 화면에 "친구에게 추천하기"가 나타나고, 없으면 공유할 링크가 없어 항목을 숨긴다.
+    /// 출시 전(TestFlight)에는 링크가 열리지 않지만, 첫 버전부터 항목을 보여 주려고 앱을 만들 때 받은 값을 미리 넣었다.
+    static let appID: String? = "6828736184"
 
     static var recommendURL: URL? {
         recommendURL(appID: appID)

@@ -17,7 +17,7 @@ public final class AdConsentManager {
     public private(set) var isPrivacyOptionsRequired = false
 
     @ObservationIgnored private var isMobileAdsStarted = false
-    @ObservationIgnored private let logger = Logger(subsystem: "com.ahn.CalcMoney", category: "AdConsent")
+    @ObservationIgnored private let logger = Logger(subsystem: "com.deokwooahn.calcmoney", category: "AdConsent")
 
     public init() {}
 

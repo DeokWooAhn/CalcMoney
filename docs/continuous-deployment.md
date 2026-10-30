@@ -76,7 +76,7 @@ maestro --device <serial> test .maestro --include-tags=release -e APP_ID=com.ahn
 - 기기에 Play 스토어판(또는 내부 테스트판)이 깔려 있으면 서명이 달라 설치되지 않습니다. 지우면 그 기기의 앱 데이터(즐겨찾기, 계산 기록)가 사라지니 개인 기기라면 먼저 확인하세요.
 - Flow는 `clearState`로 앱 데이터를 매번 지웁니다.
 - Firestore가 App Check를 강제하면 기기의 디버그 토큰이 Firebase 콘솔에 등록돼 있어야 합니다.
-- iOS 코드도 바뀌었다면 시뮬레이터에서 같은 Flow를 `-e APP_ID=com.ahn.CalcMoney`로 돌립니다.
+- iOS 코드도 바뀌었다면 시뮬레이터에서 같은 Flow를 `-e APP_ID=com.deokwooahn.calcmoney`로 돌립니다.
 
 ### 2. 내부 테스트판을 직접 써 보기
 

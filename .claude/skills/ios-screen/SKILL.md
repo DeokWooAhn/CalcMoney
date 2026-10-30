@@ -63,7 +63,7 @@ public final class <Feature>ViewModel {
 - 정석 레퍼런스: `Data/Exchange/Repository/ExchangeRateRepositoryImpl.swift` — actor 기반, 12h TTL(Android와 동일), 원격 실패 시 stale 캐시 폴백, 동시 refresh 요청은 in-flight Task 공유로 중복 방지
 - Firestore 응답 파싱은 Firebase-free한 순수 파서로 분리 (`ExchangeRateDocumentParser` 참조) — Firebase 없이도 단위 테스트 가능하게
 - Repository 구현은 Firestore 문서/DTO를 그대로 반환하지 말고 **반드시 Domain 타입으로 변환**해서 반환
-- 새 UserDefaults 스토어가 필요하면 전용 suite로 분리: `UserDefaults.suite(named:)` → `com.ahn.CalcMoney.<name>` (Android DataStore Qualifier 분리와 같은 이유)
+- 새 UserDefaults 스토어가 필요하면 전용 suite로 분리: `UserDefaults.suite(named:)` → `com.deokwooahn.calcmoney.<name>` (Android DataStore Qualifier 분리와 같은 이유)
 - SwiftData 모델 변경 시 기존 레코드 마이그레이션 고려 — Room처럼 자동 스키마 export는 없음
 - `exchangeRates/latest` 문서 구조를 바꾸면 Cloud Functions(`functions/`)와 Android `:data` 모듈도 함께 확인
 

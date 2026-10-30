@@ -211,7 +211,7 @@ git push origin android-v1.0.2
 첫 출시 전에 채워야 하는 값이 있습니다.
 
 - 실제 AdMob ID: 저장소 밖의 `ios/CalcMoney/Config/AdMob.xcconfig`에 둡니다. 배포 파이프라인을 만들면 Android처럼 GitHub 시크릿에서 이 파일을 만들게 합니다.
-- `AppStoreLink.appID`: App Store Connect의 앱 Apple ID(숫자)입니다. 비어 있으면 설정의 "친구에게 추천하기"가 숨겨집니다.
+- `AppStoreLink.appID`: App Store Connect의 앱 Apple ID(숫자)입니다. 앱을 만들 때 받은 `6828736184`를 넣었습니다. 비어 있으면 설정의 "친구에게 추천하기"가 숨겨집니다.
 
 ### Firebase
 

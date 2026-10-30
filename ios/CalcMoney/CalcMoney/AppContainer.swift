@@ -78,7 +78,7 @@ private struct Repositories {
     /// 이번 실행 동안만 캐시가 유지되는 편이 낫다. 계산기 탭은 캐시와 무관하게 동작하고
     /// 환율도 원격에서 다시 받아 오므로 기능은 그대로 살아 있다.
     private static func makeExchangeRateLocalDataSource() -> ExchangeRateLocalDataSource {
-        let logger = Logger(subsystem: "com.ahn.CalcMoney", category: "AppContainer")
+        let logger = Logger(subsystem: "com.deokwooahn.calcmoney", category: "AppContainer")
 
         do {
             return try ExchangeRateLocalDataSource.make()

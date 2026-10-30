@@ -147,7 +147,7 @@ jobs:
       # 첫 Flow에서 Maestro가 시뮬레이터에 XCTest 드라이버를 설치하고 띄운다. 러너가 느리면 기본 대기 시간을 넘길 수 있다.
       MAESTRO_DRIVER_STARTUP_TIMEOUT: 180000
       MAESTRO_CLI_NO_ANALYTICS: 1
-      APP_ID: com.ahn.CalcMoney
+      APP_ID: com.deokwooahn.calcmoney
       MAESTRO_TAGS: smoke
       SIMULATOR_NAME: iPhone 17 Pro
 

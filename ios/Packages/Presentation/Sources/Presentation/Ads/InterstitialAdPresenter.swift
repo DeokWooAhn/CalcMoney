@@ -13,7 +13,7 @@ final class InterstitialAdPresenter: NSObject {
     private var isLoading = false
     private var isPresenting = false
     private var onShown: (() -> Void)?
-    private let logger = Logger(subsystem: "com.ahn.CalcMoney", category: "InterstitialAd")
+    private let logger = Logger(subsystem: "com.deokwooahn.calcmoney", category: "InterstitialAd")
 
     init(adUnitID: String) {
         self.adUnitID = adUnitID

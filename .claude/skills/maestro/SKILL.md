@@ -22,13 +22,13 @@ Flow 하나로 Android와 iOS를 함께 돌린다. 두 플랫폼이 **같은 id*
 
 ## 실행
 
-`APP_ID`는 플랫폼마다 다르다(대소문자까지). 저장소 루트에서 실행한다.
+`APP_ID`는 플랫폼마다 다르다. iOS는 `com.ahn.CalcMoney`를 다른 개발자가 이미 등록해 번들 ID가 `com.deokwooahn.calcmoney`다. 저장소 루트에서 실행한다.
 
 ```bash
 # Android (debug 빌드 설치 후)
 maestro --device <serial> test .maestro -e APP_ID=com.ahn.calcmoney
 # iOS 시뮬레이터 (debug 빌드 설치 후)
-maestro --device <udid> test .maestro -e APP_ID=com.ahn.CalcMoney
+maestro --device <udid> test .maestro -e APP_ID=com.deokwooahn.calcmoney
 ```
 
 - iOS 빌드: `ios/`에서 `xcodebuild build -workspace CalcMoney.xcworkspace -scheme CalcMoney -destination 'platform=iOS Simulator,id=<udid>' -derivedDataPath <dir>` 후 `xcrun simctl install`.
@@ -46,7 +46,7 @@ maestro --device <udid> test .maestro -e APP_ID=com.ahn.CalcMoney
 | 통화 선택 버튼 | `currency.selector` | `CurrencySelector` | `CurrencySelectorView` |
 | 선택 창 검색·행·하트·닫기 | `currency.search`, `currency.row.<코드>`, `favorite.toggle.<코드>`, `currency.picker.close`(iOS만) | `CurrencyPickerSheet` | `CurrencyPickerSheet` |
 | 즐겨찾기 카드 | `favorite.card.<코드>` | `FavoriteScreen` | `FavoriteView` |
-| 친구에게 추천하기 | `setting.share` | `SettingScreen` | `SettingView`(App Store 출시 전에는 숨김) |
+| 친구에게 추천하기 | `setting.share` | `SettingScreen` | `SettingView`(`AppStoreLink.appID`가 없으면 숨김) |
 
 - Android는 `MainScreen`에서 `testTagsAsResourceId`를 켠다. 바텀시트·Dialog는 별도 창이라 따로 켠다(`CurrencyPickerSheet` 참고).
 - 계산기 키 id는 양쪽 유닛 테스트(`CalculatorKeyTestTagTest.kt`, `CalculatorKeyTests.swift`)가 고정한다.

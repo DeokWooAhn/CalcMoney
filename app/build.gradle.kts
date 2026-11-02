@@ -61,6 +61,8 @@ plugins {
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
     id("com.google.devtools.ksp")
+    alias(libs.plugins.dependency.guard)
+    alias(libs.plugins.manifest.shield)
 }
 
 android {
@@ -123,6 +125,22 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+}
+
+// 라이브러리 버전 한 줄만 올려도 함께 바뀌는 것을 저장소의 baseline 파일과 비교한다.
+// 달라지면 검사가 실패하고, 의도한 변경이면 baseline을 다시 만들어 PR에 함께 커밋한다.
+// 태스크 이름에 Release가 없어 릴리스 시크릿 검증에 걸리지 않는다.
+dependencyGuard {
+    // 출시 앱에 실제로 들어가는 의존성 목록. dependencies/releaseRuntimeClasspath.txt
+    configuration("releaseRuntimeClasspath")
+}
+
+manifestShield {
+    // Merged Manifest의 권한·exported 컴포넌트. manifestShield/releaseAndroidManifest.txt
+    configuration("release") {
+        // 어느 라이브러리가 넣었는지도 함께 남긴다.
+        sources = true
     }
 }
 

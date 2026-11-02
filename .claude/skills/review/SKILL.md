@@ -74,7 +74,7 @@ xcodebuild test -workspace CalcMoney.xcworkspace -scheme CalcMoney \
   -testPlan CalcMoney -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest'
 ```
 
-리소스·매니페스트·Gradle을 건드렸으면 lint와 빌드까지 본다.
+리소스·매니페스트·Gradle을 건드렸으면 lint와 빌드까지 본다. 라이브러리 버전을 바꿨으면 `app/dependencies/`·`app/manifestShield/` baseline diff에서 새 의존성, 권한, exported 컴포넌트가 생겼는지 본다.
 
 ## 응답 형식
 

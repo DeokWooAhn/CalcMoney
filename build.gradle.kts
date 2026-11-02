@@ -13,6 +13,8 @@ plugins {
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.firebase.crashlytics) apply false
     alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.dependency.guard) apply false
+    alias(libs.plugins.manifest.shield) apply false
     // 루트가 병합 모듈이라 apply false가 아니다.
     alias(libs.plugins.kover)
 }

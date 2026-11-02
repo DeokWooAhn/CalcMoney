@@ -34,6 +34,9 @@ playReview = "2.0.2"
 detekt = "2.0.0-alpha.0"
 # AGP 9 지원은 0.9.4+, AGP 9 빌드 변형 수정은 0.9.5+.
 kover = "0.9.11"
+# 라이브러리 버전을 올릴 때 따라 바뀌는 의존성·Manifest를 baseline 파일로 드러낸다.
+dependencyGuard = "0.5.0"
+manifestShield = "0.1.11"
 
 [libraries]
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
@@ -105,3 +108,5 @@ google-services = { id = "com.google.gms.google-services", version.ref = "google
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+dependency-guard = { id = "com.dropbox.dependency-guard", version.ref = "dependencyGuard" }
+manifest-shield = { id = "io.github.fornewid.manifest-shield", version.ref = "manifestShield" }

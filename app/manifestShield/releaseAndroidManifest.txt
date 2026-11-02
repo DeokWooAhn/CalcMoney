@@ -1,0 +1,24 @@
+uses-permission:
+  android.permission.ACCESS_ADSERVICES_AD_ID
+  android.permission.ACCESS_ADSERVICES_ATTRIBUTION
+  android.permission.ACCESS_ADSERVICES_TOPICS
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.FOREGROUND_SERVICE
+  android.permission.INTERNET
+  android.permission.WAKE_LOCK
+  com.ahn.calcmoney.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+  com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE
+  com.google.android.gms.permission.AD_ID
+
+activity:
+  com.ahn.presentation.main.MainActivity (exported)
+
+service:
+  androidx.work.impl.background.systemjob.SystemJobService (exported)
+    permission: android.permission.BIND_JOB_SERVICE
+
+receiver:
+  androidx.profileinstaller.ProfileInstallReceiver (exported)
+    permission: android.permission.DUMP
+  androidx.work.impl.diagnostics.DiagnosticsReceiver (exported)
+    permission: android.permission.DUMP

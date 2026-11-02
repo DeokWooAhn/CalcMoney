@@ -1,0 +1,106 @@
+[:app]
+uses-permission:
+  android.permission.INTERNET
+
+activity:
+  com.ahn.presentation.main.MainActivity (exported)
+
+[:presentation]
+uses-permission:
+  android.permission.INTERNET
+
+[androidx.core:core:1.16.0]
+uses-permission:
+  com.ahn.calcmoney.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+
+[androidx.profileinstaller:profileinstaller:1.4.0]
+receiver:
+  androidx.profileinstaller.ProfileInstallReceiver (exported)
+    permission: android.permission.DUMP
+
+[androidx.work:work-runtime:2.7.0]
+uses-permission:
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.FOREGROUND_SERVICE
+  android.permission.WAKE_LOCK
+
+service:
+  androidx.work.impl.background.systemjob.SystemJobService (exported)
+    permission: android.permission.BIND_JOB_SERVICE
+
+receiver:
+  androidx.work.impl.diagnostics.DiagnosticsReceiver (exported)
+    permission: android.permission.DUMP
+
+[com.google.android.datatransport:transport-backend-cct:3.3.0]
+uses-permission:
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.INTERNET
+
+[com.google.android.datatransport:transport-runtime:3.3.0]
+uses-permission:
+  android.permission.ACCESS_NETWORK_STATE
+
+[com.google.android.gms:play-services-ads-api:25.3.0]
+uses-permission:
+  android.permission.ACCESS_ADSERVICES_AD_ID
+  android.permission.ACCESS_ADSERVICES_ATTRIBUTION
+  android.permission.ACCESS_ADSERVICES_TOPICS
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.INTERNET
+  com.google.android.gms.permission.AD_ID
+
+[com.google.android.gms:play-services-ads-identifier:18.0.0]
+uses-permission:
+  com.google.android.gms.permission.AD_ID
+
+[com.google.android.gms:play-services-measurement-api:23.2.0]
+uses-permission:
+  android.permission.ACCESS_ADSERVICES_AD_ID
+  android.permission.ACCESS_ADSERVICES_ATTRIBUTION
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.INTERNET
+  android.permission.WAKE_LOCK
+  com.google.android.gms.permission.AD_ID
+
+[com.google.android.gms:play-services-measurement-impl:23.2.0]
+uses-permission:
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.INTERNET
+  android.permission.WAKE_LOCK
+  com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE
+  com.google.android.gms.permission.AD_ID
+
+[com.google.android.gms:play-services-measurement-sdk-api:23.2.0]
+uses-permission:
+  android.permission.ACCESS_ADSERVICES_AD_ID
+  android.permission.ACCESS_ADSERVICES_ATTRIBUTION
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.INTERNET
+  android.permission.WAKE_LOCK
+  com.google.android.gms.permission.AD_ID
+
+[com.google.android.gms:play-services-measurement:23.2.0]
+uses-permission:
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.INTERNET
+  android.permission.WAKE_LOCK
+  com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE
+
+[com.google.firebase:firebase-crashlytics:20.0.6]
+uses-permission:
+  android.permission.INTERNET
+
+[com.google.firebase:firebase-firestore:26.3.0]
+uses-permission:
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.INTERNET
+
+[com.google.firebase:firebase-installations:19.1.0]
+uses-permission:
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.INTERNET
+
+[io.grpc:grpc-android:1.62.2]
+uses-permission:
+  android.permission.ACCESS_NETWORK_STATE

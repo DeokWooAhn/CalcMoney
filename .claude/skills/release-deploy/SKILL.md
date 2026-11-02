@@ -22,10 +22,10 @@ description: 릴리스, 배포, 버전 관리, CI/CD 워크플로, Firebase Func
 
 ## CI 파이프라인 (PR → master)
 
-`detekt` → `test`(+ Kover 리포트) → `lintDebug` → `assembleDebug` → `koverVerifyUnit` 순서. PR 올리기 전 로컬에서 동일하게 검증:
+`detekt` → baseline 비교(`:app:dependencyGuard`, `:app:manifestShield`) → `test`(+ Kover 리포트) → `lintDebug` → `assembleDebug` → `koverVerifyUnit` 순서. PR 올리기 전 로컬에서 동일하게 검증:
 
 ```bash
-./gradlew detekt test :app:assembleDebug :koverVerifyUnit
+./gradlew detekt :app:dependencyGuard :app:manifestShield test :app:assembleDebug :koverVerifyUnit
 ```
 
 커버리지가 루트 `build.gradle.kts`의 하한(`minBound`) 아래로 떨어지면 `build` job이 실패하고, 그러면 `e2e_smoke`와 태그 릴리스·Play 업로드도 막힌다.

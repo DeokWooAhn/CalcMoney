@@ -73,22 +73,44 @@ App Store Connect가 버전 번호를 `1.0`으로 만들어 두는데, 빌드의
 |---|---|
 | 로그인 필요 | 아니요 (계정 기능이 없다) |
 | 연락처 | 이름·전화번호는 직접 입력. 이메일은 지원 페이지와 같은 `dwahndev@gmail.com` |
-| 첨부 파일 | 없음 |
+| 첨부 파일 | 실기기 화면 녹화 영상(아래) |
 
-심사자는 영어로 읽으므로 메모는 영어로 쓴다.
+심사자는 영어로 읽으므로 메모는 영어로 쓴다. 첫 제출(2026-10-31) 때 Apple이 "심사 이력이 적은 개발자 계정"이라며 Guideline 2.1 Information Needed로 아래 1~6을 요구했다. 답한 내용을 다음 제출에도 쓰도록 메모 칸에 그대로 둔다(4000자 제한 안).
 
 ```
 No account or login is required.
 
-The app is a calculator with currency conversion. Exchange rates are downloaded
-from our server (data source: ExchangeRate-API) and cached on the device, so the
-app keeps working offline after the first launch.
+1. Screen recording
+Attached is a screen recording captured on a physical iPhone running the latest iOS. It starts by launching the app from the Home Screen and shows the App Tracking Transparency prompt, the calculator with live currency conversion, the calculation history, changing and swapping currencies, and the Exchange, Favorites and Settings tabs. The app has no accounts, no user-generated content and no paid content.
 
-On first launch, Google's consent form (UMP) appears where required by the user's
-region, followed once by the App Tracking Transparency prompt. Ads are served by
-Google AdMob: banner ads on the Exchange, Favorites and Settings tabs, and an
-occasional interstitial ad when leaving the Calculator tab. Every feature works
-whether or not tracking is allowed.
+2. Purpose and target audience
+Simple Currency Calculator is a calculator with built-in currency conversion. It is for travelers and online shoppers, mainly Korean users, who add up or discount prices in a foreign currency and want to see the total in their own currency. Instead of switching between a calculator and a converter, the user types an expression such as (1,980 + 2,480) × 0.8 and sees the result and its converted value together while typing. Rates are cached on the device, so the app keeps working offline (for example on a plane) after the first launch.
+
+3. How to use the main features
+No login, setup or sample files are needed. An internet connection is needed only the first time, to download the rates.
+- Calculator tab: the two currencies are at the top. Tap one to search for and pick another currency, or tap the arrows between them to swap. Type an expression; the converted amount appears below the result. The clock key shows the calculation history.
+- Exchange tab: enter an amount to convert it between two currencies. The rate used and its date are shown.
+- Favorites tab: in the currency picker, tap the heart next to a currency to add it. The Favorites tab converts one base amount into all favorite currencies.
+- Settings tab: Theme (system, light or dark), Exchange rate details (source and date), Privacy policy, Recommend to a friend, and Privacy and ad settings (shown only where Google's consent form is required).
+
+4. External services
+- ExchangeRate-API (exchangerate-api.com): source of the exchange rates. Our server fetches them once a day; the app never calls this API directly.
+- Google Firebase: Cloud Functions (daily rate update on our server), Cloud Firestore (delivers the rate document to the app), App Check with App Attest (protects the database), Crashlytics (crash reports) and Google Analytics for Firebase (usage analytics).
+- Google AdMob (Google Mobile Ads SDK): banner ads on the Exchange, Favorites and Settings tabs, and an occasional interstitial ad when leaving the Calculator tab.
+- Google User Messaging Platform: consent form where required by law.
+- Apple App Tracking Transparency. Every feature works whether or not tracking is allowed.
+The app uses no authentication, payment or AI services.
+
+5. Regional differences
+All features and content are the same in every region. Rates are quoted against the Korean won for all users, and the interface follows the device language (English or Korean). The only regional differences come from privacy law: Google's consent form and the Privacy and ad settings item appear only in the EEA, the UK and Switzerland, and the ads themselves vary by region.
+
+6. Regulated industry and third-party material
+The app is not a financial service. It does not trade, transfer or hold money and gives no financial advice; rates are labeled as reference only. The exchange rate data is provided by ExchangeRate-API under its terms of use and is credited in the app (Settings > Exchange rate details > Data source) and in the App Store description. The app contains no other third-party content.
 ```
 
-(요약: 로그인 없음. 환율은 서버에서 받아 기기에 저장해 오프라인에서도 쓴다. 첫 실행 때 지역에 따라 UMP 동의 창, 이어서 ATT 창이 한 번 뜬다. 배너 3곳과 계산기를 떠날 때 가끔 전면 광고가 나오고, 추적 허용과 무관하게 모든 기능을 쓸 수 있다.)
+**화면 녹화(1번)는 실기기, 최신 iOS, 앱 실행부터 시작**이 조건이다.
+
+- iPhone을 최신 iOS로 올리고, TestFlight에서 앱을 지웠다가 다시 설치해 첫 실행의 ATT 창부터 찍는다.
+- 심사자가 읽기 쉽게 iOS 설정 > 앱 > 이 앱 > 언어를 English로 바꿔 찍는다(기기 언어는 그대로 둬도 된다).
+- 제어 센터의 화면 기록으로 홈 화면에서 시작해 1~2분 안에 끝낸다. 광고는 누르지 않는다.
+- 영상은 App Store Connect의 심사 메시지 답장에 첨부하고, 같은 글을 버전 페이지 "앱 심사 정보 > 메모"에도 넣는다.

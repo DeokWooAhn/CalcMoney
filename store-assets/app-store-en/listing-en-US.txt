@@ -1,5 +1,5 @@
 === NAME (max 30) ===
-Simple Currency Calculator
+Simple Currency Calc - Travel
 
 === SUBTITLE (max 30) ===
 Convert while you calculate
@@ -8,7 +8,7 @@ Convert while you calculate
 Check price tags as you shop. Type any calculation, like (1,980 + 2,480) × 0.8, and see the result and its converted value together. Works offline once rates are saved.
 
 === KEYWORDS (max 100, comma-separated, no spaces) ===
-exchange,rate,converter,money,forex,fx,travel,dollar,euro,yen,won,krw,usd,jpy,eur,offline,shopping
+exchange,rate,converter,calculator,money,forex,fx,dollar,euro,yen,won,krw,usd,jpy,offline,shopping
 
 === DESCRIPTION (max 4000) ===
 Simple Currency Calculator does one thing well: it converts while you calculate.
@@ -26,7 +26,7 @@ FAVORITES AT A GLANCE
 Star the currencies you check often and see them all against a single base amount on one screen.
 
 FIND ANY CURRENCY FAST
-Search by country, currency name, or code. Your favorites sit at the top of the list, and the ★ and A–Z index on the right jumps straight to where you want to go.
+Search by country, currency name, or code. Your favorites sit at the top of the list, and the star and A–Z index on the right jumps straight to where you want to go.
 
 WORKS OFFLINE ONCE RATES ARE SAVED
 Open the app once while you are online and the rates are saved on your device. After that it keeps converting on a plane or in a dead zone, using the last rates it downloaded. The first download needs an internet connection, so open the app before you fly. The converter and favorites screens show the date of the rates, so you know how fresh they are.

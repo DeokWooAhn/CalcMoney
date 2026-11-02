@@ -9,7 +9,7 @@
 |---|---|
 | 플랫폼 | iOS |
 | 이름 | 심플 환율 계산기 - 여행 환전 |
-| 기본 언어 | 한국어 |
+| 기본 언어 | 한국어로 만든 뒤 영어(미국)로 바꾼다(아래 2절) |
 | 번들 ID | `com.deokwooahn.calcmoney` (`GoogleService-Info.plist`와 같다) |
 | SKU | `calcmoney-ios` (사용자에게 보이지 않는 내부 식별자. 나중에 바꿀 수 없다) |
 | 사용자 액세스 | 전체 액세스 |
@@ -26,9 +26,12 @@
 | 카테고리 | 기본 유틸리티, 보조 여행 |
 | 콘텐츠 권한 | 제3자 콘텐츠를 표시함: **예**. 환율 데이터(ExchangeRate-API)를 보여 준다. 쓰는 요금제의 이용 조건(출처 표시 등)을 지키는지 확인하고 답한다. 앱은 설정의 "환율 기준 정보"에 출처를 표시한다 |
 | 연령 등급 | 아래 3절 |
-| 개인정보처리방침 URL | https://deokwooahn.github.io/CalcMoney/privacy-policy.html (iOS·ATT 내용 게시 확인) |
 
-영어(미국) 현지화를 추가하고 `listing-en-US.txt`의 이름·부제를 넣는다.
+개인정보처리방침 URL(https://deokwooahn.github.io/CalcMoney/privacy-policy.html)은 앱 정보가 아니라 "앱 개인정보 보호" 화면에서 언어별로 넣는다.
+
+영어(미국) 현지화를 추가하고 `listing-en-US.txt`의 이름·부제를 넣는다. 영어 이름도 "Simple Currency Calculator"가 이미 쓰여 2026-10-30에 "Simple Currency Calc - Travel"로 정했다. 이름에서 "Calculator"가 빠져 영어 키워드에 `calculator`를 넣고, 이름과 겹치는 `travel`과 100자를 넘기는 `eur`를 뺐다.
+
+**기본 언어는 영어(미국)로 둔다.** 스토어 언어 중 맞는 현지화가 없으면 기본 언어의 이름·설명·스크린샷이 보이는데, 영어(미국)를 지원하는 스토어는 미국·일본뿐이고 EU 나라와 영국·태국·베트남·대만 등은 영어(영국)만 지원한다([App Store localizations](https://developer.apple.com/help/app-store-connect/reference/app-store-localizations/)). 기본 언어가 한국어면 그 나라들에 한국어 페이지가 나간다. 한국 스토어는 한국어 현지화가 있어 한국어로 보인다. 기본 언어는 내용을 채운 현지화로만 바꿀 수 있어 영어 이름·부제를 먼저 저장한다.
 
 ## 3. 연령 등급
 
@@ -52,13 +55,15 @@
 
 ## 5. 버전 정보 (1.0.0)
 
+App Store Connect가 버전 번호를 `1.0`으로 만들어 두는데, 빌드의 `MARKETING_VERSION`(1.0.0)과 같아야 빌드를 붙일 수 있어 `1.0.0`으로 고친다.
+
 | 항목 | 값 |
 |---|---|
-| 스크린샷 | iPhone 6.9형: `iphone-0{1,2,3,4}.png`, iPad 13형: `ipad-0{1,2,3,4}.png` (영어는 `../app-store-en/`) |
-| 프로모션 텍스트·설명·키워드 | 언어별 listing 파일 |
+| 스크린샷 | iPhone 6.3형(필수, 1206×2622): `iphone63-0{1,2,3,4}.png`, iPhone 6.9형(선택, 1320×2868): `iphone-0{1,2,3,4}.png`, iPad 13형(필수): `ipad-0{1,2,3,4}.png` (영어는 `../app-store-en/`). 2026-10-30 기준 App Store Connect의 iPhone 필수 크기는 "Dynamic Island 지원 iPhone(중형 디스플레이)"라 6.9형 이미지를 `sips -z 2622 1206`으로 줄여 만들었다 |
+| 프로모션 텍스트·설명·키워드 | 언어별 listing 파일. 설명에 `★`를 넣으면 "유효하지 않은 문자"로 저장되지 않는다 |
 | 지원 URL | https://deokwooahn.github.io/CalcMoney/support.html |
 | 마케팅 URL | 비워 둔다 |
-| 저작권 | `2026 <판매자 이름>`. 판매자 이름은 Developer Program 가입 이름(개인이면 본명)과 맞춘다 |
+| 저작권 | `2026 DeokWoo Ahn`. 판매자 이름(비즈니스 화면의 법적 이름)과 맞춘다 |
 | 빌드 | Xcode Archive로 올린 빌드. 수출 규정은 `Info.plist`의 `ITSAppUsesNonExemptEncryption = NO`로 미리 답해 두어 빌드마다 묻지 않는다 |
 | 버전 출시 | **이 버전을 수동으로 출시**. 첫 출시는 승인 뒤 TestFlight·실기기 확인을 한 번 더 하고 내보낸다 |
 

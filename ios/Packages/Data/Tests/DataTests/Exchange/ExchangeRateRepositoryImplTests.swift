@@ -1,5 +1,6 @@
 import Domain
 import Foundation
+import os
 import Testing
 @testable import Data
 
@@ -26,6 +27,7 @@ struct ExchangeRateRepositoryImplTests {
         remoteRates: [ExchangeRateData]? = nil,
         cachedRates: [ExchangeRateData] = [],
         nowMillis: Int = 0,
+        crashBreadcrumbs: any CrashBreadcrumbs = NoOpCrashBreadcrumbs(),
     ) async throws -> (ExchangeRateRepositoryImpl, RemoteDataSourceStub) {
         let remote = RemoteDataSourceStub(result: remoteRates)
         let local = try ExchangeRateLocalDataSource.make(inMemory: true)
@@ -37,6 +39,7 @@ struct ExchangeRateRepositoryImplTests {
         let repository = ExchangeRateRepositoryImpl(
             remoteDataSource: remote,
             localDataSource: local,
+            crashBreadcrumbs: crashBreadcrumbs,
             now: { Date(timeIntervalSince1970: Double(nowMillis) / 1000) },
         )
 
@@ -100,6 +103,55 @@ struct ExchangeRateRepositoryImplTests {
         await #expect(throws: ExchangeRateError.self) {
             _ = try await repository.exchangeRate(from: "USD", to: "KRW")
         }
+    }
+
+    @Test("원격에서 받으면 받은 통화 수를 크래시 단서로 남긴다")
+    func 원격에서_받으면_크래시_단서를_남긴다() async throws {
+        let breadcrumbs = RecordingCrashBreadcrumbs()
+        let (repository, _) = try await makeRepository(
+            remoteRates: [Self.usd, Self.jpy],
+            crashBreadcrumbs: breadcrumbs,
+        )
+
+        _ = try await repository.exchangeRate(from: "USD", to: "KRW")
+
+        #expect(breadcrumbs.logs == ["rates: refreshed 2 from remote"])
+    }
+
+    @Test("원격 조회에 실패하고 캐시가 있으면 실패와 캐시 사용을 크래시 단서로 남긴다")
+    func 원격_실패_캐시_사용을_크래시_단서로_남긴다() async throws {
+        let breadcrumbs = RecordingCrashBreadcrumbs()
+        let (repository, _) = try await makeRepository(
+            remoteRates: nil,
+            cachedRates: [Self.usd],
+            nowMillis: 1000 + 13 * 60 * 60 * 1000,
+            crashBreadcrumbs: breadcrumbs,
+        )
+
+        _ = try await repository.exchangeRate(from: "USD", to: "KRW")
+
+        #expect(breadcrumbs.logs == ["rates: remote failed (networkUnavailable), using 1 cached"])
+    }
+
+    @Test("원격 조회에 실패하고 캐시도 없으면 그 사실을 크래시 단서로 남긴다")
+    func 원격_실패_캐시_없음을_크래시_단서로_남긴다() async throws {
+        let breadcrumbs = RecordingCrashBreadcrumbs()
+        let (repository, _) = try await makeRepository(remoteRates: nil, crashBreadcrumbs: breadcrumbs)
+
+        _ = try? await repository.exchangeRate(from: "USD", to: "KRW")
+
+        #expect(breadcrumbs.logs == ["rates: remote failed (networkUnavailable), no cache"])
+    }
+
+    @Test("새로고침이 실패하면 실패를 크래시 단서로 남기고 오류를 그대로 던진다")
+    func 새로고침_실패를_크래시_단서로_남긴다() async throws {
+        let breadcrumbs = RecordingCrashBreadcrumbs()
+        let (repository, _) = try await makeRepository(remoteRates: nil, crashBreadcrumbs: breadcrumbs)
+
+        await #expect(throws: ExchangeRateError.self) {
+            try await repository.refreshExchangeRates()
+        }
+        #expect(breadcrumbs.logs == ["rates: manual refresh failed (networkUnavailable)"])
     }
 
     @Test("같은 통화면 1.0을 반환한다")
@@ -257,5 +309,18 @@ private actor RemoteDataSourceStub: ExchangeRateRemoteDataSource {
         guard let result else { throw ExchangeRateError.networkUnavailable() }
 
         return result
+    }
+}
+
+/// 남긴 크래시 단서를 기록하는 대역
+private final class RecordingCrashBreadcrumbs: CrashBreadcrumbs {
+    private let state = OSAllocatedUnfairLock(initialState: [String]())
+
+    var logs: [String] { state.withLock { $0 } }
+
+    func setScreen(_: String) {}
+
+    func log(_ message: String) {
+        state.withLock { $0.append(message) }
     }
 }

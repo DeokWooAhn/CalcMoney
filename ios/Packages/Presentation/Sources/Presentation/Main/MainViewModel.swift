@@ -12,18 +12,23 @@ public final class MainViewModel {
     @ObservationIgnored private let themeUseCases: ThemeUseCases
     @ObservationIgnored private let reviewPromptUseCases: ReviewPromptUseCases
     @ObservationIgnored private let interstitialAdUseCases: InterstitialAdUseCases
+    @ObservationIgnored private let crashBreadcrumbs: any CrashBreadcrumbs
     /// 이번 실행에서 인앱 리뷰를 요청했는지. 리뷰를 부탁한 직후에는 전면 광고를 띄우지 않는다.
     @ObservationIgnored private var hasRequestedReviewThisSession = false
+    /// 마지막으로 크래시 단서에 남긴 광고 요청 가능 여부. 바뀔 때만 다시 남긴다.
+    @ObservationIgnored private var lastRecordedCanRequestAds: Bool?
     @ObservationIgnored private var observeTask: Task<Void, Never>?
 
     public init(
         themeUseCases: ThemeUseCases,
         reviewPromptUseCases: ReviewPromptUseCases,
         interstitialAdUseCases: InterstitialAdUseCases,
+        crashBreadcrumbs: any CrashBreadcrumbs = NoOpCrashBreadcrumbs(),
     ) {
         self.themeUseCases = themeUseCases
         self.reviewPromptUseCases = reviewPromptUseCases
         self.interstitialAdUseCases = interstitialAdUseCases
+        self.crashBreadcrumbs = crashBreadcrumbs
 
         let themeModeStream = themeUseCases.getThemeMode()
         observeTask = Task { [weak self] in
@@ -57,6 +62,20 @@ public final class MainViewModel {
     /// 인앱 리뷰를 요청했다고 남긴다. 이번 실행에서는 전면 광고를 띄우지 않는다.
     public func markReviewRequested() {
         hasRequestedReviewThisSession = true
+        crashBreadcrumbs.log("review: in-app review requested")
+    }
+
+    /// 지금 보고 있는 하단 탭을 크래시 단서로 남긴다.
+    func recordScreen(_ tab: MainTab) {
+        crashBreadcrumbs.setScreen(tab.rawValue)
+    }
+
+    /// 광고 동의 결과로 광고를 요청할 수 있는지 크래시 단서로 남긴다. 값이 바뀔 때만 남긴다.
+    func recordAdConsent(canRequestAds: Bool) {
+        if lastRecordedCanRequestAds == canRequestAds { return }
+
+        lastRecordedCanRequestAds = canRequestAds
+        crashBreadcrumbs.log("ads: canRequestAds=\(canRequestAds)")
     }
 
     /// 계산기를 떠나는 지금 전면 광고를 보여 줄 차례인지 알려 준다.
@@ -71,6 +90,7 @@ public final class MainViewModel {
     }
 
     public func recordInterstitialAdShown() {
+        crashBreadcrumbs.log("ads: interstitial shown")
         Task {
             await interstitialAdUseCases.recordShown()
         }

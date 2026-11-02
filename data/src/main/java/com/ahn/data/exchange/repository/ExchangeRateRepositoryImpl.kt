@@ -6,6 +6,7 @@ import com.ahn.data.exchange.mapper.krwCurrencyInfo
 import com.ahn.data.exchange.mapper.rateOf
 import com.ahn.data.exchange.mapper.toCurrencyInfo
 import com.ahn.data.exchange.remote.datasource.ExchangeRateRemoteDataSource
+import com.ahn.domain.crash.CrashBreadcrumbs
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.domain.exchange.model.ExchangeRateException
 import com.ahn.domain.exchange.repository.ExchangeRateRepository
@@ -18,15 +19,18 @@ import javax.inject.Inject
 class ExchangeRateRepositoryImpl internal constructor(
     private val remoteDataSource: ExchangeRateRemoteDataSource,
     private val localDataSource: ExchangeRateLocalDataSource,
+    private val crashBreadcrumbs: CrashBreadcrumbs,
     private val clock: Clock,
 ) : ExchangeRateRepository {
     @Inject
     constructor(
         remoteDataSource: ExchangeRateRemoteDataSource,
         localDataSource: ExchangeRateLocalDataSource,
+        crashBreadcrumbs: CrashBreadcrumbs,
     ) : this(
         remoteDataSource = remoteDataSource,
         localDataSource = localDataSource,
+        crashBreadcrumbs = crashBreadcrumbs,
         clock = Clock.systemDefaultZone(),
     )
 
@@ -55,9 +59,12 @@ class ExchangeRateRepositoryImpl internal constructor(
             runCatching {
                 val valid = remoteDataSource.fetchExchangeRates()
                 localDataSource.replaceRates(valid)
+                crashBreadcrumbs.log("rates: refreshed ${valid.size} from remote")
                 valid
             }.getOrElse { error ->
                 if (error is CancellationException) throw error
+                val fallback = if (cached.isEmpty()) "no cache" else "using ${cached.size} cached"
+                crashBreadcrumbs.log("rates: remote failed (${error.toBreadcrumb()}), $fallback")
                 cached.ifEmpty { throw error }
             }
         }
@@ -91,8 +98,15 @@ class ExchangeRateRepositoryImpl internal constructor(
 
     override suspend fun refreshExchangeRates() {
         refreshMutex.withLock {
-            val valid = remoteDataSource.fetchExchangeRates()
-            localDataSource.replaceRates(valid)
+            runCatching {
+                val valid = remoteDataSource.fetchExchangeRates()
+                localDataSource.replaceRates(valid)
+                crashBreadcrumbs.log("rates: manual refresh ${valid.size}")
+            }.onFailure { error ->
+                if (error !is CancellationException) {
+                    crashBreadcrumbs.log("rates: manual refresh failed (${error.toBreadcrumb()})")
+                }
+            }.getOrThrow()
         }
     }
 
@@ -107,6 +121,13 @@ class ExchangeRateRepositoryImpl internal constructor(
         return (listOf(krwCurrencyInfo()) + rates.map { it.toCurrencyInfo() })
             .distinctBy { it.code }
     }
+
+    /**
+     * 크래시 단서에 남길 오류 이름. release 빌드는 R8이 앱 클래스 이름을 줄이므로
+     * 앱이 정의한 예외는 고정된 영어 메시지로 남긴다.
+     */
+    private fun Throwable.toBreadcrumb(): String =
+        if (this is ExchangeRateException) message.orEmpty() else javaClass.name
 
     companion object {
         private const val CACHE_TTL_MS = 12 * 60 * 60 * 1000L

@@ -58,9 +58,14 @@ public struct MainTabView: View {
             }
         }
         .onChange(of: adConsentManager.canRequestAds, initial: true) { _, canRequestAds in
+            mainViewModel.recordAdConsent(canRequestAds: canRequestAds)
             if canRequestAds {
                 interstitialAd.preload()
             }
+        }
+        // 크래시가 나면 어느 탭이었는지 알 수 있게 탭이 바뀔 때마다 남긴다 (Android `MainScreen.onScreenChange` 대응).
+        .onChange(of: selectedTab, initial: true) { _, tab in
+            mainViewModel.recordScreen(tab)
         }
         // 계산을 마치고 다른 탭으로 넘어가는 순간에만 전면 광고를 고려한다 (Android `MainScreen.onLeaveCalculator` 대응).
         .onChange(of: selectedTab) { oldTab, newTab in

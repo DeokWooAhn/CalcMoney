@@ -5,6 +5,7 @@ import com.ahn.domain.ads.usecase.InterstitialAdUseCases
 import com.ahn.domain.ads.usecase.RecordInterstitialAdCalculationUseCase
 import com.ahn.domain.ads.usecase.RecordInterstitialAdShownUseCase
 import com.ahn.domain.ads.usecase.ShouldShowInterstitialAdUseCase
+import com.ahn.domain.crash.CrashBreadcrumbs
 import com.ahn.domain.review.usecase.RecordAppOpenUseCase
 import com.ahn.domain.review.usecase.RecordCalculationSuccessUseCase
 import com.ahn.domain.review.usecase.ReviewPromptUseCases
@@ -46,6 +47,7 @@ class MainViewModelTest : BehaviorSpec({
     val recordInterstitialAdCalculationUseCase = mockk<RecordInterstitialAdCalculationUseCase>()
     val shouldShowInterstitialAdUseCase = mockk<ShouldShowInterstitialAdUseCase>()
     val recordInterstitialAdShownUseCase = mockk<RecordInterstitialAdShownUseCase>()
+    val crashBreadcrumbs = mockk<CrashBreadcrumbs>(relaxed = true)
 
     fun createViewModel() = MainViewModel(
         themeUseCases = ThemeUseCases(
@@ -61,6 +63,7 @@ class MainViewModelTest : BehaviorSpec({
             shouldShow = shouldShowInterstitialAdUseCase,
             recordShown = recordInterstitialAdShownUseCase,
         ),
+        crashBreadcrumbs = crashBreadcrumbs,
     )
 
     beforeSpec {
@@ -238,6 +241,55 @@ class MainViewModelTest : BehaviorSpec({
                 verify(exactly = 1) {
                     Log.w("MainViewModel", "Failed to record interstitial ad shown.", any<Throwable>())
                 }
+            }
+        }
+    }
+
+    Given("크래시 단서를 남길 때") {
+        When("하단 탭이 바뀌면") {
+            Then("그 탭을 화면 단서로 남겨야 한다") {
+                createViewModel().recordScreen("exchange")
+
+                verify(exactly = 1) { crashBreadcrumbs.setScreen("exchange") }
+            }
+        }
+
+        When("광고 요청 가능 여부가 같은 값으로 여러 번 오면") {
+            Then("처음 한 번만 남겨야 한다") {
+                val viewModel = createViewModel()
+
+                viewModel.recordAdConsent(canRequestAds = false)
+                viewModel.recordAdConsent(canRequestAds = false)
+
+                verify(exactly = 1) { crashBreadcrumbs.log("ads: canRequestAds=false") }
+            }
+        }
+
+        When("광고 요청 가능 여부가 바뀌면") {
+            Then("바뀐 값을 다시 남겨야 한다") {
+                val viewModel = createViewModel()
+
+                viewModel.recordAdConsent(canRequestAds = false)
+                viewModel.recordAdConsent(canRequestAds = true)
+
+                verify(exactly = 1) { crashBreadcrumbs.log("ads: canRequestAds=false") }
+                verify(exactly = 1) { crashBreadcrumbs.log("ads: canRequestAds=true") }
+            }
+        }
+
+        When("인앱 리뷰를 요청하면") {
+            Then("리뷰 요청을 남겨야 한다") {
+                createViewModel().markReviewRequested()
+
+                verify(exactly = 1) { crashBreadcrumbs.log("review: in-app review requested") }
+            }
+        }
+
+        When("전면 광고를 보여 줬으면") {
+            Then("광고 표시를 남겨야 한다") {
+                createViewModel().recordInterstitialAdShown()
+
+                verify(exactly = 1) { crashBreadcrumbs.log("ads: interstitial shown") }
             }
         }
     }

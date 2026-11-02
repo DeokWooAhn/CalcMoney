@@ -41,8 +41,9 @@ GitHub Actions 실행 번호를 `10000 + 실행 번호` 규칙으로 변환해 A
 라이브러리 버전을 한 줄만 올려도 함께 따라오는 의존성, 권한, exported 컴포넌트를 저장소에 커밋한 텍스트 파일(baseline)과 비교합니다. `android-ci.yml`의 `build` job이 정적 분석 바로 뒤에 `:app:dependencyGuard`와 `:app:manifestShield`를 돌립니다.
 
 - **dependency-guard**: 출시 앱의 런타임 의존성 목록을 `app/dependencies/releaseRuntimeClasspath.txt`와 비교합니다.
-- **manifest-shield**: release Merged Manifest의 권한과 exported 컴포넌트를 `app/manifestShield/releaseAndroidManifest.txt`와 비교합니다. 어느 라이브러리가 넣었는지는 같은 폴더의 `.sources.txt`에 남습니다.
+- **manifest-shield**: release Merged Manifest의 권한(`uses-permission-sdk-23` 포함)과 exported 컴포넌트(권한으로 보호된 것 포함)를 `app/manifestShield/releaseAndroidManifest.txt`와 비교합니다. 어느 라이브러리가 넣었는지는 같은 폴더의 `.sources.txt`에 남습니다.
 - **실패하면**: 의도한 변경이면 `./gradlew :app:dependencyGuardBaseline :app:manifestShieldBaseline`으로 baseline을 다시 만들어 같은 PR에 커밋합니다. 리뷰어는 baseline diff로 무엇이 바뀌었는지 봅니다. 모르는 변경이면 어떤 라이브러리가 넣었는지부터 찾습니다. 새 권한이 광고 ID나 데이터 보안처럼 Play Console에 신고해야 하는 항목인지도 확인합니다.
+- 두 플러그인은 baseline 파일이 없으면 새로 만들고 통과합니다. 그래서 CI는 검사 전에 `git ls-files --error-unmatch`로 세 baseline 파일이 커밋돼 있는지 먼저 확인합니다.
 - CI는 baseline을 자동으로 고치지 않습니다. 두 태스크 이름에는 `Release`가 없어 로컬에서도 릴리스 시크릿 없이 돕니다.
 
 ## Android 단위 테스트 커버리지 (Kover)

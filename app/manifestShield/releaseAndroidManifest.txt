@@ -12,3 +12,13 @@ uses-permission:
 
 activity:
   com.ahn.presentation.main.MainActivity (exported)
+
+service:
+  androidx.work.impl.background.systemjob.SystemJobService (exported)
+    permission: android.permission.BIND_JOB_SERVICE
+
+receiver:
+  androidx.profileinstaller.ProfileInstallReceiver (exported)
+    permission: android.permission.DUMP
+  androidx.work.impl.diagnostics.DiagnosticsReceiver (exported)
+    permission: android.permission.DUMP

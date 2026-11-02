@@ -13,11 +13,24 @@ uses-permission:
 uses-permission:
   com.ahn.calcmoney.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
 
+[androidx.profileinstaller:profileinstaller:1.4.0]
+receiver:
+  androidx.profileinstaller.ProfileInstallReceiver (exported)
+    permission: android.permission.DUMP
+
 [androidx.work:work-runtime:2.7.0]
 uses-permission:
   android.permission.ACCESS_NETWORK_STATE
   android.permission.FOREGROUND_SERVICE
   android.permission.WAKE_LOCK
+
+service:
+  androidx.work.impl.background.systemjob.SystemJobService (exported)
+    permission: android.permission.BIND_JOB_SERVICE
+
+receiver:
+  androidx.work.impl.diagnostics.DiagnosticsReceiver (exported)
+    permission: android.permission.DUMP
 
 [com.google.android.datatransport:transport-backend-cct:3.3.0]
 uses-permission:

@@ -141,6 +141,10 @@ manifestShield {
     configuration("release") {
         // 어느 라이브러리가 넣었는지도 함께 남긴다.
         sources = true
+        // minSdk가 23 이상이라 <uses-permission-sdk-23>으로 들어온 권한도 실제로 적용된다.
+        usesPermissionSdk23 = true
+        // 권한으로 보호된 exported 컴포넌트도 남긴다. 아무 앱이나 받을 수 있는 권한으로 보호하면 막히지 않는다.
+        unprotectedOnly = false
     }
 }
 

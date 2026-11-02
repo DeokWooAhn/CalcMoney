@@ -10,16 +10,19 @@ public actor ExchangeRateRepositoryImpl: ExchangeRateRepository {
 
     private let remoteDataSource: any ExchangeRateRemoteDataSource
     private let localDataSource: ExchangeRateLocalDataSource
+    private let crashBreadcrumbs: any CrashBreadcrumbs
     private let now: @Sendable () -> Date
     private var inFlightRefresh: Task<[ExchangeRateData], any Error>?
 
     public init(
         remoteDataSource: any ExchangeRateRemoteDataSource,
         localDataSource: ExchangeRateLocalDataSource,
+        crashBreadcrumbs: any CrashBreadcrumbs = NoOpCrashBreadcrumbs(),
         now: @escaping @Sendable () -> Date = { Date() },
     ) {
         self.remoteDataSource = remoteDataSource
         self.localDataSource = localDataSource
+        self.crashBreadcrumbs = crashBreadcrumbs
         self.now = now
     }
 
@@ -48,7 +51,15 @@ public actor ExchangeRateRepositoryImpl: ExchangeRateRepository {
     }
 
     public func refreshExchangeRates() async throws {
-        _ = try await refresh()
+        do {
+            let valid = try await refresh()
+            crashBreadcrumbs.log("rates: manual refresh \(valid.count)")
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            crashBreadcrumbs.log("rates: manual refresh failed (\(error.breadcrumbName))")
+            throw error
+        }
     }
 
     /// 지원 통화 목록을 반환한다. 기준 통화 KRW를 항상 포함하고 코드 기준으로 중복을 제거한다.
@@ -75,10 +86,16 @@ public actor ExchangeRateRepositoryImpl: ExchangeRateRepository {
         }
 
         do {
-            return try await refresh()
+            let valid = try await refresh()
+            crashBreadcrumbs.log("rates: refreshed \(valid.count) from remote")
+
+            return valid
         } catch is CancellationError {
             throw CancellationError()
         } catch {
+            let fallback = cached.isEmpty ? "no cache" : "using \(cached.count) cached"
+            crashBreadcrumbs.log("rates: remote failed (\(error.breadcrumbName)), \(fallback)")
+
             if cached.isEmpty { throw error }
 
             return cached
@@ -104,5 +121,23 @@ public actor ExchangeRateRepositoryImpl: ExchangeRateRepository {
         defer { inFlightRefresh = nil }
 
         return try await task.value
+    }
+}
+
+private extension Error {
+    /// 크래시 단서에 남길 오류 이름. 원인 오류의 메시지는 빼고 종류만 남긴다.
+    var breadcrumbName: String {
+        if let error = self as? ExchangeRateError {
+            switch error {
+            case .notReady: return "notReady"
+            case .networkUnavailable: return "networkUnavailable"
+            case .temporarilyUnavailable: return "temporarilyUnavailable"
+            case .rateNotFound: return "rateNotFound"
+            }
+        }
+
+        let nsError = self as NSError
+
+        return "\(nsError.domain) \(nsError.code)"
     }
 }

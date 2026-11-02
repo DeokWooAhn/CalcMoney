@@ -70,6 +70,7 @@ class MainActivity : ComponentActivity() {
                     onPrivacyOptionsClick = ::showPrivacyOptionsForm,
                     onRequestReview = ::requestInAppReview,
                     onLeaveCalculator = ::showInterstitialAdIfDue,
+                    onScreenChange = viewModel::recordScreen,
                 )
             }
         }
@@ -142,6 +143,7 @@ class MainActivity : ComponentActivity() {
         adConsentState = state.copy(
             canRequestAds = state.canRequestAds && isMobileAdsInitialized,
         )
+        viewModel.recordAdConsent(adConsentState.canRequestAds)
     }
 
     private fun initializeMobileAdsIfAllowed(state: AdConsentState) {
@@ -156,6 +158,7 @@ class MainActivity : ComponentActivity() {
                     isMobileAdsInitialized = true
                     isMobileAdsInitializing = false
                     adConsentState = adConsentState.copy(canRequestAds = canRequestAds)
+                    viewModel.recordAdConsent(canRequestAds)
                     if (canRequestAds) interstitialAdController.preload()
                 }
             } catch (e: Exception) {

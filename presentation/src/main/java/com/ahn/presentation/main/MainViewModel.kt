@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ahn.domain.ads.usecase.InterstitialAdUseCases
+import com.ahn.domain.crash.CrashBreadcrumbs
 import com.ahn.domain.review.usecase.ReviewPromptUseCases
 import com.ahn.domain.setting.model.ThemeMode
 import com.ahn.domain.setting.usecase.ThemeUseCases
@@ -20,9 +21,13 @@ class MainViewModel @Inject constructor(
     private val themeUseCases: ThemeUseCases,
     private val reviewPromptUseCases: ReviewPromptUseCases,
     private val interstitialAdUseCases: InterstitialAdUseCases,
+    private val crashBreadcrumbs: CrashBreadcrumbs,
 ) : ViewModel() {
     /** 이번 실행에서 인앱 리뷰를 요청했는지. 리뷰를 부탁한 직후에는 전면 광고를 띄우지 않는다. */
     private var hasRequestedReviewThisSession = false
+
+    /** 마지막으로 크래시 단서에 남긴 광고 요청 가능 여부. 바뀔 때만 다시 남긴다. */
+    private var lastRecordedCanRequestAds: Boolean? = null
 
     val themeMode: StateFlow<ThemeMode> = themeUseCases.getThemeMode()
         .stateIn(
@@ -51,6 +56,20 @@ class MainViewModel @Inject constructor(
     /** 인앱 리뷰를 요청했다고 남긴다. 이번 실행에서는 전면 광고를 띄우지 않는다. */
     fun markReviewRequested() {
         hasRequestedReviewThisSession = true
+        crashBreadcrumbs.log("review: in-app review requested")
+    }
+
+    /** 지금 보고 있는 하단 탭을 크래시 단서로 남긴다. */
+    fun recordScreen(route: String) {
+        crashBreadcrumbs.setScreen(route)
+    }
+
+    /** 광고 동의 결과로 광고를 요청할 수 있는지 크래시 단서로 남긴다. 값이 바뀔 때만 남긴다. */
+    fun recordAdConsent(canRequestAds: Boolean) {
+        if (lastRecordedCanRequestAds == canRequestAds) return
+
+        lastRecordedCanRequestAds = canRequestAds
+        crashBreadcrumbs.log("ads: canRequestAds=$canRequestAds")
     }
 
     /**
@@ -74,6 +93,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun recordInterstitialAdShown() {
+        crashBreadcrumbs.log("ads: interstitial shown")
         viewModelScope.launch {
             try {
                 interstitialAdUseCases.recordShown()

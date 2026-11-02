@@ -39,6 +39,7 @@ final class AppContainer {
             themeUseCases: useCases.theme,
             reviewPromptUseCases: useCases.reviewPrompt,
             interstitialAdUseCases: useCases.interstitialAd,
+            crashBreadcrumbs: repositories.crashBreadcrumbs,
         )
     }
 }
@@ -52,6 +53,8 @@ private struct Repositories {
     let calculatorHistory: any CalculatorHistoryRepository
     let reviewPrompt: any ReviewPromptRepository
     let interstitialAd: any InterstitialAdRepository
+    /// 크래시 단서. Repository는 아니지만 Firebase 초기화 여부에 따라 구현이 갈려 여기서 함께 만든다.
+    let crashBreadcrumbs: any CrashBreadcrumbs
 
     init() {
         // GoogleService-Info.plist가 없으면 원격 환율은 "준비 안 됨" 상태로 동작한다.
@@ -59,10 +62,13 @@ private struct Repositories {
         let remoteDataSource: any ExchangeRateRemoteDataSource = isFirebaseConfigured
             ? FirestoreExchangeRateDataSource()
             : UnavailableExchangeRateRemoteDataSource()
+        // Crashlytics는 Firebase를 초기화하기 전에 부르면 크래시하므로 초기화했을 때만 쓴다.
+        crashBreadcrumbs = isFirebaseConfigured ? FirebaseCrashBreadcrumbs() : NoOpCrashBreadcrumbs()
 
         exchangeRate = ExchangeRateRepositoryImpl(
             remoteDataSource: remoteDataSource,
             localDataSource: Self.makeExchangeRateLocalDataSource(),
+            crashBreadcrumbs: crashBreadcrumbs,
         )
         currencySelection = CurrencySelectionRepositoryImpl(dataSource: CurrencySelectionDataSource())
         favoriteCurrency = FavoriteCurrencyRepositoryImpl(dataSource: FavoriteCurrencyDataSource())

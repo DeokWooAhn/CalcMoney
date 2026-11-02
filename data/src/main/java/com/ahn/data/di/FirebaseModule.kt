@@ -1,5 +1,6 @@
 package com.ahn.data.di
 
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
@@ -14,5 +15,11 @@ object FirebaseModule {
     @Singleton
     fun provideFirebaseFirestore(): FirebaseFirestore {
         return FirebaseFirestore.getInstance()
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseCrashlytics(): FirebaseCrashlytics {
+        return FirebaseCrashlytics.getInstance()
     }
 }

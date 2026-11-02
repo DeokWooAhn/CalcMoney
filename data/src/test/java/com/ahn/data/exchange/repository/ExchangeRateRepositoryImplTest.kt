@@ -3,6 +3,8 @@ package com.ahn.data.exchange.repository
 import com.ahn.data.exchange.local.datasource.ExchangeRateLocalDataSource
 import com.ahn.data.exchange.local.entity.ExchangeRateEntity
 import com.ahn.data.exchange.remote.datasource.ExchangeRateRemoteDataSource
+import com.ahn.domain.crash.CrashBreadcrumbs
+import com.ahn.domain.exchange.model.ExchangeRateException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly
@@ -12,6 +14,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import java.io.IOException
@@ -28,14 +31,17 @@ class ExchangeRateRepositoryImplTest :
     DescribeSpec({
         lateinit var remoteDataSource: ExchangeRateRemoteDataSource
         lateinit var localDataSource: ExchangeRateLocalDataSource
+        lateinit var crashBreadcrumbs: CrashBreadcrumbs
         lateinit var repository: ExchangeRateRepositoryImpl
 
         beforeTest {
             remoteDataSource = mockk()
             localDataSource = mockk()
+            crashBreadcrumbs = mockk(relaxed = true)
             repository = ExchangeRateRepositoryImpl(
                 remoteDataSource = remoteDataSource,
                 localDataSource = localDataSource,
+                crashBreadcrumbs = crashBreadcrumbs,
                 clock = testClock,
             )
         }
@@ -75,6 +81,7 @@ class ExchangeRateRepositoryImplTest :
 
                         rate shouldBeExactly 1400.0
                         coVerify { localDataSource.replaceRates(remoteRates) }
+                        verify(exactly = 1) { crashBreadcrumbs.log("rates: refreshed 1 from remote") }
                     }
                 }
 
@@ -107,6 +114,9 @@ class ExchangeRateRepositoryImplTest :
 
                         rate shouldBeExactly 1300.0
                         coVerify(exactly = 0) { localDataSource.replaceRates(any()) }
+                        verify(exactly = 1) {
+                            crashBreadcrumbs.log("rates: remote failed (java.io.IOException), using 1 cached")
+                        }
                     }
                 }
 
@@ -118,6 +128,27 @@ class ExchangeRateRepositoryImplTest :
 
                         shouldThrow<IOException> {
                             repository.getExchangeRate(from = "USD", to = "KRW")
+                        }
+                        verify(exactly = 1) {
+                            crashBreadcrumbs.log("rates: remote failed (java.io.IOException), no cache")
+                        }
+                    }
+                }
+
+                it("앱이 정의한 환율 오류는 클래스 이름 대신 고정된 메시지로 남긴다") {
+                    runTest {
+                        coEvery { localDataSource.getCachedRates() } returns emptyList()
+                        coEvery { localDataSource.getLatestFetchedAt() } returns 0L
+                        coEvery { remoteDataSource.fetchExchangeRates() } throws
+                            ExchangeRateException.NetworkUnavailable()
+
+                        shouldThrow<ExchangeRateException.NetworkUnavailable> {
+                            repository.getExchangeRate(from = "USD", to = "KRW")
+                        }
+                        verify(exactly = 1) {
+                            crashBreadcrumbs.log(
+                                "rates: remote failed (Exchange rate network is unavailable.), no cache",
+                            )
                         }
                     }
                 }
@@ -150,6 +181,20 @@ class ExchangeRateRepositoryImplTest :
                         repository.refreshExchangeRates()
 
                         coVerify { localDataSource.replaceRates(remoteRates) }
+                        verify(exactly = 1) { crashBreadcrumbs.log("rates: manual refresh 1") }
+                    }
+                }
+
+                it("새로고침이 실패하면 실패를 남기고 오류를 그대로 던진다") {
+                    runTest {
+                        coEvery { remoteDataSource.fetchExchangeRates() } throws IOException("network error")
+
+                        shouldThrow<IOException> {
+                            repository.refreshExchangeRates()
+                        }
+                        verify(exactly = 1) {
+                            crashBreadcrumbs.log("rates: manual refresh failed (java.io.IOException)")
+                        }
                     }
                 }
             }

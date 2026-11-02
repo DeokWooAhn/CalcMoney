@@ -20,6 +20,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.setValue
@@ -51,6 +52,7 @@ fun MainScreen(
     onPrivacyOptionsClick: () -> Unit = {},
     onRequestReview: () -> Unit = {},
     onLeaveCalculator: (isAwayFromCalculator: () -> Boolean) -> Unit = {},
+    onScreenChange: (route: String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val backPressExitMessage = stringResource(R.string.back_press_exit)
@@ -69,6 +71,13 @@ fun MainScreen(
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    val currentRoute = currentDestination?.route
+
+    // 크래시가 나면 어느 탭이었는지 알 수 있게 탭이 바뀔 때마다 남긴다.
+    LaunchedEffect(currentRoute) {
+        currentRoute?.let(onScreenChange)
+    }
+
     val isTopLevelDestination = items.any { item ->
         currentDestination?.hierarchy?.any { it.route == item.route } == true
     }

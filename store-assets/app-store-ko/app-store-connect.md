@@ -84,7 +84,7 @@ No account or login is required.
 Attached is a screen recording captured on a physical iPhone running the latest iOS. It starts by launching the app from the Home Screen and shows the App Tracking Transparency prompt, the calculator with live currency conversion, the calculation history, changing and swapping currencies, and the Exchange, Favorites and Settings tabs. The app has no accounts, no user-generated content and no paid content.
 
 2. Purpose and target audience
-Simple Currency Calculator is a calculator with built-in currency conversion. It is for travelers and online shoppers, mainly Korean users, who add up or discount prices in a foreign currency and want to see the total in their own currency. Instead of switching between a calculator and a converter, the user types an expression such as (1,980 + 2,480) × 0.8 and sees the result and its converted value together while typing. Rates are cached on the device, so the app keeps working offline (for example on a plane) after the first launch.
+Simple Currency Calculator is a calculator with built-in currency conversion. It is for travelers and online shoppers, mainly Korean users, who add up prices in a foreign currency and want to see the total in their own currency. Instead of switching between a calculator and a converter, the user types an expression such as 1,980 + 2,480 and sees the result and its converted value together while typing. Rates are cached on the device, so the app keeps working offline (for example on a plane) after the first launch.
 
 3. How to use the main features
 No login, setup or sample files are needed. An internet connection is needed only the first time, to download the rates.

@@ -59,17 +59,20 @@ class ArchitectureTest : BehaviorSpec({
                 }
         }
 
-        Then("Orbit ViewModel은 같은 패키지의 Contract에 State·Intent·SideEffect를 둔다") {
+        Then("Orbit ViewModel은 같은 패키지의 자기 Contract에 State·Intent·SideEffect를 두고 그 타입을 쓴다") {
             viewModels
                 .filter { it.implementsContainerHost() }
                 .assertTrue(
-                    additionalMessage = "<Feature>Contract에 data class State, sealed interface Intent·SideEffect",
+                    additionalMessage = "<Feature>Contract에 data class State, sealed interface Intent·SideEffect를 두고 " +
+                        "ContainerHost<<Feature>Contract.State, <Feature>Contract.SideEffect>로 구현한다",
                 ) { vm ->
                     val contractName = vm.name.removeSuffix("ViewModel") + "Contract"
                     val contract = scope.interfaces().firstOrNull {
                         it.name == contractName && it.packagee?.name == vm.packagee?.name
                     }
-                    contract != null &&
+                    val hostTypeArguments = vm.containerHostParent()?.typeArguments?.map { it.text }
+                    hostTypeArguments == listOf("$contractName.State", "$contractName.SideEffect") &&
+                        contract != null &&
                         contract.classes().any { it.name == "State" && it.hasDataModifier } &&
                         contract.interfaces().any { it.name == "Intent" && it.hasSealedModifier } &&
                         contract.interfaces().any { it.name == "SideEffect" && it.hasSealedModifier }
@@ -105,7 +108,13 @@ class ArchitectureTest : BehaviorSpec({
             repositoryImpls
                 .assertTrue { impl ->
                     impl.resideInPackage("com.ahn.data..repository..") &&
-                        impl.parents().any { it.name == impl.name.removeSuffix("Impl") }
+                        impl.parents().any { parent ->
+                            // 부모 자체의 패키지는 이 파일의 패키지라서, 부모가 가리키는 원래 선언의 패키지를 본다.
+                            val source = parent.sourceDeclaration?.asInterfaceDeclaration()
+                            source != null &&
+                                source.name == impl.name.removeSuffix("Impl") &&
+                                source.resideInPackage("com.ahn.domain..repository..")
+                        }
                 }
         }
     }
@@ -124,8 +133,16 @@ private val NON_INVOKE_USE_CASES = mapOf(
         "가진다. 나눌지는 따로 정한다",
 )
 
+private const val ORBIT_CONTAINER_HOST = "org.orbitmvi.orbit.ContainerHost"
+
+/** Orbit ContainerHost 부모. 제네릭 부모의 이름에는 타입 인자가 붙으므로 원래 선언의 전체 이름으로 찾는다. */
+private fun com.lemonappdev.konsist.api.declaration.KoClassDeclaration.containerHostParent() =
+    parents().firstOrNull {
+        it.sourceDeclaration?.asExternalDeclaration()?.fullyQualifiedName == ORBIT_CONTAINER_HOST
+    }
+
 private fun com.lemonappdev.konsist.api.declaration.KoClassDeclaration.implementsContainerHost() =
-    parents().any { it.name.startsWith("ContainerHost") }
+    containerHostParent() != null
 
 private fun com.lemonappdev.konsist.api.declaration.KoClassDeclaration.hasOperatorInvoke() =
     functions().any { it.name == "invoke" && it.hasOperatorModifier }

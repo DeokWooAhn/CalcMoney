@@ -137,8 +137,8 @@ class CalculatorViewModelReviewPromptTest :
         beforeEach {
             clearAllMocks()
 
-            every { calculateExpressionUseCase.calculate(any()) } returns "0"
-            every { calculateExpressionUseCase.calculate("1+1") } returns "2"
+            every { calculateExpressionUseCase(any()) } returns "0"
+            every { calculateExpressionUseCase("1+1") } returns "2"
             every { getCalculatorHistoriesUseCase() } returns MutableStateFlow(emptyList())
             coEvery { getSupportedCurrenciesUseCase() } returns emptyList()
             every { getFavoriteCurrenciesUseCase() } returns MutableStateFlow(emptyList())
@@ -188,7 +188,7 @@ class CalculatorViewModelReviewPromptTest :
             When("=을 누르면") {
                 Then("실패한 계산은 리뷰 요청·전면 광고 조건에 세지 않아야 한다") {
                     runTest {
-                        every { calculateExpressionUseCase.calculate(any()) } returns "Error"
+                        every { calculateExpressionUseCase(any()) } returns "Error"
 
                         createViewModel().test(this) {
                             expectInitialState()

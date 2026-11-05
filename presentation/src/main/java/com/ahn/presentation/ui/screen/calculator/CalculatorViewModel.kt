@@ -182,7 +182,7 @@ class CalculatorViewModel @Inject constructor(
                 expression
             }
 
-        val result = calculatorUseCases.calculateExpression.calculate(expressionToCalculate)
+        val result = calculatorUseCases.calculateExpression(expressionToCalculate)
 
         if (result == "Error") {
             reduce {

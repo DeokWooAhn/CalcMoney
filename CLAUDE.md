@@ -11,6 +11,7 @@ ExchangeRate-API의 원화 기준 환율(160여 개 통화)을 보여주는 앱.
 :data ──→ :domain                          Repository 구현, Room, Firestore, DataStore
 :presentation ──→ :domain                  Compose UI + Orbit MVI (:data를 모름)
 :domain                                    순수 Kotlin JVM. model / repository 인터페이스 / usecase
+:konsist                                   테스트 전용. 위 모듈의 소스를 읽어 구조 규칙을 검사 (Konsist)
 ```
 
 - 화면 4개: Calculator / Exchange / Favorite / Settings — `presentation/src/main/java/com/ahn/presentation/main/Route.kt`
@@ -25,7 +26,8 @@ Kotlin 2.2 / JVM 17 / compileSdk 36 · Compose(Material3) · Hilt+KSP(kapt 없�
 
 ```bash
 ./gradlew detekt            # 린트 (ktlint 포함, autoCorrect 켜짐)
-./gradlew test              # 전체 유닛 테스트
+./gradlew test              # 전체 유닛 테스트 (:konsist 구조 규칙 포함)
+./gradlew :konsist:test     # 구조 규칙만: ViewModel·Contract·UseCase·Repository의 모양
 ./gradlew :app:assembleDebug
 ./gradlew :koverHtmlReportUnit   # 병합 커버리지 → build/reports/kover/htmlUnit/index.html
 ./gradlew :koverVerifyUnit       # CI 커버리지 게이트와 같은 검사
@@ -39,6 +41,7 @@ Kotlin 2.2 / JVM 17 / compileSdk 36 · Compose(Material3) · Hilt+KSP(kapt 없�
 - **versionCode를 손으로 고치지 말 것.** 릴리스는 `android-v*` 태그 push → CI가 `10000 + GITHUB_RUN_NUMBER`로 계산. 로컬 기본값은 `app/build.gradle.kts`의 `DEFAULT_VERSION_CODE`.
 - detekt는 `dev.detekt` 2.0 알파 (구 `io.gitlab.arturbosch.detekt` 아님). 모듈별 `detekt-baseline.xml` 존재.
 - 테스트는 JUnit5 플랫폼(`useJUnitPlatform()`) 위의 Kotest — JUnit4 러너로 돌리면 안 됨.
+- **구조 규칙은 `:konsist` 모듈이 검사한다.** `mvi-screen` 스킬의 ViewModel·Contract·UseCase·Repository 규칙과 예외 목록(이유 포함)이 `konsist/src/test/java/com/ahn/konsist/ArchitectureTest.kt`에 있다. 예외를 더하거나 빼면 스킬도 함께 고친다. 예외가 규칙을 지키게 되면 목록에서 빼라고 테스트가 실패한다. Konsist는 0.18.1로 고정했다(1.0.0 정식이 나오면 올린다).
 - **라이브러리 버전을 올리면 baseline도 함께 다시 만들어 PR에 커밋한다.** `app/dependencies/releaseRuntimeClasspath.txt`는 출시 앱의 런타임 의존성(dependency-guard), `app/manifestShield/`는 Merged Manifest의 권한·exported 컴포넌트와 그걸 넣은 라이브러리(manifest-shield)다. 앱이 직접 선언한 권한은 `INTERNET`뿐이고 `AD_ID`·`FOREGROUND_SERVICE` 등은 AdMob·Firebase·WorkManager가 넣는다. 새 권한·exported 컴포넌트가 생기면 출처(`.sources.txt`)를 보고 Play Console 신고(광고 ID, 데이터 보안) 영향을 확인한다. CI는 비교만 하고 baseline을 고치지 않는다.
 - **Kover는 루트의 `unit` variant만 쓴다.** 각 모듈의 debug(domain은 jvm)를 루트가 병합하고, 제외 필터와 하한(`minBound`)은 루트 `build.gradle.kts`에만 있다. 태스크 앞에 `:`를 빼면 필터 없는 모듈별 리포트까지 만들고, `koverHtmlReport`(total)는 release까지 돌며, `*Release` variant 태스크는 위 시크릿 검증에 걸린다.
 - 앱은 환율 API를 직접 호출하지 않는다. 환율 API 키는 Cloud Functions의 Firebase secret `EXCHANGE_RATE_API_KEY` 하나뿐 (`local.properties`에는 `sdk.dir`만 있으면 됨).

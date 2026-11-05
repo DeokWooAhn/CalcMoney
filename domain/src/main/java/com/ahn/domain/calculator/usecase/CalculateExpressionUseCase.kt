@@ -26,8 +26,7 @@ class CalculateExpressionUseCase @Inject constructor() {
      *           값의 크기가 1e15 이상이거나 0이 아니면서 1e-10보다 작으면,
      *           소수점 이하 10자리의 과학적 표기법으로 표시합니다.
      */
-
-    fun calculate(expression: String): String {
+    operator fun invoke(expression: String): String {
         return try {
             val normalized = expression
                 .replace("\n", "")

@@ -88,7 +88,7 @@ class ConvertExchangeAmountUseCaseTest :
             }
 
             it("계산식 텍스트면 계산 결과를 환율로 변환한다") {
-                every { calculateExpressionUseCase.calculate("100+200") } returns "300"
+                every { calculateExpressionUseCase("100+200") } returns "300"
 
                 useCase.convertSingleAmount(
                     text = "100+200",
@@ -98,7 +98,7 @@ class ConvertExchangeAmountUseCaseTest :
             }
 
             it("계산식 결과가 Error이면 빈 문자열을 반환한다") {
-                every { calculateExpressionUseCase.calculate("1++") } returns "Error"
+                every { calculateExpressionUseCase("1++") } returns "Error"
 
                 useCase.convertSingleAmount(
                     text = "1++",

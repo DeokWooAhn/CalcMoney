@@ -7,6 +7,9 @@ description: 새 화면 추가, ViewModel/Contract 작성, Orbit MVI 패턴을 �
 
 설명보다 아래 레퍼런스 파일을 먼저 읽고 그 구조를 그대로 따라할 것.
 
+ViewModel·Contract·UseCase·Repository의 모양은 `:konsist` 테스트(`konsist/src/test/java/com/ahn/konsist/ArchitectureTest.kt`)가
+검사한다(`./gradlew :konsist:test`). 규칙을 바꾸거나 예외를 더할 때는 그 파일의 예외 목록에 이유를 적고 이 문서도 함께 고친다.
+
 ## 화면 하나 = 파일 3개 (`presentation/ui/screen/<feature>/`)
 
 | 파일 | 내용 | 정석 레퍼런스 |
@@ -20,11 +23,14 @@ description: 새 화면 추가, ViewModel/Contract 작성, Orbit MVI 패턴을 �
 - 진입점은 단일 `fun processIntent(intent: ...)` — when으로 private `handleX()`에 분배
 - `handleX()`가 `intent { }` 블록을 열고, 실제 로직은 private `suspend fun Syntax<State, SideEffect>.performX()` 헬퍼로
 - 순수 상태 계산이 복잡하면 별도 plain class로 추출 (예: `CalculatorExpressionReducer.kt`)
-- 예외: `MainViewModel`은 Orbit이 아닌 plain StateFlow — 새 화면에서 따라하지 말 것
+- 예외: `MainViewModel`과 `FavoriteViewModel`은 Orbit이 아닌 plain StateFlow — 새 화면에서 따라하지 말 것
+  - `MainViewModel`: Activity 범위에서 테마·인앱 리뷰·전면 광고·크래시 단서를 다룬다. 화면의 Intent·SideEffect가 없다
+  - `FavoriteViewModel`: 공유 `ExchangeViewModel`의 상태를 받아 즐겨찾기 환율 목록만 계산하는 보조 ViewModel이다.
+    자체 Intent·SideEffect가 없어 `FavoriteContract`도 `State`만 둔다
 
 ## UseCase 규칙 (`domain/<feature>/usecase/`)
 
-- 단일 책임 + `operator fun invoke`
+- 단일 책임 + `operator fun invoke`. 예외: `ConvertExchangeAmountUseCase`(계산식 환산·단일 금액 환산 두 공개 함수)
 - ViewModel에는 개별 주입하지 않고 **홀더 클래스로 묶어서 하나만 주입**: `ExchangeUseCases.kt`, `FavoriteUseCases.kt` 참조. 호출은 `exchangeUseCases.getExchangeRate(from, to)` 형태
 - 도메인 에러는 sealed 계층: `domain/.../exchange/model/ExchangeRateException.kt` → UI 문자열 변환은 `presentation/.../util/ExchangeRateErrorMapper.kt`
 

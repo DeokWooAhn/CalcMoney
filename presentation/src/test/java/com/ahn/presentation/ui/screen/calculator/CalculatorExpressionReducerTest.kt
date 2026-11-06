@@ -24,7 +24,7 @@ class CalculatorExpressionReducerTest : BehaviorSpec({
 
     beforeEach {
         clearAllMocks()
-        every { calculateExpressionUseCase.calculate(any()) } returns "0"
+        every { calculateExpressionUseCase(any()) } returns "0"
         every { convertExchangeAmountUseCase.convertExpression(any(), any(), any()) } returns ""
         every { convertExchangeAmountUseCase.convertSingleAmount(any(), any(), any()) } returns ""
     }
@@ -55,7 +55,7 @@ class CalculatorExpressionReducerTest : BehaviorSpec({
     given("곱하기 연산자 뒤에서") {
         `when`("마이너스 연산자를 입력하면") {
             then("이전 연산자를 교체하지 않고 음수 연산자로 추가해야 한다") {
-                every { calculateExpressionUseCase.calculate("2×-3") } returns "-6"
+                every { calculateExpressionUseCase("2×-3") } returns "-6"
 
                 val reducer = createReducer()
                 val multipliedState = CalculatorContract.State(

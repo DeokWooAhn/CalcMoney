@@ -184,7 +184,7 @@ class CalculatorViewModelTest : BehaviorSpec({
     beforeEach {
         clearAllMocks()
 
-        every { calculateExpressionUseCase.calculate(any()) } returns "0"
+        every { calculateExpressionUseCase(any()) } returns "0"
         coEvery { getSupportedCurrenciesUseCase() } returns emptyList()
         coEvery { getExchangeRateUseCase(any(), any()) } returns 1.0
 
@@ -603,9 +603,9 @@ class CalculatorViewModelTest : BehaviorSpec({
             Then("결과 '30'이 expression에 표시되어야 한다") {
                 runTest {
                     // InstancePerRoot에서는 Mocking을 Then 블록 안에 두는 것이 가장 안전
-                    every { calculateExpressionUseCase.calculate(any()) } returns "0"
-                    every { calculateExpressionUseCase.calculate("10+2") } returns "12"
-                    every { calculateExpressionUseCase.calculate("10+20") } returns "30"
+                    every { calculateExpressionUseCase(any()) } returns "0"
+                    every { calculateExpressionUseCase("10+2") } returns "12"
+                    every { calculateExpressionUseCase("10+20") } returns "30"
 
                     val viewModel = createViewModel()
 
@@ -677,10 +677,10 @@ class CalculatorViewModelTest : BehaviorSpec({
         When("=을 반복해서 누르면") {
             Then("마지막 연산 '+1'이 계속 반복되어야 한다") {
                 runTest {
-                    every { calculateExpressionUseCase.calculate(any()) } returns "0"
-                    every { calculateExpressionUseCase.calculate("2+1") } returns "3"
-                    every { calculateExpressionUseCase.calculate("3+1") } returns "4"
-                    every { calculateExpressionUseCase.calculate("4+1") } returns "5"
+                    every { calculateExpressionUseCase(any()) } returns "0"
+                    every { calculateExpressionUseCase("2+1") } returns "3"
+                    every { calculateExpressionUseCase("3+1") } returns "4"
+                    every { calculateExpressionUseCase("4+1") } returns "5"
 
                     val viewModel = createViewModel()
 
@@ -792,9 +792,9 @@ class CalculatorViewModelTest : BehaviorSpec({
         When("=을 누르면") {
             Then("계산 완료 상태로 바꾸거나 계산 기록에 추가하지 않아야 한다") {
                 runTest {
-                    every { calculateExpressionUseCase.calculate(any()) } returns "0"
-                    every { calculateExpressionUseCase.calculate("12+1") } returns "13"
-                    every { calculateExpressionUseCase.calculate("12+10") } returns "22"
+                    every { calculateExpressionUseCase(any()) } returns "0"
+                    every { calculateExpressionUseCase("12+1") } returns "13"
+                    every { calculateExpressionUseCase("12+10") } returns "22"
 
                     val viewModel = createViewModel()
 
@@ -862,7 +862,7 @@ class CalculatorViewModelTest : BehaviorSpec({
 
                         containerHost.processIntent(CalculatorContract.Intent.Calculate)
 
-                        verify(exactly = 0) { calculateExpressionUseCase.calculate("2") }
+                        verify(exactly = 0) { calculateExpressionUseCase("2") }
                         coVerify(exactly = 1) { addCalculatorHistoryUseCase(any()) }
 
                         cancelAndIgnoreRemainingItems()
@@ -876,8 +876,8 @@ class CalculatorViewModelTest : BehaviorSpec({
         When("AC를 누르면") {
             Then("계산 기록은 유지되어야 한다") {
                 runTest {
-                    every { calculateExpressionUseCase.calculate(any()) } returns "0"
-                    every { calculateExpressionUseCase.calculate("1+1") } returns "2"
+                    every { calculateExpressionUseCase(any()) } returns "0"
+                    every { calculateExpressionUseCase("1+1") } returns "2"
 
                     val viewModel = createViewModel()
 
@@ -907,8 +907,8 @@ class CalculatorViewModelTest : BehaviorSpec({
         When("ClearHistory를 실행하면") {
             Then("계산 기록이 비워져야 한다") {
                 runTest {
-                    every { calculateExpressionUseCase.calculate(any()) } returns "0"
-                    every { calculateExpressionUseCase.calculate("1+1") } returns "2"
+                    every { calculateExpressionUseCase(any()) } returns "0"
+                    every { calculateExpressionUseCase("1+1") } returns "2"
 
                     val viewModel = createViewModel()
 
@@ -927,7 +927,7 @@ class CalculatorViewModelTest : BehaviorSpec({
         When("=을 누르면") {
             Then("에러 상태가 되고 스낵바 SideEffect가 발생해야 한다") {
                 runTest {
-                    every { calculateExpressionUseCase.calculate(any()) } returns "Error"
+                    every { calculateExpressionUseCase(any()) } returns "Error"
 
                     val viewModel = createViewModel()
 

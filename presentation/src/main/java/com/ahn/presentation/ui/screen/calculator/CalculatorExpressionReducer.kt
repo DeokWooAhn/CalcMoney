@@ -168,7 +168,7 @@ internal class CalculatorExpressionReducer(
             return ""
         }
 
-        val result = calculateExpression.calculate(expression)
+        val result = calculateExpression(expression)
         return if (result == "Error") "" else result
     }
 

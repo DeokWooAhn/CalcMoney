@@ -1,9 +1,10 @@
 [versions]
-agp = "8.12.1"
+agp = "9.5.1"
 coreSplashscreen = "1.0.1"
 javaxInject = "1"
-kotlin = "2.2.0"
-jetbrainsKotlinJvm = "2.2.0"
+# AGP 9가 Kotlin 컴파일을 직접 맡는다(built-in Kotlin). AGP가 요구하는 KGP 하한은 2.2.10이다.
+kotlin = "2.2.21"
+jetbrainsKotlinJvm = "2.2.21"
 coreKtx = "1.16.0"
 firebaseBom = "34.13.0"
 googleServices = "4.4.4"
@@ -13,9 +14,11 @@ activityCompose = "1.10.1"
 composeBom = "2025.08.00"
 appcompat = "1.7.1"
 material = "1.12.0"
-hilt = "2.57.1"
-hiltAndroid = "2.57.1"
-ksp = "2.2.0-2.0.2"
+# Hilt Gradle 플러그인은 2.59부터 AGP 9를 지원하고, 2.59.2가 AGP 9의 느린 증분 빌드를 고쳤다.
+hilt = "2.59.2"
+hiltAndroid = "2.59.2"
+# 2.3.0부터 Kotlin 버전과 따로 간다. AGP 9 built-in Kotlin 인식은 2.3.6부터.
+ksp = "2.3.13"
 activity = "1.10.1"
 navigationCompose = "2.9.3"
 hiltNavigationCompose = "1.2.0"
@@ -32,7 +35,8 @@ playServicesAds = "25.3.0"
 userMessagingPlatform = "4.0.0"
 playReview = "2.0.2"
 # Keep the 2.x dev.detekt plugin line while it is alpha-only; switch to stable when 2.x is released.
-detekt = "2.0.0-alpha.0"
+# AGP 9 built-in Kotlin은 2.0.0-alpha.3부터 지원한다.
+detekt = "2.0.0-alpha.6"
 # AGP 9 지원은 0.9.4+, AGP 9 빌드 변형 수정은 0.9.5+.
 kover = "0.9.11"
 # 라이브러리 버전을 올릴 때 따라 바뀌는 의존성·Manifest를 baseline 파일로 드러낸다.
@@ -99,7 +103,6 @@ firebase = ["firebase-analytics", "firebase-crashlytics"]
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
 

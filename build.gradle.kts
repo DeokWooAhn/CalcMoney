@@ -4,7 +4,6 @@ import dev.detekt.gradle.extensions.DetektExtension
 
 plugins {
     alias(libs.plugins.android.application) apply false
-    alias(libs.plugins.jetbrains.kotlin.android) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.jetbrains.kotlin.jvm) apply false
     alias(libs.plugins.hilt) apply false
@@ -95,9 +94,9 @@ subprojects {
         jvmTarget.set("17")
         reports {
             html.required.set(true)
-            xml.required.set(true)
+            checkstyle.required.set(true)
             sarif.required.set(true)
-            md.required.set(false)
+            markdown.required.set(false)
         }
     }
 

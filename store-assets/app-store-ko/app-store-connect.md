@@ -64,7 +64,7 @@ App Store Connect가 버전 번호를 `1.0`으로 만들어 두는데, 빌드의
 | 지원 URL | https://deokwooahn.github.io/CalcMoney/support.html |
 | 마케팅 URL | 비워 둔다 |
 | 저작권 | `2026 DeokWoo Ahn`. 판매자 이름(비즈니스 화면의 법적 이름)과 맞춘다 |
-| 빌드 | Xcode Archive로 올린 빌드. 수출 규정은 `Info.plist`의 `ITSAppUsesNonExemptEncryption = NO`로 미리 답해 두어 빌드마다 묻지 않는다 |
+| 빌드 | Xcode Archive로 올린 빌드. 수출 규정은 `Info.plist`의 `ITSAppUsesNonExemptEncryption = NO`로 미리 답해 두어 빌드마다 묻지 않는다. 빌드 번호(앱 타깃의 `CURRENT_PROJECT_VERSION`)는 iOS 배포 자동화가 없어 올릴 때마다 손으로 1씩 올린다. 이미 올린 번호는 다시 쓸 수 없다 |
 | 버전 출시 | **이 버전을 수동으로 출시**. 첫 출시는 승인 뒤 TestFlight·실기기 확인을 한 번 더 하고 내보낸다 |
 
 ## 6. 앱 심사 정보
@@ -114,3 +114,5 @@ The app is not a financial service. It does not trade, transfer or hold money an
 - 심사자가 읽기 쉽게 iOS 설정 > 앱 > 이 앱 > 언어를 English로 바꿔 찍는다(기기 언어는 그대로 둬도 된다).
 - 제어 센터의 화면 기록으로 홈 화면에서 시작해 1~2분 안에 끝낸다. 광고는 누르지 않는다.
 - 영상은 App Store Connect의 심사 메시지 답장에 첨부하고, 같은 글을 버전 페이지 "앱 심사 정보 > 메모"에도 넣는다.
+
+정보 요청에는 답장만 하고 다시 제출하지 않는 것이 Apple 안내다. 다시 제출하면 새 심사가 시작되고 답장하던 대화가 닫힌다. 다만 답장해도 응답이 없을 수 있다. 1.0.0 (1)은 2026-11-02에 답장한 뒤 8일 동안 응답이 없어, Firebase 보안 업데이트를 넣은 1.0.0 (2)로 빌드를 바꿔 다시 제출하기로 했다(2026-11-10). 이때 답변은 메모 칸에, 영상은 첨부 파일 칸에 있어야 새 심사자도 본다.

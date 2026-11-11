@@ -29,6 +29,8 @@ AGP 8.12.1 → **9.5.1**로 올렸고 built-in Kotlin으로 옮겼다. **release
 
 그대로 둔 것: Kover 0.9.11(AGP 9 지원), google-services 4.4.4, Crashlytics 플러그인 3.0.7, dependency-guard 0.5.0, manifest-shield 0.1.11. 모두 그대로 동작했다.
 
+**Android Studio는 Rabbit 2(2026.2.2) 이상이 필요하다.** [호환성 표](https://developer.android.com/studio/releases)에서 AGP 9.5를 여는 첫 버전이다. Panda 4(2025.3.4)는 AGP 9.2까지만 연다. Rabbit의 기본 Gradle JDK는 25인데, Gradle 9.9는 JDK 25에서 돌아 그대로 쓴다. 다른 프로젝트가 Gradle 8.x면 그 프로젝트만 Gradle JDK를 21로 고른다. "Migrate to Gradle Daemon toolchain" 알림은 무시한다. 받아들이면 `gradle/gradle-daemon-jvm.properties`가 생겨 CI의 JDK 17보다 우선하므로, 하려면 17로 고정하는 별도 PR로 한다.
+
 ## 바꾼 설정
 
 - **built-in Kotlin.** `:app`·`:data`·`:presentation`에서 `org.jetbrains.kotlin.android` 플러그인과 `kotlin { compilerOptions { jvmTarget } }`를 지웠다. jvmTarget은 `compileOptions.targetCompatibility`(17)를 따른다. `:domain`·`:konsist`는 순수 JVM 모듈이라 해당 없다.
@@ -43,7 +45,8 @@ alpha.0 → alpha.6에서 바뀐 것을 `build.gradle.kts`와 `config/detekt/det
 - 리포트 이름: `xml` → `checkstyle`(파일 확장자는 그대로 `.xml`), `md` → `markdown`
 - `code_style: android_studio` → `intellij_idea`. alpha.0은 이 값을 줄 길이·trailing comma 기본값에 반영하지 않아, 그동안 실제로는 120자·trailing comma 허용으로 검사됐다. alpha.6은 `android_studio`를 100자·trailing comma 금지로 적용해 1,673건이 실패했다. 실제로 쓰던 기준에 맞춘다.
 - `MaxLineLength` → `MaximumLineLength`. `MaxLineLength`는 별칭이라 그 아래 `maxLineLength: 120`이 적용되지 않았다.
-- 기본 활성 상태가 바뀐 ktlint 규칙 14개를 alpha.0 때 상태로 고정했다(`detekt.yml`의 주석 참고). 새로 켜진 `BlankLineBetweenWhenConditions`만 22건을 냈다.
+- 기본 활성 상태가 바뀐 ktlint 규칙 14개(alpha.2가 ktlint 1.8 표준 규칙에 맞춰 5개를 켜고 9개를 껐다)는 처음에 alpha.0 상태로 고정했다. 후속 PR에서 고정을 풀고 새 기본값으로 옮겼다. 새로 켜진 `BlankLineBetweenWhenConditions`가 낸 22곳(`when` 조건 사이 빈 줄)을 고쳤다.
+- 같은 PR에서 모듈 3개의 `detekt-baseline.xml`을 비웠다. 약 600건 가운데 실제로 남아 있던 위반은 테스트 파일의 빈 줄 1건뿐이었다. alpha.0에서도 baseline을 비우고 돌리면 그 1건만 나왔으므로, 나머지는 이미 고쳐졌거나 꺼 둔 규칙의 죽은 항목이었다. 그 1건도 고쳐 baseline에 남은 항목이 없다.
 
 ## 로컬에서 확인한 것
 

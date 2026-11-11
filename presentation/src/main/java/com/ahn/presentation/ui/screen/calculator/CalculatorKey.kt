@@ -86,12 +86,19 @@ internal fun CalculatorKey.toIntent(): CalculatorContract.Intent? =
 internal val CalculatorKey.testTag: String
     get() = "keypad." + when (this) {
         CalculatorKey.History -> "history"
+
         CalculatorKey.Clear -> "clear"
+
         CalculatorKey.Parenthesis -> "parenthesis"
+
         CalculatorKey.Dot -> "dot"
+
         CalculatorKey.Delete -> "delete"
+
         CalculatorKey.Calculate -> "equals"
+
         is CalculatorKey.Number -> value
+
         is CalculatorKey.Operator -> when (inputValue) {
             "+" -> "plus"
             "-" -> "minus"

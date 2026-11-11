@@ -200,13 +200,17 @@ private fun ColumnScope.FavoriteRateContent(
                 onExchangeIntent(ExchangeContract.Intent.ToggleFavorite(currencyCode))
             },
         )
+
         favoriteState.isLoading -> FavoriteLoading()
+
         exchangeState.favoriteCurrencyCodes.isEmpty() -> FavoriteEmptyMessage(
             stringResource(R.string.empty_favorite_currency),
         )
+
         favoriteState.baseOnlyFavoriteCode != null -> FavoriteEmptyMessage(
             stringResource(R.string.favorite_only_base_currency, favoriteState.baseOnlyFavoriteCode),
         )
+
         else -> FavoriteEmptyMessage(stringResource(R.string.favorite_rate_load_failed))
     }
 }

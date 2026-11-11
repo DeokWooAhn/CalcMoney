@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 private val ADMOB_TEST_APP_ID = "ca-app-pub-3940256099942544~3347511713"
 private val ADMOB_TEST_BANNER_ID = "ca-app-pub-3940256099942544/9214589741"
 private val ADMOB_TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"
@@ -30,7 +28,6 @@ fun adMobValueStrict(name: String): String {
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.hilt)
     alias(libs.plugins.kover)
@@ -89,13 +86,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
-        }
-    }
     buildFeatures {
         compose = true
+        // AGP 9부터 기본값이 false다. AdMob 광고 단위 ID를 resValue로 넣는다.
+        resValues = true
     }
     packaging {
         resources {

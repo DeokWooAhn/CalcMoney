@@ -1,183 +1,88 @@
-# AGP 9 업그레이드 계획
+# AGP 9 업그레이드
 
-조사 기준일: 2026-09-15. AGP 9.4.0 stable, Gradle 9.7.1, 프로젝트 AGP 8.12.1 / Gradle 8.13 시점.
+2026-09-15에 조사해 "detekt 2.0.0 정식 전에는 착수하지 않는다"로 미뤘다. 2026-11-11에 alpha.6으로 진행했다. 이 문서는 그 결정과 남은 확인을 기록한다.
 
 이 문서는 Android 쪽만 다룬다. iOS(`ios/`)는 SPM이라 영향이 없다.
 
 ## 결론
 
-**지금 착수하지 않는다.** 착수 조건은 하나다 — **`dev.detekt`가 2.0.0 정식으로 올라오는 것**. 2026-09-15 기준 `2.0.0-alpha.6`까지만 나와 있고, 이 프로젝트는 `2.0.0-alpha.0`이다.
+AGP 8.12.1 → **9.5.1**로 올렸고 built-in Kotlin으로 옮겼다. **release 빌드 확인(아래 체크리스트)만 남았다.** 로컬 release 빌드는 시크릿 강제 검증 때문에 막혀 있어(`app/build.gradle.kts`의 `isReleaseBuildRequested()`) 다음 `android-v*` 태그에서 CI가 만든 서명 빌드로 확인한다.
 
-AGP 9를 미루는 것이 손해가 아닌 이유는, **AGP 9가 주는 최적화를 이미 받고 있기 때문**이다. `android.r8.optimizedResourceShrinking`과 `-repackageclasses` 두 플래그를 8.12.1에서 직접 켜서 release APK를 11.5MB에서 10.2MB로(-11.35%) 줄였다. AGP 9.0/9.1은 이 두 줄을 기본값으로 만들어 줄 뿐 결과물을 더 줄여주지는 않는다.
+### 착수 조건을 바꾼 이유
 
-즉 AGP 9는 **이 두 줄을 지우기 위한 작업**이지, 최적화를 얻기 위한 작업이 아니다.
+처음 조건은 `dev.detekt` 2.0.0 정식 출시였다. 이유는 detekt 신 좌표가 AGP 9와 맞는지 **판정 자체가 없다**는 것이었다. 2026-11-11 기준 정식은 아직 없지만 판정은 생겼다.
 
-## 현재 상태 대조
+- `2.0.0-alpha.3`부터 AGP 9 built-in Kotlin을 지원한다. `android.newDsl=false`·`android.builtInKotlin=false` 옵트아웃이 필요 없다.
+- 이 저장소는 원래도 알파(`2.0.0-alpha.0`)를 썼다. 알파에서 알파로 올리는 것이라 위험이 새로 생기지 않는다.
+- alpha.6으로 실제로 돌려 소스 변경 없이 통과했다(아래 "detekt 설정").
 
-최소 버전은 [AGP 9.0.0 릴리즈 노트](https://developer.android.com/build/releases/agp-9-0-0-release-notes)의 Compatibility 표와 Google `agp-9-upgrade` 스킬을 따랐다.
+## 바뀐 버전
 
-| 항목 | AGP 9.0 요구 | CalcMoney 현재 | 판정 |
+| 항목 | 전 | 후 | 이유 |
 | --- | --- | --- | --- |
-| AGP | 9.0.0 (권장 9.0.1+) | 8.12.1 | 상향 대상. 8.x 최신은 8.13.2 |
-| **Gradle** | **9.1.0** | **8.13** | 메이저 업그레이드 필요 |
-| **KGP** | **2.2.10** | **2.2.0** | 미달. AGP 9가 강제로 끌어올린다 |
-| **KSP** | **2.3.6+** | 2.2.0-2.0.2 | 상향 필요. 버전 표기 체계 변경 |
-| **Hilt** | **2.59.2+** | 2.57.1 | 상향 필요 |
-| JDK | 17 | 17 | 충족 |
-| SDK Build Tools | 36.0.0 | compileSdk 36 | 충족 |
-| Room | 2.8.0+ | 2.8.4 | 충족 |
-| 최대 API 레벨 | 36.1 | compileSdk 36 | 충족 |
-| kapt 미사용 | 필수 | KSP만 사용 | 충족 |
-| 레거시 variant API 미사용 | 필수 | 사용 없음 | 충족 |
-| **detekt** | — | `dev.detekt` 2.0.0-alpha.0 | **호환 여부 미확인** |
+| AGP | 8.12.1 | 9.5.1 | 2026-11-11 최신 stable |
+| Gradle | 8.13 | 9.9.0 | AGP 9.5 하한 9.6.0. wrapper jar는 9.9.0 공식 SHA-256과 같다 |
+| Kotlin(KGP·Compose 컴파일러) | 2.2.0 | 2.2.21 | AGP 9가 KGP 2.2.10에 런타임 의존한다. 2.2 안의 마지막 패치 |
+| KSP | 2.2.0-2.0.2 | 2.3.13 | built-in Kotlin 인식은 2.3.6부터. 2.3.0부터 Kotlin 버전과 따로 간다 |
+| Hilt | 2.57.1 | 2.59.2 | AGP 9 지원은 2.59, 느린 증분 빌드 수정은 2.59.2. 2.60은 Kotlin 2.3.21로 올라가 피했다 |
+| detekt | 2.0.0-alpha.0 | 2.0.0-alpha.6 | AGP 9 built-in Kotlin 지원은 alpha.3부터 |
 
-KGP가 요구치보다 낮다는 점이 중요하다. AGP 9.0은 built-in Kotlin을 위해 KGP 2.2.10에 런타임 의존하므로, **Kotlin 버전이 의도와 무관하게 올라간다.** 2.2.0에 묶어 두려면 built-in Kotlin을 옵트아웃해야 하는데, 그러면 AGP 9로 올릴 이유가 없어진다.
+그대로 둔 것: Kover 0.9.11(AGP 9 지원), google-services 4.4.4, Crashlytics 플러그인 3.0.7, dependency-guard 0.5.0, manifest-shield 0.1.11. 모두 그대로 동작했다.
 
-KSP는 2.3.0부터 Kotlin 컴파일러 버전과 분리됐다. `2.2.0-2.0.2` 형태에서 `2.3.12`처럼 접두사 없는 단일 버전으로 바뀐다.
+## 바꾼 설정
 
-## 이미 준비된 부분
+- **built-in Kotlin.** `:app`·`:data`·`:presentation`에서 `org.jetbrains.kotlin.android` 플러그인과 `kotlin { compilerOptions { jvmTarget } }`를 지웠다. jvmTarget은 `compileOptions.targetCompatibility`(17)를 따른다. `:domain`·`:konsist`는 순수 JVM 모듈이라 해당 없다.
+- **`resValues = true`.** AGP 9부터 기본값이 `false`다. `:app`(`admob_app_id`)과 `:presentation`(배너 3종·전면 광고 ID)이 `resValue`로 AdMob ID를 넣으므로 두 모듈에서 켰다. 안 켜면 빌드는 통과하고 광고만 안 나온다. 디버그 APK에 `admob_*` 문자열 5개가 있는 것을 `aapt2 dump resources`로 확인했다.
+- **R8 플래그 제거.** `gradle.properties`의 `android.r8.optimizedResourceShrinking=true`는 AGP 9.0부터, `app/proguard-rules.pro`의 `-repackageclasses`는 AGP 9.1부터 기본값이다.
+- **유닛 테스트는 debug만 돈다.** `android.onlyEnableUnitTestForTheTestedBuildType`가 기본으로 켜져 `testReleaseUnitTest`가 없어졌다. 같은 테스트를 두 번 돌리던 것이 빠진 것이고, Kover는 원래 debug만 본다.
 
-업그레이드 난이도를 낮추는 요소들이다. 착수할 때 다시 조사하지 않아도 된다.
+### detekt 설정
 
-- **kapt이 없다.** 전 모듈 KSP다. AGP 9는 `org.jetbrains.kotlin.kapt`과 호환되지 않으므로 이게 없는 것이 가장 크다.
-- **레거시 variant API를 쓰지 않는다.** `applicationVariants`, `libraryVariants`, `variantFilter`, `dexOptions` 사용처가 없다.
-- **keep 규칙이 거의 없다.** `app/proguard-rules.pro`에 `-keepattributes` 한 건뿐이고 `consumer-rules.pro` 둘은 비어 있다. 패키지 와일드카드 0개, 멤버 미지정 `-keep class` 0개. AGP 9의 `strictFullModeForKeepRules` 기본값 변경(`-keep class A`가 기본 생성자를 암묵적으로 남기지 않음) 영향을 받지 않는다.
-- **`getDefaultProguardFile("proguard-android-optimize.txt")`** 를 쓴다. AGP 9가 막는 `proguard-android.txt`가 아니다.
-- **전역 옵션이 없다.** `-dontoptimize`, `-dontobfuscate` 등이 없어 `globalOptionsInConsumerRules.disallowed` 변경과 무관하다.
-- **namespace가 모듈별로 유일**하다(`com.ahn.calcmoney`, `com.ahn.data`, `com.ahn.presentation`).
-- **`targetSdk = 36`이 명시**돼 있어 기본값이 `compileSdk`로 바뀌는 변경 영향이 없다.
-- **Java source/target이 17로 명시**돼 있어 기본값 8→11 변경 영향이 없다.
-- **Java 소스가 없다.** R class가 compile-time non-final로 바뀌어도 Java `switch` 상수 문제가 없다.
-- **shader, NDK, density split, ABI filter 사용처가 없다.**
-- **`android.enableR8.fullMode=false`가 없다.** full mode가 이미 켜져 있다.
-- **CI가 JDK 17**(`temurin`)을 쓴다. AGP 9 요구치를 이미 만족한다.
-- **Kover 0.9.11이 AGP 9를 지원한다.** 0.9.4에서 AGP 9 지원, 0.9.5에서 AGP 9 빌드 변형 수정이 들어갔고 Gradle 9도 지원한다. 설정은 빌드 변형 이름(`debug`)만 쓰고 루트 스크립트에서 Kover 타입을 import하지 않는다. 다만 built-in Kotlin 조합은 실제로 확인되지 않았으므로 아래 8단계에서 검증한다.
+alpha.0 → alpha.6에서 바뀐 것을 `build.gradle.kts`와 `config/detekt/detekt.yml`에서 맞췄다. **목표는 업그레이드만으로 검사 기준이 달라지지 않는 것**이다. 기준을 바꾸려면 별도 PR에서 코드와 함께 고친다.
 
-## 블로커
+- 리포트 이름: `xml` → `checkstyle`(파일 확장자는 그대로 `.xml`), `md` → `markdown`
+- `code_style: android_studio` → `intellij_idea`. alpha.0은 이 값을 줄 길이·trailing comma 기본값에 반영하지 않아, 그동안 실제로는 120자·trailing comma 허용으로 검사됐다. alpha.6은 `android_studio`를 100자·trailing comma 금지로 적용해 1,673건이 실패했다. 실제로 쓰던 기준에 맞춘다.
+- `MaxLineLength` → `MaximumLineLength`. `MaxLineLength`는 별칭이라 그 아래 `maxLineLength: 120`이 적용되지 않았다.
+- 기본 활성 상태가 바뀐 ktlint 규칙 14개를 alpha.0 때 상태로 고정했다(`detekt.yml`의 주석 참고). 새로 켜진 `BlankLineBetweenWhenConditions`만 22건을 냈다.
 
-### 1. detekt — 판정 자체가 없다
+## 로컬에서 확인한 것
 
-JetBrains 호환성 표는 구 좌표 `io.gitlab.arturbosch.detekt` (< 2.0.0)에 대해 `android.newDsl=false` + `android.builtInKotlin=false`를 요구한다. 이 프로젝트는 신 좌표 **`dev.detekt` 2.0.0-alpha.0**이라 표의 어느 행에도 해당하지 않는다.
+| 검사 | 결과 |
+| --- | --- |
+| `detekt` | 통과. 소스 파일 변경 없음 |
+| `test` | 디버그 유닛 189개, JVM 96개. 전과 같은 수 |
+| `:koverVerifyUnit` | 통과. 78.02% → 77.89%. 클래스별로 비교하면 Kotlin 2.2.21이 줄 번호를 한두 줄씩 다르게 매긴 차이(놓친 줄 +2, 덮은 줄 −3)이고 빠진 테스트는 없다 |
+| `lintDebug` 3모듈, `:app:assembleDebug` | 통과 |
+| `:app:dependencyGuard` | Hilt 2.59.2와 kotlin-stdlib 2.2.21만 바뀌어 baseline을 다시 만들었다 |
+| `:app:manifestShield` | 변화 없음. 권한·exported 컴포넌트가 그대로다 |
+| Maestro (에뮬레이터 Pixel 9 Pro, Android 16) | smoke 3개 + release 2개 통과. 앱 프로세스에 크래시·`ClassNotFoundException` 없음 |
 
-두 플래그는 AGP 9의 핵심 기능 둘을 끄는 플래그다. detekt 때문에 둘 다 끄면 AGP 9로 올려도 얻는 게 없고, `android.newDsl=false` 옵트아웃은 **AGP 10.0에서 제거**된다.
+## 남은 확인: release 빌드
 
-영향 범위가 lint 태스크에 그치지 않는다. 루트 `build.gradle.kts`가 `dev.detekt.gradle.Detekt`, `DetektCreateBaselineTask`, `extensions.DetektExtension` 타입을 **직접 import해 `subprojects {}`로 전 모듈에 적용**한다. detekt의 API가 바뀌면 **루트 빌드 스크립트 자체가 컴파일되지 않아** 어떤 Gradle 태스크도 실행되지 않는다. `android-ci.yml`은 `detekt`가 첫 스텝이라 CI 전체가 거기서 멈춘다.
+R8 동작이 AGP 9.0·9.1에서 바뀌었다. 이 저장소는 영향을 받지 않을 것으로 본다. `-keep class` 규칙이 없고 전역 옵션도 없기 때문이다. 다만 release에서만 드러나므로 다음 태그의 서명 빌드로 확인한다. 바뀐 동작은 다음과 같다.
 
-**정식 릴리스를 기다리는 것이 1순위 선행 조건이다.** 여기서 막히면 나머지 단계는 의미가 없다.
+- `android.r8.strictFullModeForKeepRules`가 켜져, `-keep class A`가 기본 생성자를 더 이상 암묵적으로 남기지 않는다.
+- R8이 클래스를 기본 패키지로 리패키징한다.
+- R8이 코드와 리소스를 함께 보고 축소한다(optimized resource shrinking).
 
-### 2. Gradle 8.13 → 9.1+ 는 별도의 메이저 업그레이드
+내부 테스트판은 실제 광고가 뜨므로 Maestro를 돌리지 않고 손으로 확인한다.
 
-AGP 9.0은 Gradle 9.1.0 미만에서 동작하지 않는다. Gradle 9는 그 자체로 별도의 breaking change 묶음을 갖는다. AGP 업그레이드와 같은 커밋에 섞지 않고 먼저 단독으로 올려 통과시킨다.
-
-### 3. built-in Kotlin 마이그레이션
-
-AGP 9.0은 built-in Kotlin을 기본으로 켠다. `org.jetbrains.kotlin.android`는 신 DSL과 호환되지 않으므로 Android 모듈 3개에서 `alias(libs.plugins.jetbrains.kotlin.android)`을 걷어내야 한다.
-
-| 모듈 | 플러그인 | 조치 |
-| --- | --- | --- |
-| `:app` | `android.application` + `kotlin.android` | kotlin.android 제거 |
-| `:data` | `android.library` + `kotlin.android` | kotlin.android 제거 |
-| `:presentation` | `android.library` + `kotlin.android` | kotlin.android 제거 |
-| `:domain` | `java-library` + `kotlin.jvm` | 해당 없음 |
-
-`:domain`은 순수 JVM 모듈이라 built-in Kotlin 대상이 아니다.
-
-### 4. `resValue` — 이 프로젝트 고유 항목
-
-AGP 9는 `android.defaults.buildfeatures.resvalues`를 `true → false`로 바꾼다. 이 프로젝트는 **AdMob 단위 ID를 전부 `resValue`로 주입**한다.
-
-| 모듈 | `resValue` 개수 | 내용 |
-| --- | --- | --- |
-| `:app` | 2 | `admob_app_id` (debug/release) |
-| `:presentation` | 7 | `admob_app_id`, 배너 3종 ID (debug/release) |
-
-두 모듈에 아래를 명시하지 않으면 **광고 ID 리소스가 생성되지 않는다.** 현재 두 모듈의 `buildFeatures` 블록에는 `compose = true`만 있다.
-
-```kotlin
-buildFeatures {
-    compose = true
-    resValues = true
-}
-```
-
-빌드는 통과하고 **런타임에 광고만 안 나오는** 형태로 실패하므로 놓치기 쉽다.
-
-### 5. 호환성 미확인 플러그인
-
-호환성 표에 행이 없는 플러그인들이다. 착수 시 각각 확인한다.
-
-- `com.google.gms.google-services` 4.4.4
-- `com.google.firebase.crashlytics` 3.0.7
-- `org.jetbrains.kotlin.plugin.compose` (KGP에 종속되므로 KGP가 올라가면 따라간다)
-
-## R8 플래그 제거
-
-AGP 9로 올리면 아래 두 줄을 지운다. 지우는 시점이 다르다.
-
-| 위치 | 내용 | 제거 시점 |
-| --- | --- | --- |
-| `gradle.properties` | `android.r8.optimizedResourceShrinking=true` | **AGP 9.0** |
-| `app/proguard-rules.pro` | `-repackageclasses` | **AGP 9.1** |
-
-AGP 9.0에서 둘 다 지우면 리패키징이 꺼져 DEX가 다시 커진다. 각 파일의 주석에 제거 시점을 적어 두었다.
-
-## 실행 순서
-
-각 단계를 별도 커밋으로 나눈다. 한 단계라도 실패하면 거기서 멈추고 원인을 정리한 뒤 다음으로 넘어간다. 각 단계의 검증은 CI와 동일하게 `detekt` → `test` → `lintDebug` → `assembleDebug` 순으로 돌린다.
-
-| # | 작업 | 비고 |
-| --- | --- | --- |
-| 1 | `dev.detekt` 2.0.0 정식 릴리스 확인 및 상향. **여기서 막히면 중단** | 루트 빌드 스크립트의 import 3개가 살아 있는지 함께 확인 |
-| 2 | AGP 8.12.1 → 8.13.2 | 8.x 안에서 먼저 최신화 |
-| 3 | Gradle 8.13 → 9.1+ 단독 업그레이드 | |
-| 4 | KSP 2.2.0-2.0.2 → 2.3.6+ | 버전 표기 체계가 바뀐다 |
-| 5 | Hilt 2.57.1 → 2.59.2+ | |
-| 6 | `:app`·`:presentation`에 `resValues = true` 명시 | AGP 9 이전에 넣어도 무해하다 |
-| 7 | AGP 8.13.2 → 9.0.1. Android Studio **AGP Upgrade Assistant** 사용 | |
-| 8 | built-in Kotlin 마이그레이션 (Android 모듈 3개에서 `kotlin.android` 제거) | `./gradlew :koverHtmlReportUnit --dry-run`에 `:data:testDebugUnitTest`·`:presentation:testDebugUnitTest`·`:domain:test`가 그대로 있고 Release 태스크가 없는지, `:koverVerifyUnit`이 통과하고 커버리지가 전과 같은지 확인. 테스트가 조용히 빠지면 수치가 떨어져 드러난다 |
-| 9 | `gradle.properties`에서 `optimizedResourceShrinking` 제거 | AGP 9.0부터 기본값 |
-| 10 | 서명 release 빌드로 크기·광고 검증 | 아래 체크리스트 |
-| 11 | (AGP 9.1 이후) `-repackageclasses` 제거 | |
-
-착수 시 Google `agp-9-upgrade` 스킬을 설치해 쓴다.
-
-```bash
-android skills add agp-9-upgrade --project .
-```
-
-### 옵트아웃 플래그
-
-서드파티 플러그인이 막으면 아래를 `gradle.properties`에 **임시로** 넣는다. 임시라는 주석을 반드시 남기고, 원인이 풀리면 제거한다. `android.newDsl=false`는 AGP 10.0에서 제거되므로 영구 해결책이 아니다.
-
-```properties
-# 임시: <플러그인명>이 AGP 9 신 DSL 미지원. <조건> 충족 시 제거
-android.newDsl=false
-android.builtInKotlin=false
-```
-
-`android.disallowKotlinSourceSets=false`는 넣지 않는다. Google 스킬이 명시적으로 금지한다.
-
-### 검증 체크리스트 (단계 10)
-
-로컬 release 빌드는 `isReleaseBuildRequested()`의 시크릿 강제 검증 때문에 막힌다(`app/build.gradle.kts`). 실기기 검증은 **CI가 만든 서명 빌드**로 한다.
-
-- AdMob 배너 3종 노출: Exchange / Favorite / Settings
-- UMP 동의 플로우 (최초 실행, 동의·거부·설정에서 재호출)
-- 환율 조회와 Room 캐시 (12h TTL 만료 후 갱신 포함)
+- AdMob 배너 3종 노출: Exchange / Favorite / Settings, 계산기 전면 광고
+- UMP 동의 흐름(최초 실행, 동의·거부, 설정에서 다시 열기)
+- 환율 조회와 Room 캐시(12h TTL 만료 뒤 갱신 포함)
 - 계산기 수식 환산, 즐겨찾기 등록·해제
 - 라이트·다크 테마
-- Logcat에 `ClassNotFoundException`, `NoSuchMethodException`, `Resources$NotFoundException` 없음
-- AAB 크기를 직전 릴리스와 비교
-
-`resValues`와 리소스 축소 최적화가 얽히는 지점이라 **광고 ID 리소스가 실제로 살아 있는지**가 핵심이다.
+- Logcat에 `ClassNotFoundException`, `NoSuchMethodException`, `Resources$NotFoundException`이 없음
+- AAB 크기를 직전 릴리스와 비교. 8.12.1에서 두 R8 플래그를 직접 켜 둔 상태와 같아야 한다
 
 ## 롤백
 
-단계별 커밋이므로 문제 단계만 되돌린다. 단계 7 이후 문제가 발견되면, AGP만 8.13.2로 내리는 것은 Gradle 9와 조합이 검증되지 않았으므로 단계 3까지 함께 되돌린다.
+이 PR 하나를 되돌린다. AGP만 8.x로 내리는 것은 Gradle 9.9와 조합이 검증되지 않았으므로 Gradle·Kotlin·KSP·Hilt·detekt를 함께 되돌린다.
 
 ## 참고
 
-- [AGP 9.0.0 릴리즈 노트](https://developer.android.com/build/releases/agp-9-0-0-release-notes) — breaking change와 Gradle 프로퍼티 기본값 변경 전체 목록
+- [AGP 9.0.0 릴리스 노트](https://developer.android.com/build/releases/agp-9-0-0-release-notes) — Gradle 프로퍼티 기본값 변경 전체 목록
+- [AGP 9.1.0 릴리스 노트](https://developer.android.com/build/releases/agp-9-1-0-release-notes) — R8 기본 리패키징
 - [built-in Kotlin 마이그레이션 가이드](https://developer.android.com/build/migrate-to-built-in-kotlin)
-- [AGP Upgrade Assistant](https://developer.android.com/build/agp-upgrade-assistant)
-- Android Studio **Otter 3 (2025.2.3) 이상** 필요. IntelliJ IDEA는 2026.1 기준 AGP 9.0 미지원이다.
+- Google [`agp-9-upgrade` 스킬](https://github.com/android/skills/tree/main/build-system/agp/agp-9-upgrade) (Apache-2.0) — KSP 2.3.6+, Hilt 2.59.2+ 요구치
+- detekt [2.0.0-alpha.3 릴리스 노트](https://github.com/detekt/detekt/releases/tag/v2.0.0-alpha.3) — AGP 9 built-in Kotlin 지원

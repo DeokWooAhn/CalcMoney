@@ -65,15 +65,19 @@ class CalculatorViewModel @Inject constructor(
             }
 
             is CalculatorContract.Intent.SelectExchangeCurrency -> handleSelectExchangeCurrency(intent.currency)
+
             is CalculatorContract.Intent.SelectMainExchangeCurrency -> handleSelectMainExchangeCurrency(intent.currency)
 
             is CalculatorContract.Intent.ToggleFavorite -> handleToggleFavorite(intent.currencyCode)
 
             is CalculatorContract.Intent.Delete -> handleDelete()
+
             is CalculatorContract.Intent.Clear -> handleClear()
+
             is CalculatorContract.Intent.Calculate -> handleCalculate()
 
             CalculatorContract.Intent.SwapExchangeCurrencies -> intent { performSwapExchangeCurrencies() }
+
             CalculatorContract.Intent.ClearHistory -> handleClearHistory()
         }
     }

@@ -4,6 +4,7 @@ config:
 
 ktlint:
   active: true
+  # 120자·trailing comma 허용. android_studio는 100자·trailing comma 금지로 검사한다(detekt 2.0.0-alpha.3+).
   code_style: intellij_idea
   autoCorrect: true
   MaximumLineLength:
@@ -24,36 +25,6 @@ ktlint:
   MultilineExpressionWrapping:
     active: false
   TrailingCommaOnCallSite:
-    active: true
-  # detekt 2.0.0-alpha.0 → alpha.6에서 ktlint 규칙의 기본 활성 상태가 바뀌었다.
-  # 업그레이드만으로 검사 기준이 달라지지 않게 alpha.0 때 상태로 고정한다. 바꿀 때는 별도 PR에서 코드와 함께 고친다.
-  BlankLineBetweenWhenConditions:
-    active: false
-  Kdoc:
-    active: false
-  MixedConditionOperators:
-    active: false
-  SpacingAroundSquareBrackets:
-    active: false
-  ThenSpacing:
-    active: false
-  BlankLineBeforeDeclaration:
-    active: true
-  IfElseBracing:
-    active: true
-  IfElseWrapping:
-    active: true
-  NoBlankLineInList:
-    active: true
-  NoConsecutiveComments:
-    active: true
-  NoEmptyFirstLineInClassBody:
-    active: true
-  NoSingleLineBlockComment:
-    active: true
-  StringTemplateIndent:
-    active: true
-  TryCatchFinallySpacing:
     active: true
 
 style:

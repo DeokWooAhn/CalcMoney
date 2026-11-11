@@ -54,6 +54,7 @@ internal class CalculatorExpressionReducer(
             }
 
             charBefore == '(' && operator != "-" -> null
+
             else -> buildInsertState(currentState, operator)
         }
     }
@@ -87,8 +88,10 @@ internal class CalculatorExpressionReducer(
         val textToInsert = when {
             openCount > closeCount && charBefore != null &&
                     (charBefore.isDigit() || charBefore == ')') -> ")"
+
             charBefore != null &&
                     (charBefore.isDigit() || charBefore == ')') -> "×("
+
             else -> "("
         }
 

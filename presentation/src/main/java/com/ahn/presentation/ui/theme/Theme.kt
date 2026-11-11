@@ -87,6 +87,7 @@ fun CalcMoneyTheme(
         }
 
         darkTheme -> DarkColorScheme
+
         else -> LightColorScheme
     }
 

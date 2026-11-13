@@ -28,7 +28,7 @@ opt_in_rules:
   - toggle_bool
   - unneeded_parentheses_in_closure_argument
 
-# 테스트 이름은 한국어로 쓴다 (CLAUDE.md 컨벤션). 한국어에는 대소문자가 없어서
+# 테스트 이름은 한국어로 쓴다 (AGENTS.md 컨벤션). 한국어에는 대소문자가 없어서
 # 소문자 시작 검사를 그대로 두면 모든 테스트 함수가 위반으로 잡힌다.
 identifier_name:
   validates_start_with_lowercase: off

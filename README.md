@@ -221,8 +221,7 @@ Firebase Functions와 Firestore 규칙은 `functions/**`, `firebase.json`, `fire
 
 ## 프로젝트 문서
 
-- [에이전트 작업 지침](AGENTS.md)
-- [프로젝트 개요와 개발 메모](CLAUDE.md)
+- [에이전트 작업 지침과 개발 메모](AGENTS.md) (Claude Code는 `CLAUDE.md`를 통해 같은 파일을 읽습니다)
 - [지속적 배포 안내](docs/continuous-deployment.md)
 - [Cloud Functions와 Firestore 데이터 구조](functions/README.md)
 - [AGP 9 업그레이드 계획](docs/agp-9-upgrade-plan.md)

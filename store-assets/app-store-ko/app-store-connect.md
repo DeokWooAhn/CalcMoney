@@ -64,7 +64,7 @@ App Store Connect가 버전 번호를 `1.0`으로 만들어 두는데, 빌드의
 | 지원 URL | https://deokwooahn.github.io/CalcMoney/support.html |
 | 마케팅 URL | 비워 둔다 |
 | 저작권 | `2026 DeokWoo Ahn`. 판매자 이름(비즈니스 화면의 법적 이름)과 맞춘다 |
-| 빌드 | Xcode Archive로 올린 빌드. 수출 규정은 `Info.plist`의 `ITSAppUsesNonExemptEncryption = NO`로 미리 답해 두어 빌드마다 묻지 않는다. 빌드 번호(앱 타깃의 `CURRENT_PROJECT_VERSION`)는 iOS 배포 자동화가 없어 올릴 때마다 손으로 1씩 올린다. 이미 올린 번호는 다시 쓸 수 없다 |
+| 빌드 | Xcode Archive로 올린 빌드. 수출 규정은 앱 타깃 빌드 설정의 `INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO`로 미리 답해 두어 빌드마다 묻지 않는다. 빌드 번호(앱 타깃의 `CURRENT_PROJECT_VERSION`)는 iOS 배포 자동화가 없어 올릴 때마다 손으로 1씩 올린다. 이미 올린 번호는 다시 쓸 수 없다 |
 | 버전 출시 | **이 버전을 수동으로 출시**. 첫 출시는 승인 뒤 TestFlight·실기기 확인을 한 번 더 하고 내보낸다 |
 
 ## 6. 앱 심사 정보

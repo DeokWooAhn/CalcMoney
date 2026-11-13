@@ -33,6 +33,18 @@ PR 올리기 전 위 4개를 순서대로 로컬에서 통과시킬 것 — CI �
 - **워크스페이스로만 테스트를 실행할 것.** `CalcMoney.xctestplan` 하나가 앱 타깃 2개(`CalcMoneyTests`, `CalcMoneyUITests`) + 패키지 테스트 3개(`DomainTests`, `DataTests`, `PresentationTests`)를 전부 포함하는데, `.xcodeproj`만 열면 패키지 테스트가 test plan에서 해석되지 않고 빠진다.
 - `.swiftlint.yml`은 레포 루트가 아니라 `ios/.swiftlint.yml`에 있음. CodeRabbit 설정(`.coderabbit.yaml`)도 `config_file: ios/.swiftlint.yml`로 명시적으로 경로를 지정해둠 — 새 도구를 추가할 때 이 경로 기준을 유지할 것.
 
+## 앱 Info.plist 값이 있는 곳
+
+앱 타깃은 `GENERATE_INFOPLIST_FILE = YES`라, 빌드된 앱의 Info.plist는 `ios/CalcMoney/Info.plist`와 앱 타깃 빌드 설정의 `INFOPLIST_KEY_*`를 Xcode가 합쳐 만든다.
+
+- **빌드 설정(`project.pbxproj`의 앱 타깃 Debug·Release)에 있는 것**
+  - 홈 화면 이름: `INFOPLIST_KEY_CFBundleDisplayName`(언어별 값이 없을 때의 기본값). 언어별 값은 `CalcMoney/InfoPlist.xcstrings`
+  - ATT 동의 창 문구: `INFOPLIST_KEY_NSUserTrackingUsageDescription`. 언어별 값은 같은 `InfoPlist.xcstrings`
+  - 수출 규정 답: `INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO`. 업로드할 때마다 묻지 않게 미리 답해 둔다
+- **`Info.plist` 파일에 있는 것**: 지원 언어(`CFBundleLocalizations`: ko, en), AdMob 앱 ID(`GADApplicationIdentifier`)와 광고 단위 ID 4개(`AdMob*ID`). AdMob 값은 `$(…)` 변수라 실제 값은 빌드 설정에서 온다(Debug는 Google 테스트 ID, Release는 git이 무시하는 `Config/AdMob.xcconfig`).
+- **개발 지역(`CFBundleDevelopmentRegion`)은 프로젝트의 `developmentRegion = en`에서 온다.** 기기 언어가 한국어도 영어도 아니면 앱이 영어로 보인다. `Info.plist`에 `ko`를 적어 둔 적이 있지만 Xcode가 만드는 값이 덮어써 효과가 없었다(1.0.0 빌드부터 `en`).
+- **Xcode가 `Info.plist`를 다시 저장하면 주석을 지우고 키를 알파벳순으로 정렬한다.** 설명은 `Info.plist`가 아니라 이 스킬에 둔다. `InfoPlist.xcstrings`에는 Xcode가 빌드하면서 찾은 키(`CFBundleName` 등)를 자동으로 더한다.
+
 ## 린트/포맷 설정에서 의도적으로 다른 부분 (기본값이 아니라고 "고치지" 말 것)
 
 - `disabled_rules: [trailing_comma]` — Swift 6 트레일링 콤마를 코드 전반(Package.swift 포함)에서 쓰기 때문에 의도적으로 끔

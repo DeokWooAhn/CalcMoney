@@ -1,6 +1,6 @@
 ---
 name: ios-screen
-description: iOS(ios/Packages)에 새 화면 추가, ViewModel 작성, 레이어 배선을 할 때 사용. Domain/Data/Presentation 의존 규칙과 Orbit MVI를 흉내낸 자체 패턴 포함.
+description: iOS(ios/Packages)에 새 화면 추가, ViewModel 작성, 레이어 배선을 할 때 사용. Domain/Data/Presentation 의존 규칙, Orbit MVI를 흉내낸 자체 패턴, iPad 방향·ATT 동의 제약 포함.
 ---
 
 # iOS 화면 / 레이어 배선 규칙
@@ -72,6 +72,15 @@ public final class <Feature>ViewModel {
 - `ios/CalcMoney/CalcMoney/AppContainer.swift`가 유일한 배선 지점. Hilt 모듈 대응이지만 프레임워크 없이 수동 생성자 주입
 - 새 Repository/UseCase를 추가하면 `AppContainer` 내부 `Repositories`/`UseCases` 조립 struct에 추가
 - `ExchangeViewModel`은 `AppContainer`에서 한 번만 생성해서 Exchange/Favorite/Setting 탭에 공유 주입 — 화면별로 새로 만들지 말 것
+
+## 화면 전역 제약
+
+- **iPad는 네 방향을 모두 지원한다.** iPadOS 26부터 `UIRequiresFullScreen`으로 화면을 고정할 수 없어
+  창 크기가 자유롭게 바뀐다. 넓은 화면에서는 계산기 폭을 `CalculatorLayout`이, 나머지 화면 폭을
+  `readableContentWidth()`가 줄인다. 화면을 새로 만들면 iPad 가로에서도 확인한다.
+- ATT(앱 추적 투명성) 동의 창은 `AdConsentManager`가 UMP 동의 뒤에 한 번 띄운다. UMP에 IDFA 안내
+  메시지가 설정돼 있으면 UMP가 먼저 띄우고 앱 쪽은 건너뛴다. `UI_TESTING` 실행에서는 동의 흐름
+  전체를 건너뛴다.
 
 ## 동시성 주의사항
 

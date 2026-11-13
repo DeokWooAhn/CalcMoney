@@ -12,6 +12,7 @@ Claude Code는 `CLAUDE.md`를 통해 이 파일을 읽고, Codex 같은 다른 �
 - 관련 없는 사용자 변경은 보존하고, 커밋·푸시 범위에 넣지 않는다.
 - 새 의존성을 `gradle/libs.versions.toml`이나 각 `Package.swift`에 임의로 추가하지 않는다. 목적과 대안, 앱 크기·빌드 시간 영향을 설명하고 승인을 받은 뒤 추가한다.
 - 주석·KDoc·테스트 설명·커밋 메시지는 한국어, 코드 식별자와 로그는 영어로 쓴다.
+- **실행하지 않은 검증을 통과했다고 말하지 않는다.** 돌리지 못했으면 무엇을 왜 못 돌렸는지와 돌려야 할 명령을 적는다. "통과할 것으로 보인다"고 쓰지 않는다.
 - **코드에 남지 않는 결정은 `docs/decisions/`에 남긴다.** 스토어 이미지·등록 문구·소개 글을 만들거나, 버그처럼 보이는 동작을 고치기 전에 `docs/decisions/README.md`의 목록을 먼저 본다. 대화에서 정책·문구 방향·하지 않기로 한 것을 정했으면 그 작업을 마치기 전에 기록을 더하거나 있는 기록을 고친다.
 
 ## 브랜치·커밋·PR
@@ -96,46 +97,15 @@ ios/Packages/Presentation   -> Domain                         # SwiftUI, Observa
 - `SharedPreferences`. 키-값 저장은 DataStore를 쓴다.
 - HTTP 클라이언트(Retrofit, Ktor, Volley, `HttpURLConnection`)와 JSON 파서(Gson, Moshi). 이 앱은 환율 API를 직접 호출하지 않고 Firestore가 네트워크 레이어다. 필요해 보이면 먼저 묻는다.
 
-## Android 화면·MVI·데이터 작업
-
-- 새 화면은 `presentation/ui/screen/<feature>/`에 `Contract`, `ViewModel`, `Screen` 세 파일로 구성한다. `ExchangeContract.kt`, `ExchangeViewModel.kt`, `ExchangeScreen.kt`을 기준으로 삼는다.
-- ViewModel은 단일 `processIntent()` 진입점에서 intent를 private handler로 분배한다. Orbit `intent {}`의 실제 로직은 `suspend fun Syntax<State, SideEffect>.performX()` 형태의 private helper에 둔다.
-- UseCase는 단일 책임의 `operator fun invoke`를 쓴다. ViewModel에는 개별 UseCase 대신 `ExchangeUseCases`, `FavoriteUseCases` 같은 홀더를 하나만 주입한다.
-- **구조 규칙은 `:konsist` 모듈이 검사한다.** `mvi-screen` 스킬의 ViewModel·Contract·UseCase·Repository 규칙과 예외 목록(이유 포함)이 `konsist/src/test/java/com/ahn/konsist/ArchitectureTest.kt`에 있다. 예외를 더하거나 빼면 스킬도 함께 고친다. 예외가 규칙을 지키게 되면 목록에서 빼라고 테스트가 실패한다. Konsist는 0.18.1로 고정했다(1.0.0 정식이 나오면 올린다).
-- 도메인 오류는 sealed 계층으로 표현하고 UI 문자열 변환은 presentation 레이어에서 한다.
-- Repository 구현은 `data/<feature>/local`, `remote`, `mapper`, `repository` 구조를 따른다.
-- Room 스키마를 바꾸면 DB 버전과 migration을 추가하고 `data/schemas/` JSON도 커밋한다.
-- 새 Repository·DataStore는 `data/di/`의 Module과 Qualifier까지 함께 배선한다.
-- 새 AdMob 배너를 추가하면 `presentation/build.gradle.kts`의 buildType별 리소스와 CI 환경 변수를 함께 수정한다.
-- 사용자에게 보이는 문자열은 `res/values/strings.xml`에 정의하고 `values-ko`를 함께 채운다. Composable이나 ViewModel에 표시 문자열을 직접 쓰지 않는다.
-- 상호작용 요소는 최소 48dp 터치 영역을 확보한다. 아이콘·이미지에는 `contentDescription`을 주고 장식용이면 `null`을 명시한다.
-- `Screen` 컴포저블과 재사용 컴포넌트에는 `@Preview`를 최소 하나 둔다. ViewModel을 배선하는 `Route`에는 두지 않는다.
-- Composable 본문에서 상태를 바꾸거나 비즈니스 로직을 실행하지 않는다. `LaunchedEffect`, `DisposableEffect` 같은 side-effect API를 쓴다.
-- `Context`를 ViewModel이나 깊은 컴포저블 계층으로 넘기지 않는다. 필요하면 그 자리에서 `LocalContext.current`로 얻는다.
-
-## iOS 화면·레이어 작업
-
-- 새 화면은 `Presentation/Sources/Presentation/Screen/<Feature>/`에 State/Intent/SideEffect 파일과 `<Feature>ViewModel`, `<Feature>View`로 구성한다. `Screen/Exchange/`를 기준으로 삼는다.
-- ViewModel은 `@MainActor @Observable final class`이고 `send(_ intent:)` 단일 진입점에서 분배한다. Orbit `postSideEffect`에 대응하는 one-shot 이벤트는 `SideEffectBus`로 내보내고 View는 `.task { for await effect in viewModel.sideEffects() { ... } }`로 소비한다.
-- Async intent 처리가 겹치면 안 되는 화면은 `CalculatorViewModel`의 `enqueue(_:)` 직렬화 패턴을 따른다. `@MainActor`만으로는 `await` 지점에서 다른 intent가 끼어드는 걸 막지 못한다.
-- UseCase는 `callAsFunction`을 쓰는 struct 하나에 한 가지 일만 담는다. Repository는 프로토콜로만 Domain에 두고 구현은 Data에 둔다.
-- Domain은 Foundation 이상을 의존하지 않는다. `import SwiftUI`, `import UIKit`, `import Data`, Firebase 관련 import가 Domain에 들어가면 안 된다.
-- Presentation은 `import Data`를 하지 않는다. Domain에만 의존한다.
-- Data의 Repository 구현은 Firestore 문서/DTO를 그대로 반환하지 않고 Domain 타입으로 변환해서 반환한다.
-- Presentation 패키지 전체가 `.defaultIsolation(MainActor.self)`라 기본이 MainActor다. **UIKit이 메인 스레드 밖에서 부를 수 있는 클로저(`Color.dynamic` 같은 동적 색상 provider 등)는 반드시 `nonisolated`로 둔다.** 빠뜨리면 Swift 6 런타임이 SIGTRAP으로 크래시한다(`1b268fe` 참조).
-- **iPad는 네 방향을 모두 지원한다.** iPadOS 26부터 `UIRequiresFullScreen`으로 화면을 고정할 수 없어 창 크기가 자유롭게 바뀐다. 넓은 화면에서는 계산기 폭을 `CalculatorLayout`이, 나머지 화면 폭을 `readableContentWidth()`가 줄인다. 화면을 새로 만들면 iPad 가로에서도 확인한다.
-- ATT(앱 추적 투명성) 동의 창은 `AdConsentManager`가 UMP 동의 뒤에 한 번 띄운다. UMP에 IDFA 안내 메시지가 설정돼 있으면 UMP가 먼저 띄우고 앱 쪽은 건너뛴다. `UI_TESTING` 실행에서는 동의 흐름 전체를 건너뛴다.
-
 ## 두 플랫폼 공통 화면 규칙
 
 - **인앱 리뷰는 OS·스토어의 시스템 창만 쓴다.** "앱이 어떤가요?"처럼 먼저 묻는 창을 직접 만들면 Play 정책(카드 전후 질문 금지)과 App Store 심사 지침 5.6.1 위반이다. 요청 조건은 domain `ReviewPromptPolicy`(Android·iOS 같은 값)에 있고, 계산기에서 계산에 성공한 직후에만 요청한다. `UI_TESTING` 실행에서는 띄우지 않는다. iOS 개발 빌드는 요청할 때마다 창이 떠서 테스트를 막는다.
 - **테스트 id(`testTag`·`accessibilityIdentifier`)를 바꿨으면 `.maestro/` Flow도 함께 고친다.** 두 플랫폼이 같은 id로 Flow 하나를 돌린다. CI `e2e_smoke`가 Android 태그 릴리스의 관문이라 Flow가 깨지면 릴리스가 막힌다.
 
-## Android 테스트와 검증
+## Android 검증
 
-- 새 테스트는 Kotest `BehaviorSpec`과 한국어 Given/When/Then 설명을 쓴다. `isolationMode = IsolationMode.InstancePerRoot`와 MockK를 쓰며 Mockito는 쓰지 않는다.
-- 테스트는 JUnit5 플랫폼(`useJUnitPlatform()`) 위의 Kotest다. JUnit4 러너로 돌리지 않는다.
-- ViewModel 테스트는 `StandardTestDispatcher`, `Dispatchers.setMain/resetMain`, `runTest`, `advanceUntilIdle`, `orbit-test` 패턴을 따른다.
+테스트 작성법(Kotest·MockK·ViewModel 패턴)은 `testing` 스킬을 따른다. 여기서는 명령과 게이트만 둔다.
+
 - 필요한 범위의 검증을 실행한다.
 
 ```bash
@@ -157,11 +127,10 @@ ios/Packages/Presentation   -> Domain                         # SwiftUI, Observa
 - **Kover는 루트의 `unit` variant만 쓴다.** 각 모듈의 debug(domain은 jvm)를 루트가 병합하고, 제외 필터와 하한(`minBound`)은 루트 `build.gradle.kts`에만 있다. 태스크 앞에 `:`를 빼면 필터 없는 모듈별 리포트까지 만들고, `koverHtmlReport`(total)는 release까지 돌며, `*Release` variant 태스크는 시크릿 검증에 걸린다.
 - **라이브러리 버전을 올리면 baseline도 함께 다시 만들어 PR에 커밋한다.** `app/dependencies/releaseRuntimeClasspath.txt`는 출시 앱의 런타임 의존성(dependency-guard), `app/manifestShield/`는 Merged Manifest의 권한·exported 컴포넌트와 그걸 넣은 라이브러리(manifest-shield)다. 앱이 직접 선언한 권한은 `INTERNET`뿐이고 `AD_ID`·`FOREGROUND_SERVICE` 등은 AdMob·Firebase·WorkManager가 넣는다. 새 권한·exported 컴포넌트가 생기면 출처(`.sources.txt`)를 보고 Play Console 신고(광고 ID, 데이터 보안) 영향을 확인한다. CI는 비교만 하고 baseline을 고치지 않는다.
 
-## iOS 테스트와 검증
+## iOS 검증
 
-- 새 유닛 테스트는 Swift Testing(`@Test`, `@Suite`, `#expect`)을 쓴다. XCTest는 UI 테스트(`CalcMoneyUITests`)에만 쓴다.
-- 테스트 함수 이름은 **한글 + 언더스코어**를 그대로 쓴다(`func 등호_연타는_기록을_중복_저장하지_않는다()`). 영어나 raw identifier로 바꾸지 않는다. `.swiftformat`·`.swiftlint.yml`이 이를 보존하도록 이미 설정돼 있다.
-- 새 UseCase나 Repository를 추가하면 대응하는 테스트도 함께 추가한다. 시간·난수·네트워크에 의존하는 비결정적 테스트는 만들지 말고 `Clock`이나 fake 데이터소스를 주입한다.
+테스트 작성법(Swift Testing·한글 테스트 이름·주입)은 `ios-testing` 스킬을 따른다. 여기서는 명령만 둔다.
+
 - 모든 명령은 `ios/` 디렉터리에서 실행한다.
 
 ```bash
@@ -213,10 +182,10 @@ Claude Code는 아래 스킬을 필요할 때 알아서 불러온다. 스킬 자
 | --- | --- |
 | 코드 리뷰, PR·diff 검토 | `.claude/skills/review/SKILL.md` |
 | Crashlytics 크래시 분석·수정 | `.claude/skills/analyze-crash/SKILL.md` |
-| Android 새 화면/ViewModel 추가, MVI 패턴, 레이어 배선 | `.claude/skills/mvi-screen/SKILL.md` |
+| Android 새 화면/ViewModel 추가, MVI 패턴, 레이어 배선, Compose 작성 규칙 | `.claude/skills/mvi-screen/SKILL.md` |
 | Android 테스트 작성 | `.claude/skills/testing/SKILL.md` |
 | Android 릴리스·배포·CI, Firebase Functions 배포 | `.claude/skills/release-deploy/SKILL.md` |
-| iOS 새 화면/ViewModel 추가, 레이어별 배선 | `.claude/skills/ios-screen/SKILL.md` |
+| iOS 새 화면/ViewModel 추가, 레이어별 배선, iPad 방향·ATT 제약 | `.claude/skills/ios-screen/SKILL.md` |
 | iOS 테스트 작성 | `.claude/skills/ios-testing/SKILL.md` |
 | iOS 린트·빌드·CI | `.claude/skills/ios-ci/SKILL.md` |
 | Maestro E2E Flow 작성·실행·리뷰, 테스트 id 부여 | `maestro-e2e` 플러그인의 `flows` 스킬 + `.claude/skills/maestro/SKILL.md`(이 저장소의 APP_ID·id 표·제약) |

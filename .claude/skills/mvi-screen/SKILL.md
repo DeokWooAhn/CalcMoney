@@ -1,6 +1,6 @@
 ---
 name: mvi-screen
-description: 새 화면 추가, ViewModel/Contract 작성, Orbit MVI 패턴을 따를 때 사용. UseCase·Repository·DI 배선 규칙 포함.
+description: 새 화면 추가, ViewModel/Contract 작성, Orbit MVI 패턴을 따를 때 사용. UseCase·Repository·DI 배선과 Compose 작성 규칙(문자열·접근성·Preview·side-effect) 포함.
 ---
 
 # 화면 / MVI / 레이어 배선 규칙
@@ -9,6 +9,7 @@ description: 새 화면 추가, ViewModel/Contract 작성, Orbit MVI 패턴을 �
 
 ViewModel·Contract·UseCase·Repository의 모양은 `:konsist` 테스트(`konsist/src/test/java/com/ahn/konsist/ArchitectureTest.kt`)가
 검사한다(`./gradlew :konsist:test`). 규칙을 바꾸거나 예외를 더할 때는 그 파일의 예외 목록에 이유를 적고 이 문서도 함께 고친다.
+예외가 규칙을 지키게 되면 목록에서 빼라고 테스트가 실패한다. Konsist는 0.18.1로 고정했다(1.0.0 정식이 나오면 올린다).
 
 ## 화면 하나 = 파일 3개 (`presentation/ui/screen/<feature>/`)
 
@@ -27,6 +28,19 @@ ViewModel·Contract·UseCase·Repository의 모양은 `:konsist` 테스트(`kons
   - `MainViewModel`: Activity 범위에서 테마·인앱 리뷰·전면 광고·크래시 단서를 다룬다. 화면의 Intent·SideEffect가 없다
   - `FavoriteViewModel`: 공유 `ExchangeViewModel`의 상태를 받아 즐겨찾기 환율 목록만 계산하는 보조 ViewModel이다.
     자체 Intent·SideEffect가 없어 `FavoriteContract`도 `State`만 둔다
+
+## Compose 작성 규칙 (Screen 파일)
+
+- 사용자에게 보이는 문자열은 `res/values/strings.xml`에 정의하고 `values-ko`를 함께 채운다.
+  Composable이나 ViewModel에 표시 문자열을 직접 쓰지 않는다.
+- 상호작용 요소는 최소 48dp 터치 영역을 확보한다. 아이콘·이미지에는 `contentDescription`을 주고
+  장식용이면 `null`을 명시한다.
+- `Screen` 컴포저블과 재사용 컴포넌트에는 `@Preview`를 최소 하나 둔다. ViewModel을 배선하는
+  `Route`에는 두지 않는다.
+- Composable 본문에서 상태를 바꾸거나 비즈니스 로직을 실행하지 않는다. `LaunchedEffect`,
+  `DisposableEffect` 같은 side-effect API를 쓴다.
+- `Context`를 ViewModel이나 깊은 컴포저블 계층으로 넘기지 않는다. 필요하면 그 자리에서
+  `LocalContext.current`로 얻는다.
 
 ## UseCase 규칙 (`domain/<feature>/usecase/`)
 

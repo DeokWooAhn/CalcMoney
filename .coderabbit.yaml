@@ -3,7 +3,20 @@
 # 이 파일이 있으면 CodeRabbit 웹 대시보드 설정보다 우선한다.
 # 한 레포에 안드로이드 앱(루트 Gradle 모듈)과 iOS 앱(ios/)이 함께 있으므로
 # path_instructions 를 경로별로 나눠 각 스택의 기준으로 리뷰하게 한다.
+# 이 저장소의 규칙 원본은 AGENTS.md 와 .claude/skills/ 이고, knowledge_base 로 함께 읽힌다.
 language: ko-KR
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "AGENTS.md"
+      - ".claude/skills/review/SKILL.md"
+      - ".claude/skills/mvi-screen/SKILL.md"
+      - ".claude/skills/testing/SKILL.md"
+      - ".claude/skills/ios-screen/SKILL.md"
+      - ".claude/skills/ios-testing/SKILL.md"
+      - ".claude/skills/maestro/SKILL.md"
 
 reviews:
   path_filters:
@@ -293,7 +306,7 @@ reviews:
         - 안드로이드 앱과 같은 클린 아키텍처를 SPM 로컬 패키지로 옮긴 구조다.
           의존 방향은 Presentation → Domain ← Data 이며, Presentation 은 Data 를 모른다.
         - swift-tools 6.2 / iOS 17 최소 지원. Swift 6 동시성 검사가 켜져 있다.
-        - 주석·KDoc·테스트 이름은 한국어, 코드 식별자와 로그는 영어 (CLAUDE.md 컨벤션).
+        - 주석·KDoc·테스트 이름은 한국어, 코드 식별자와 로그는 영어 (AGENTS.md 컨벤션).
           한국어 식별자를 영어로 바꾸라는 지적은 하지 말 것.
 
         언어 정확성:

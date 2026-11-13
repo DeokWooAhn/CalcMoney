@@ -25,7 +25,7 @@
 # 기존 코드가 startPos..<pos 처럼 붙여 쓴다.
 --ranges no-space
 
-# 테스트 이름은 한국어 + 언더스코어가 프로젝트 컨벤션이다 (CLAUDE.md).
+# 테스트 이름은 한국어 + 언더스코어가 프로젝트 컨벤션이다 (AGENTS.md).
 # 기본값(raw-identifiers)은 `숫자 변환 연산자 유지`() 처럼 백틱 식별자로 바꿔버린다.
 --test-case-name-format preserve
 

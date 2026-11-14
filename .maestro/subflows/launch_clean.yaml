@@ -17,15 +17,26 @@ appId: ${APP_ID}
             id: "wait.never"
           timeout: 2000
           optional: true
-- launchApp:
-    clearState: true
-    # 비워 두지 않으면 기본값이 `all: allow`다. Android에서는 권한 목록을 읽으려고 APK 전체(debug 약 89MB)를
-    # 매번 adb로 받는데, CI 에뮬레이터에서 이 전송이 가끔 수 분씩 멈췄다. 이 앱은 런타임 권한을 쓰지 않아
-    # 받을 필요가 없다. 권한이 필요한 화면이 생기면 `all` 대신 그 권한만 적는다(예: `notifications: allow`).
-    permissions: {}
-    arguments:
-      UI_TESTING: true
-      UI_TESTING_RATES: ${UI_TESTING_RATES || "LIVE"}
+      - launchApp:
+          clearState: true
+          # 런타임 권한이 없어 APK 전체를 전송하는 기본 권한 허용 단계를 생략한다.
+          permissions: {}
+          arguments:
+            UI_TESTING: true
+            UI_TESTING_RATES: ${UI_TESTING_RATES || "LIVE"}
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - stopApp
+      # 재설치 중 실행 상태 조회가 끊기지 않도록 앱이 시작 인자로 테스트 상태를 초기화한다.
+      - launchApp:
+          clearState: false
+          permissions: {}
+          arguments:
+            UI_TESTING: true
+            UI_TESTING_RESET: true
+            UI_TESTING_RATES: ${UI_TESTING_RATES || "LIVE"}
 # 보이는 순간 넘어가므로 실기기·시뮬레이터에서는 오래 걸리지 않는다. CI 에뮬레이터는 콜드 스타트가
 # 느리므로 넉넉히 둔다.
 - extendedWaitUntil:

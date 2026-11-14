@@ -6,11 +6,20 @@ set -euo pipefail
 
 OUT=build/maestro
 mkdir -p "$OUT"
+touch "$OUT/diagnostics-started"
 
 # 실패를 되짚을 수 있게 테스트 내내 앱 로그를 남긴다(크래시·UI_TESTING 인식 여부 확인용).
 xcrun simctl spawn "$UDID" log stream --style compact --predicate 'process == "CalcMoney"' >"$OUT/app.log" 2>&1 &
 LOG_PID=$!
-trap 'kill "$LOG_PID" 2>/dev/null || true' EXIT
+cleanup() {
+  result=$?
+  trap - EXIT
+  kill "$LOG_PID" 2>/dev/null || true
+  python3 .github/scripts/collect_ios_diagnostics.py --udid "$UDID" --app-id "$APP_ID" \
+    --process CalcMoney --output "$OUT/diagnostics" --started "$OUT/diagnostics-started" || true
+  exit "$result"
+}
+trap cleanup EXIT
 
 xcrun simctl install "$UDID" "$APP_PATH"
 

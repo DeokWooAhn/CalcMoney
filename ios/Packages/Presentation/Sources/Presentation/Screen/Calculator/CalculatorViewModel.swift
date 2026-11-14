@@ -84,6 +84,7 @@ public final class CalculatorViewModel {
         case .delete: handleDelete()
         case .clear: handleClear()
         case .calculate: handleCalculate()
+        case .retryExchange: Task { [weak self] in await self?.performLoadCurrencies() }
         case .clearHistory: enqueuePersistence { await $0.handleClearHistory() }
         default: sendCurrencyIntent(intent)
         }
@@ -301,10 +302,10 @@ extension CalculatorViewModel {
             state.availableCurrencies = currencies
             state.mainExchangeCurrency = mainCurrency
             state.selectedExchangeCurrency = subCurrency
-
+            state.exchangeFailure = nil
             restartRateFetch()
         } catch {
-            sideEffectBus.send(.showSnackbar(message: error.exchangeRateErrorMessage))
+            state.exchangeFailure = error.exchangeRateErrorMessage
         }
     }
 
@@ -338,11 +339,11 @@ extension CalculatorViewModel {
 
             var newState = state
             newState.exchangeRate = rate
+            newState.exchangeFailure = nil
             state = reducer.withConvertedAmounts(newState)
         } catch {
             guard isLatestRateRequest(requestID, from: from, to: to) else { return }
-
-            sideEffectBus.send(.showSnackbar(message: error.exchangeRateErrorMessage))
+            state.exchangeFailure = error.exchangeRateErrorMessage
         }
     }
 

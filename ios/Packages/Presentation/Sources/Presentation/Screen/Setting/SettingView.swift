@@ -71,14 +71,6 @@ struct SettingView: View {
         }
         .background(AppColors.background)
         .snackbarOverlay(snackbar)
-        .task {
-            for await sideEffect in exchangeViewModel.sideEffects() {
-                switch sideEffect {
-                case let .showSnackbar(message):
-                    snackbar.show(message)
-                }
-            }
-        }
         .safeAreaInset(edge: .bottom) {
             AdMobBanner(adUnitID: AdConfig.settingsBannerUnitID, canRequestAds: canRequestAds)
         }

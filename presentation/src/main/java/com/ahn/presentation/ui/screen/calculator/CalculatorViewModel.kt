@@ -327,7 +327,9 @@ class CalculatorViewModel @Inject constructor(
             restartRateFetch(state.mainExchangeCurrency, state.selectedExchangeCurrency)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            reduce { state.copy(exchangeFailure = e.toExchangeRateErrorUiText()) }
+            if (state.availableCurrencies.isEmpty()) {
+                reduce { state.copy(exchangeFailure = e.toExchangeRateErrorUiText()) }
+            }
 
             Log.e(
                 "CalculatorViewModel",

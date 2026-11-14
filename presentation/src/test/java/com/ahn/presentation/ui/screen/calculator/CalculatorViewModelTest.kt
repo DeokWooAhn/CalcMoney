@@ -172,8 +172,11 @@ class CalculatorViewModelTest : BehaviorSpec({
                 previewResult = "",
                 repeatOperation = "+1",
                 isCalculatedResult = true,
-                histories = onePlusOneHistory,
             )
+        }
+        // 기록은 저장에 성공한 뒤에 목록에 들어간다.
+        expectState {
+            copy(histories = onePlusOneHistory)
         }
     }
 
@@ -658,13 +661,11 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 previewResult = "",
                                 repeatOperation = "+20",
                                 isCalculatedResult = true,
-                                histories = listOf(
-                                    CalculatorContract.HistoryItem(
-                                        expression = "10+20",
-                                        result = "30",
-                                    ),
-                                ),
                             )
+                        }
+                        // 기록은 저장에 성공한 뒤에 목록에 들어간다.
+                        expectState {
+                            copy(histories = histories + CalculatorContract.HistoryItem("10+20", "30"))
                         }
                     }
                 }
@@ -727,13 +728,11 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 previewResult = "",
                                 repeatOperation = "+1",
                                 isCalculatedResult = true,
-                                histories = listOf(
-                                    CalculatorContract.HistoryItem(
-                                        expression = "2+1",
-                                        result = "3",
-                                    ),
-                                ),
                             )
+                        }
+                        // 기록은 저장에 성공한 뒤에 목록에 들어간다.
+                        expectState {
+                            copy(histories = histories + CalculatorContract.HistoryItem("2+1", "3"))
                         }
 
                         containerHost.processIntent(CalculatorContract.Intent.Calculate)
@@ -744,17 +743,11 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 previewResult = "",
                                 repeatOperation = "+1",
                                 isCalculatedResult = true,
-                                histories = listOf(
-                                    CalculatorContract.HistoryItem(
-                                        expression = "2+1",
-                                        result = "3",
-                                    ),
-                                    CalculatorContract.HistoryItem(
-                                        expression = "3+1",
-                                        result = "4",
-                                    ),
-                                ),
                             )
+                        }
+                        // 기록은 저장에 성공한 뒤에 목록에 들어간다.
+                        expectState {
+                            copy(histories = histories + CalculatorContract.HistoryItem("3+1", "4"))
                         }
 
                         containerHost.processIntent(CalculatorContract.Intent.Calculate)
@@ -765,21 +758,11 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 previewResult = "",
                                 repeatOperation = "+1",
                                 isCalculatedResult = true,
-                                histories = listOf(
-                                    CalculatorContract.HistoryItem(
-                                        expression = "2+1",
-                                        result = "3",
-                                    ),
-                                    CalculatorContract.HistoryItem(
-                                        expression = "3+1",
-                                        result = "4",
-                                    ),
-                                    CalculatorContract.HistoryItem(
-                                        expression = "4+1",
-                                        result = "5",
-                                    ),
-                                ),
                             )
+                        }
+                        // 기록은 저장에 성공한 뒤에 목록에 들어간다.
+                        expectState {
+                            copy(histories = histories + CalculatorContract.HistoryItem("4+1", "5"))
                         }
                     }
                 }
@@ -833,13 +816,11 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 previewResult = "",
                                 repeatOperation = "+10",
                                 isCalculatedResult = true,
-                                histories = listOf(
-                                    CalculatorContract.HistoryItem(
-                                        expression = "12+10",
-                                        result = "22",
-                                    ),
-                                ),
                             )
+                        }
+                        // 기록은 저장에 성공한 뒤에 목록에 들어간다.
+                        expectState {
+                            copy(histories = histories + CalculatorContract.HistoryItem("12+10", "22"))
                         }
 
                         containerHost.processIntent(CalculatorContract.Intent.Delete)

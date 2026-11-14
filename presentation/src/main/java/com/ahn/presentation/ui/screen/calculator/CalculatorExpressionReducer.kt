@@ -1,12 +1,61 @@
 package com.ahn.presentation.ui.screen.calculator
 
 import com.ahn.domain.calculator.usecase.CalculateExpressionUseCase
+import com.ahn.domain.calculator.usecase.ExtractRepeatOperationUseCase
 import com.ahn.domain.exchange.usecase.ConvertExchangeAmountUseCase
+import com.ahn.presentation.R
+import com.ahn.presentation.util.UiText
 
 internal class CalculatorExpressionReducer(
     private val calculateExpression: CalculateExpressionUseCase,
     private val convertExchangeAmount: ConvertExchangeAmountUseCase,
+    private val extractRepeatOperation: ExtractRepeatOperationUseCase,
 ) {
+    /**
+     * "="를 눌렀을 때의 다음 상태와 저장할 기록을 정한다.
+     *
+     * 상태를 바꾸거나 저장하지 않는 순수 함수다. ViewModel은 이 함수를 `reduce` 안에서 부르는데, `reduce`는
+     * `StateFlow.update`라 다른 변경과 겹치면 블록을 다시 실행한다. 그래도 같은 입력에는 같은 결과가 나온다.
+     *
+     * 숫자만 남은 결과에서 다시 누르면 직전 연산(`repeatOperation`)을 이어 붙여 계산한다.
+     */
+    fun calculate(currentState: CalculatorContract.State): CalculationOutcome {
+        val expression = currentState.expression
+        if (expression.isEmpty()) return CalculationOutcome.Ignored
+
+        val repeatOperation = currentState.repeatOperation
+        val shouldRepeatOperation = repeatOperation != null && expression.toDoubleOrNull() != null
+        if (!shouldRepeatOperation && !hasBinaryOperator(expression)) return CalculationOutcome.Ignored
+
+        val expressionToCalculate = if (shouldRepeatOperation) expression + repeatOperation else expression
+        val result = calculateExpression(expressionToCalculate)
+
+        if (result == "Error") {
+            return CalculationOutcome.Failed(
+                currentState.copy(
+                    isError = true,
+                    errorMessage = UiText.StringResource(R.string.calculator_error),
+                ),
+            )
+        }
+
+        val nextState = buildNewExpressionState(
+            currentState = currentState,
+            newExpression = result,
+            newCursorPos = result.length,
+        ).copy(
+            previewResult = "",
+            convertedPreviewAmount = "",
+            repeatOperation = extractRepeatOperation(expressionToCalculate) ?: repeatOperation,
+            isCalculatedResult = true,
+        )
+
+        return CalculationOutcome.Succeeded(
+            state = nextState,
+            history = CalculatorContract.HistoryItem(expression = expressionToCalculate, result = result),
+        )
+    }
+
     fun inputNumber(
         currentState: CalculatorContract.State,
         number: String,
@@ -217,4 +266,19 @@ internal sealed interface CalculatorExpressionResult {
     data class Updated(val state: CalculatorContract.State) : CalculatorExpressionResult
 
     data object MaxNumberLengthExceeded : CalculatorExpressionResult
+}
+
+/** [CalculatorExpressionReducer.calculate]의 결과. 화면에 반영할 상태와, 성공했을 때 저장할 기록을 담는다. */
+internal sealed interface CalculationOutcome {
+    /** 계산할 수식이 아니다. 상태를 바꾸지 않는다. */
+    data object Ignored : CalculationOutcome
+
+    /** 계산할 수 없는 수식이다. 오류 상태를 보여 주고 기록에 남기지 않는다. */
+    data class Failed(val state: CalculatorContract.State) : CalculationOutcome
+
+    /** 계산에 성공했다. [state]를 바로 보여 주고, [history]는 저장에 성공한 뒤 기록 목록에 넣는다. */
+    data class Succeeded(
+        val state: CalculatorContract.State,
+        val history: CalculatorContract.HistoryItem,
+    ) : CalculationOutcome
 }

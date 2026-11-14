@@ -46,3 +46,4 @@
 | [store-copy-calculator-not-discount.md](store-copy-calculator-not-discount.md) | 앱을 할인 계산기로 소개하지 않는다 |
 | [store-copy-currency-in-headline.md](store-copy-currency-in-headline.md) | 여러 나라가 보는 스토어 제목에 특정 통화를 앞세우지 않는다 |
 | [offline-claim-condition.md](offline-claim-condition.md) | "오프라인에서도 된다"는 저장된 환율이 있을 때로 한정해 말한다 |
+| [calculator-intent-ordering.md](calculator-intent-ordering.md) | 두 플랫폼 계산기는 인텐트가 겹쳐도 같은 순서로 동작한다(확정·저장·조회 분리) |

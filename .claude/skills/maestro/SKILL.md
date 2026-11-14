@@ -34,6 +34,8 @@ maestro --device <udid> test .maestro -e APP_ID=com.deokwooahn.calcmoney
 - iOS 빌드: `ios/`에서 `xcodebuild build -workspace CalcMoney.xcworkspace -scheme CalcMoney -destination 'platform=iOS Simulator,id=<udid>' -derivedDataPath <dir>` 후 `xcrun simctl install`.
 - `UI_TESTING` 인자가 광고 동의 창과 광고 로드, 인앱 리뷰 창을 끈다. Android는 디버그 빌드에서만 받는다.
   iOS 개발 빌드는 리뷰를 요청할 때마다 창을 띄우므로, 이 인자 없이 계산을 반복하는 Flow는 리뷰 창에 막힐 수 있다.
+- iOS는 먼저 `stopApp`한 뒤 재설치 없이 실행한다. `UI_TESTING` + `UI_TESTING_RESET`이 함께 있으면 Debug 앱이 저장소 생성 전에 앱 소유 설정 6개를 비우고 메모리 환율 캐시를 쓴다. 일반·Release 실행에는 적용되지 않는다. `clearState: true`의 재설치 직후에는 실제 프로세스가 시작 중이어도 Maestro가 종료로 판단한 CI 기록이 있다.
+- `.github/scripts/maestro-ios-smoke.sh`는 종료 시 `build/maestro/diagnostics/`에 도구·기기 정보, 프로세스 상태, 스크린샷, 통합 로그와 실행 중 생성된 관련 크래시 보고서를 남긴다. `summary.json`의 명령별 종료 코드로 수집 누락을 확인한다. 진단 실패가 테스트 실패 코드를 덮어쓰지 않는다.
 
 ## 고정 환율 smoke
 

@@ -16,7 +16,9 @@ final class AppContainer {
     let adConsentManager = AdConsentManager()
 
     init() {
-        let repositories = Repositories()
+        let options = UITestingLaunchOptions(arguments: ProcessInfo.processInfo.arguments)
+        options.preparePreferences()
+        let repositories = Repositories(options: options)
         let useCases = UseCases(repositories: repositories)
 
         calculatorViewModel = CalculatorViewModel(
@@ -42,6 +44,10 @@ final class AppContainer {
             interstitialAdUseCases: useCases.interstitialAd,
             crashBreadcrumbs: repositories.crashBreadcrumbs,
         )
+        if options.resetsState {
+            Logger(subsystem: "com.deokwooahn.calcmoney", category: "UITesting")
+                .info("ui-test: state reset and container ready")
+        }
     }
 }
 
@@ -57,16 +63,20 @@ private struct Repositories {
     /// 크래시 단서. Repository는 아니지만 Firebase 초기화 여부에 따라 구현이 갈려 여기서 함께 만든다.
     let crashBreadcrumbs: any CrashBreadcrumbs
 
-    init() {
+    init(options: UITestingLaunchOptions) {
         // GoogleService-Info.plist가 없으면 원격 환율은 "준비 안 됨" 상태로 동작한다.
-        let isFirebaseConfigured = !Self.usesFixedRates && FirebaseBootstrap.configureIfAvailable()
-        let remoteDataSource = Self.makeRemoteDataSource(isFirebaseConfigured: isFirebaseConfigured)
+        let isFirebaseConfigured = !options.usesFixedRates && FirebaseBootstrap.configureIfAvailable()
+        let remoteDataSource = Self.makeRemoteDataSource(
+            isFirebaseConfigured: isFirebaseConfigured,
+            usesFixedRates: options.usesFixedRates,
+        )
         // Crashlytics는 Firebase를 초기화하기 전에 부르면 크래시하므로 초기화했을 때만 쓴다.
         crashBreadcrumbs = isFirebaseConfigured ? FirebaseCrashBreadcrumbs() : NoOpCrashBreadcrumbs()
 
         exchangeRate = ExchangeRateRepositoryImpl(
             remoteDataSource: remoteDataSource,
-            localDataSource: Self.makeExchangeRateLocalDataSource(),
+            localDataSource: Self
+                .makeExchangeRateLocalDataSource(inMemory: options.resetsState || options.usesFixedRates),
             crashBreadcrumbs: crashBreadcrumbs,
         )
         currencySelection = CurrencySelectionRepositoryImpl(dataSource: CurrencySelectionDataSource())
@@ -82,11 +92,11 @@ private struct Repositories {
     /// 저장소 손상·용량 부족·마이그레이션 실패로 앱 전체를 못 쓰게 만드는 것보다,
     /// 이번 실행 동안만 캐시가 유지되는 편이 낫다. 계산기 탭은 캐시와 무관하게 동작하고
     /// 환율도 원격에서 다시 받아 오므로 기능은 그대로 살아 있다.
-    private static func makeExchangeRateLocalDataSource() -> ExchangeRateLocalDataSource {
+    private static func makeExchangeRateLocalDataSource(inMemory: Bool) -> ExchangeRateLocalDataSource {
         let logger = Logger(subsystem: "com.deokwooahn.calcmoney", category: "AppContainer")
 
         do {
-            return try ExchangeRateLocalDataSource.make(inMemory: usesFixedRates)
+            return try ExchangeRateLocalDataSource.make(inMemory: inMemory)
         } catch {
             logger.error("Falling back to in-memory exchange rate cache: \(error.localizedDescription)")
         }
@@ -99,16 +109,10 @@ private struct Repositories {
         }
     }
 
-    private static var usesFixedRates: Bool {
-        #if DEBUG
-            let arguments = ProcessInfo.processInfo.arguments
-            return arguments.contains("UI_TESTING") && arguments.contains("FIXED_EXCHANGE_RATES")
-        #else
-            return false
-        #endif
-    }
-
-    private static func makeRemoteDataSource(isFirebaseConfigured: Bool) -> any ExchangeRateRemoteDataSource {
+    private static func makeRemoteDataSource(
+        isFirebaseConfigured: Bool,
+        usesFixedRates: Bool,
+    ) -> any ExchangeRateRemoteDataSource {
         #if DEBUG
             if usesFixedRates { return FixedExchangeRateDataSource() }
         #endif

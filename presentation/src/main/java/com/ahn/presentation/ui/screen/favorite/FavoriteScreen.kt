@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -52,6 +53,7 @@ import com.ahn.presentation.R
 import com.ahn.presentation.ui.component.AdMobBanner
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.ExchangeInputContainer
+import com.ahn.presentation.ui.component.LoadFailureMessage
 import com.ahn.presentation.ui.screen.exchange.ExchangeContract
 import com.ahn.presentation.ui.screen.exchange.ExchangeViewModel
 import com.ahn.presentation.util.localizedName
@@ -192,6 +194,9 @@ private fun ColumnScope.FavoriteRateContent(
     favoriteState: FavoriteContract.State,
     onExchangeIntent: (ExchangeContract.Intent) -> Unit,
 ) {
+    val context = LocalContext.current
+    val failure = exchangeState.failure
+
     when {
         favoriteState.items.isNotEmpty() -> FavoriteRateGrid(
             items = favoriteState.items,
@@ -211,7 +216,31 @@ private fun ColumnScope.FavoriteRateContent(
             stringResource(R.string.favorite_only_base_currency, favoriteState.baseOnlyFavoriteCode),
         )
 
+        failure != null -> FavoriteLoadFailure(
+            message = failure.message.asString(context),
+            onRetry = { onExchangeIntent(ExchangeContract.Intent.RefreshExchangeRates) },
+        )
+
         else -> FavoriteEmptyMessage(stringResource(R.string.favorite_rate_load_failed))
+    }
+}
+
+@Composable
+private fun ColumnScope.FavoriteLoadFailure(
+    message: String,
+    onRetry: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f),
+        contentAlignment = Alignment.Center,
+    ) {
+        LoadFailureMessage(
+            message = message,
+            onRetry = onRetry,
+            testTagName = "favorite.failure",
+        )
     }
 }
 

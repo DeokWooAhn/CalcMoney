@@ -26,6 +26,7 @@ interface CalculatorContract {
         val histories: List<HistoryItem> = emptyList(),
         val isError: Boolean = false,
         val errorMessage: UiText? = null,
+        val exchangeFailure: UiText? = null,
     )
 
     // 2. 의도: 추상화된 입력
@@ -47,6 +48,8 @@ interface CalculatorContract {
         object Calculate : Intent
 
         object ClearHistory : Intent
+
+        object RetryExchange : Intent
     }
 
     // 3. 부수 효과: 일회성 이벤트

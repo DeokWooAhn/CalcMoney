@@ -106,6 +106,8 @@ class CalculatorViewModel @Inject constructor(
 
             is CalculatorContract.Intent.Calculate -> handleCalculate()
 
+            is CalculatorContract.Intent.RetryExchange -> intent { performLoadCurrencies() }
+
             CalculatorContract.Intent.SwapExchangeCurrencies -> intent { performSwapExchangeCurrencies() }
 
             CalculatorContract.Intent.ClearHistory -> handleClearHistory()
@@ -318,17 +320,16 @@ class CalculatorViewModel @Inject constructor(
                     availableCurrencies = currencies,
                     mainExchangeCurrency = mainCurrency,
                     selectedExchangeCurrency = subCurrency,
+                    exchangeFailure = null,
                 )
             }
 
             restartRateFetch(state.mainExchangeCurrency, state.selectedExchangeCurrency)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            postSideEffect(
-                CalculatorContract.SideEffect.ShowSnackBar(
-                    e.toExchangeRateErrorUiText(),
-                ),
-            )
+            if (state.availableCurrencies.isEmpty()) {
+                reduce { state.copy(exchangeFailure = e.toExchangeRateErrorUiText()) }
+            }
 
             Log.e(
                 "CalculatorViewModel",
@@ -369,7 +370,9 @@ class CalculatorViewModel @Inject constructor(
 
             reduce {
                 if (state.isLatestRateRequest(requestId, latestRateRequestId.get(), from, to)) {
-                    expressionReducer.run { state.copy(exchangeRate = rate).withConvertedAmounts() }
+                    expressionReducer.run {
+                        state.copy(exchangeRate = rate, exchangeFailure = null).withConvertedAmounts()
+                    }
                 } else {
                     state
                 }
@@ -378,11 +381,7 @@ class CalculatorViewModel @Inject constructor(
             throw e
         } catch (e: Exception) {
             if (state.isLatestRateRequest(requestId, latestRateRequestId.get(), from, to)) {
-                postSideEffect(
-                    CalculatorContract.SideEffect.ShowSnackBar(
-                        e.toExchangeRateErrorUiText(),
-                    ),
-                )
+                reduce { state.copy(exchangeFailure = e.toExchangeRateErrorUiText()) }
             }
         }
     }

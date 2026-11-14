@@ -63,14 +63,11 @@ import com.ahn.presentation.R
 import com.ahn.presentation.main.MainViewModel
 import com.ahn.presentation.ui.component.AdMobBanner
 import com.ahn.presentation.ui.component.CustomSnackbarHost
-import com.ahn.presentation.ui.screen.exchange.ExchangeContract
 import com.ahn.presentation.ui.screen.exchange.ExchangeViewModel
 import com.ahn.presentation.ui.theme.CalcMoneyTheme
 import com.ahn.presentation.util.formatExchangeRateDate
 import com.ahn.presentation.util.formatExchangeRateFetchedAt
-import com.ahn.presentation.util.rememberShowSnackbar
 import org.orbitmvi.orbit.compose.collectAsState
-import org.orbitmvi.orbit.compose.collectSideEffect
 
 @Composable
 fun SettingRoute(
@@ -83,7 +80,6 @@ fun SettingRoute(
     val exchangeState by exchangeViewModel.collectAsState()
     val themeMode by mainViewModel.themeMode.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val showSnackbar = rememberShowSnackbar(snackbarHostState)
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val appInfo = remember(context) { context.getAppInfo() }
@@ -94,12 +90,6 @@ fun SettingRoute(
     }
     val exchangeRateFetchedAtText = remember(exchangeState.exchangeRateFetchedAt) {
         formatExchangeRateFetchedAt(exchangeState.exchangeRateFetchedAt)
-    }
-
-    exchangeViewModel.collectSideEffect { sideEffect ->
-        when (sideEffect) {
-            is ExchangeContract.SideEffect.ShowSnackBar -> showSnackbar(sideEffect.message)
-        }
     }
 
     SettingScreen(

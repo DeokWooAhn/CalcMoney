@@ -15,7 +15,15 @@ interface ExchangeContract {
         val exchangeRateDate: String = "",
         val exchangeRateFetchedAt: Long = 0L,
         val isLoading: Boolean = false,
+        val failure: Failure? = null,
     )
+
+    data class Failure(
+        val scope: Scope,
+        val message: UiText,
+    ) {
+        enum class Scope { CURRENCIES, RATE }
+    }
 
     sealed interface Intent {
         data class UpdateFromAmount(val amount: String) : Intent

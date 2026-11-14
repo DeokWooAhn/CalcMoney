@@ -227,9 +227,9 @@ class CalculatorViewModel @Inject constructor(
     /**
      * 계산 기록을 저장하고 계산 성공을 셉니다. [persistenceMutex] 안에서 부릅니다.
      *
-     * 기록 목록에는 저장에 성공한 뒤에만 넣습니다. 저장소의 기록 흐름이 같은 목록을 먼저 내보냈어도 중복되지 않게,
-     * 저장 전 목록에 붙인 결과로 덮어씁니다. 기록이 바뀌는 일은 모두 잠금 안에서 일어나므로 저장 전 목록이 정확합니다.
-     * 기록 저장에 실패해도 계산 성공은 셉니다.
+     * 기록 목록에는 저장에 성공한 뒤에만 넣습니다. 저장하는 동안 목록이 그대로였을 때만 저장 전 목록에 새 기록을 붙이고,
+     * 그사이 저장소의 기록 흐름이 목록을 바꿨으면 흐름을 따릅니다. 흐름이 새 기록을 먼저 내보냈을 때 중복되지 않고,
+     * 늦게 도착한 기존 기록을 덮어쓰지도 않습니다. 기록 저장에 실패해도 계산 성공은 셉니다.
      */
     private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.saveCalculation(
         history: CalculatorContract.HistoryItem,
@@ -251,7 +251,15 @@ class CalculatorViewModel @Inject constructor(
         }
 
         if (isHistorySaved) {
-            reduce { state.copy(histories = (historiesBeforeSave + history).takeLast(MAX_HISTORY_COUNT)) }
+            reduce {
+                // 저장하는 동안 기록 흐름(observeSavedData)이 목록을 바꿨다면 그 목록이 저장소를 따른 것이다.
+                // 덮어쓰면 그사이 들어온 기존 기록이 빠지므로 그대로 둔다. 저장소는 저장이 끝나면 새 목록을 내보낸다.
+                if (state.histories == historiesBeforeSave) {
+                    state.copy(histories = (historiesBeforeSave + history).takeLast(MAX_HISTORY_COUNT))
+                } else {
+                    state
+                }
+            }
         }
 
         recordCalculationSuccess()

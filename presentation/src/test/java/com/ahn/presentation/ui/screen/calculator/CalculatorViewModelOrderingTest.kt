@@ -35,6 +35,7 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
@@ -42,6 +43,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.milliseconds
 import org.orbitmvi.orbit.test.Item
 import org.orbitmvi.orbit.test.OrbitTestContext
@@ -78,6 +80,12 @@ class CalculatorViewModelOrderingTest :
         val savedOperations = mutableListOf<String>()
         val savedMainCurrencyCodes = mutableListOf<String>()
         val requestedRatePairs = mutableListOf<String>()
+
+        /** 응답(성공·실패)까지 끝난 환율 조회. 취소된 요청도 실제 네트워크처럼 끝까지 응답한다. */
+        val completedRatePairs = mutableListOf<String>()
+
+        /** 저장소의 기록 흐름. 기본은 빈 목록이고, 시나리오가 저장 중에 값을 바꿔 늦게 도착한 기록을 흉내 낸다. */
+        val historyFlow = MutableStateFlow<List<CalculatorHistory>>(emptyList())
 
         var addHistoryDelayMillis = 0L
         var addHistoryError: Throwable? = null
@@ -171,13 +179,15 @@ class CalculatorViewModelOrderingTest :
             savedOperations.clear()
             savedMainCurrencyCodes.clear()
             requestedRatePairs.clear()
+            completedRatePairs.clear()
+            historyFlow.value = emptyList()
             mainCurrencySaveDelayMillis.clear()
             rateScript.clear()
             addHistoryDelayMillis = 0L
             addHistoryError = null
             supportedCurrenciesDelayMillis = 0L
 
-            every { getHistoryUseCase() } returns MutableStateFlow(emptyList())
+            every { getHistoryUseCase() } returns historyFlow
             every { getFavoriteCurrenciesUseCase() } returns MutableStateFlow(emptyList())
             coEvery { getCalculatorSelectionUseCase() } returns CalculatorCurrencySelection(
                 mainCode = "KRW",
@@ -204,7 +214,10 @@ class CalculatorViewModelOrderingTest :
                 val pair = "${firstArg<String>()}->${secondArg<String>()}"
                 requestedRatePairs += pair
                 val step = rateScript[pair]?.removeFirstOrNull() ?: RateStep()
-                delay(step.delayMillis)
+                // 실제 Firestore 요청은 호출한 쪽이 취소해도 멈추지 않는다. 취소와 무관하게 응답이 돌아오게 해
+                // 요청 번호 확인만으로 지난 응답을 버리는지 본다.
+                withContext(NonCancellable) { delay(step.delayMillis) }
+                completedRatePairs += pair
                 step.error?.let { throw it }
                 step.rate
             }
@@ -297,6 +310,8 @@ class CalculatorViewModelOrderingTest :
                         runScenario(
                             scenario = { testScope -> selectUsdEurUsd(usd, eur, testScope) },
                             verify = { state, _ ->
+                                // 첫 USD 요청도 응답까지 끝났다. 그래도 마지막 요청의 환율이 남아야 한다.
+                                completedRatePairs.count { it == "USD->JPY" } shouldBe 2
                                 state.mainExchangeCurrency?.code shouldBe "USD"
                                 state.exchangeRate shouldBe 3.0
                             },
@@ -321,6 +336,8 @@ class CalculatorViewModelOrderingTest :
                         runScenario(
                             scenario = { testScope -> selectUsdEurUsd(usd, eur, testScope) },
                             verify = { state, sideEffects ->
+                                // 첫 USD 요청도 오류 응답까지 끝났다. 그래도 그 오류를 띄우지 않아야 한다.
+                                completedRatePairs.count { it == "USD->JPY" } shouldBe 2
                                 state.exchangeRate shouldBe 3.0
                                 val snackbars =
                                     sideEffects.filterIsInstance<CalculatorContract.SideEffect.ShowSnackBar>()
@@ -410,6 +427,37 @@ class CalculatorViewModelOrderingTest :
                         } finally {
                             unmockkStatic(Log::class)
                         }
+                    }
+                }
+            }
+        }
+
+        Given("8. 기존 기록이 기록 흐름으로 늦게 도착하는 상태에서") {
+            When("1+2를 입력하고 = 를 누르면") {
+                Then("저장하는 동안 들어온 기존 기록이 화면 목록에서 빠지지 않아야 한다") {
+                    runTest {
+                        val earlierHistory = CalculatorHistory(expression = "7×6", result = "42")
+                        coEvery { addHistoryUseCase(any()) } coAnswers {
+                            delay(20L)
+                            // 시작 로드가 늦어 화면 목록은 아직 비어 있었다. 저장이 끝나 저장소가 기존 기록과 새 기록을 함께 내보낸다.
+                            historyFlow.value = listOf(earlierHistory, firstArg())
+                            // 기록 흐름을 수집할 틈을 준 뒤 저장을 마친다.
+                            delay(1L)
+                        }
+
+                        runScenario(
+                            scenario = { testScope ->
+                                containerHost.inputOnePlusTwo()
+                                containerHost.processIntent(CalculatorContract.Intent.Calculate)
+                                testScope.settle()
+                            },
+                            verify = { state, _ ->
+                                state.histories shouldBe listOf(
+                                    CalculatorContract.HistoryItem(expression = "7×6", result = "42"),
+                                    CalculatorContract.HistoryItem(expression = "1+2", result = "3"),
+                                )
+                            },
+                        )
                     }
                 }
             }

@@ -3,7 +3,6 @@
 - 정한 날: 2026-11-14
 - 근거: 2026-11-14 대화(iOS 구조 개선 검토), Orbit 9.0.0 `RealContainer.kt` 소스, 아래 "확인 방법"의 테스트
 - 적용: Android·iOS 계산기 ViewModel. 다른 화면에 기다리는 인텐트(저장·조회)를 더할 때도 같은 원칙을 쓴다.
-  2026-11-14에는 Android만 이 원칙대로 고쳤다. iOS는 아직 범용 인텐트 큐(`enqueue`)를 쓰고, 다음 PR에서 맞춘다.
 
 ## 규칙
 
@@ -17,6 +16,7 @@ Android는 Orbit·AndroidX, iOS는 SwiftUI·Observation이다. MVI를 버리거�
   다른 변경과 겹치면 블록을 다시 실행하므로, 저장·이벤트는 블록 밖에서 실제로 반영된 실행의 결과로 처리한다.
 - **저장**: 로컬 저장은 탭한 순서대로 하나씩 처리한다. 기록 추가·삭제, 통화 선택, 즐겨찾기, 리뷰·광고 횟수가 여기에 든다.
   Android는 `Mutex`를 쓰고, 인텐트가 상태를 확정한 뒤 다른 중단 없이 바로 잠금을 요청한다.
+  iOS는 저장만 이어 붙이는 Task 사슬(`enqueuePersistence`)을 쓴다. 범용 인텐트 큐는 두지 않는다.
 - **조회**: 환율 조회는 저장 순서에 넣지 않고 기다리지도 않는다. 새 조회를 시작할 때 이전 조회를 취소하고 요청 번호를 올린다.
   응답이 오면 요청 번호, 취소 여부, 통화쌍을 모두 확인한 뒤에만 반영한다. 오류 스낵바도 같은 조건에서만 띄운다.
 
@@ -60,3 +60,4 @@ Android는 Orbit·AndroidX, iOS는 SwiftUI·Observation이다. MVI를 버리거�
 - Android: `presentation/src/test/.../calculator/CalculatorViewModelOrderingTest.kt`
 - iOS: `ios/Packages/Presentation/Tests/PresentationTests/Screen/Calculator/CalculatorViewModelOrderingTests.swift`.
   1은 `CalculatorViewModelCalculateTests`, 3은 `CalculatorViewModelCurrencyTests`가 맡는다.
+  iOS 가짜 환율 저장소는 지연을 `Task.detached`에서 기다려 취소를 무시한다.

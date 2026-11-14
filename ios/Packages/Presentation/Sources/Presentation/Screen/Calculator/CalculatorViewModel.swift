@@ -5,6 +5,14 @@ import Observation
 /// 계산기 화면 ViewModel (Android `CalculatorViewModel` + Orbit MVI 대응)
 ///
 /// View는 `send(_:)`로 의도를 전달하고, `state` 관찰과 `sideEffects()` 구독으로 결과를 받는다.
+///
+/// 핸들러가 저장·조회에서 기다리는 사이 MainActor가 풀려 다음 의도가 끼어든다. 겹쳐도 순서가 지켜지도록 일을 셋으로 나눈다.
+/// - 확정: 계산 결과·통화 선택은 `await` 전에 `state`에 반영한다. 다음 의도는 반영된 상태를 읽는다.
+/// - 저장: 로컬 저장은 `enqueuePersistence(_:)`로 탭한 순서대로 처리한다.
+/// - 조회: 환율 조회는 기다리지 않고 따로 돌린다. 마지막 요청의 응답만 반영한다(`restartRateFetch()`).
+///
+/// Android `CalculatorViewModel`도 같은 동작을 지킨다. 두 플랫폼이 같은 시나리오로 검증한다
+/// (`docs/decisions/calculator-intent-ordering.md`).
 @MainActor
 @Observable
 public final class CalculatorViewModel {
@@ -22,7 +30,11 @@ public final class CalculatorViewModel {
     @ObservationIgnored private let sideEffectBus = SideEffectBus<CalculatorSideEffect>()
     @ObservationIgnored private var observeHistoriesTask: Task<Void, Never>?
     @ObservationIgnored private var observeFavoritesTask: Task<Void, Never>?
-    @ObservationIgnored private var intentTask: Task<Void, Never>?
+    @ObservationIgnored private var loadCurrenciesTask: Task<Void, Never>?
+    @ObservationIgnored private var persistenceTask: Task<Void, Never>?
+    @ObservationIgnored private var rateFetchTask: Task<Void, Never>?
+    /// 가장 최근 환율 조회의 번호. 이 번호와 다른 요청의 응답은 버린다.
+    @ObservationIgnored private var latestRateRequestID = 0
 
     public init(
         calculatorUseCases: CalculatorUseCases,
@@ -41,18 +53,23 @@ public final class CalculatorViewModel {
         reducer = CalculatorExpressionReducer(
             calculateExpression: calculatorUseCases.calculateExpression,
             convertExchangeAmount: exchangeUseCases.convertExchangeAmount,
+            extractRepeatOperation: calculatorUseCases.extractRepeatOperation,
         )
 
-        // Android도 Orbit container의 onCreate 블록에서 부르므로 초기 로드가 인텐트 큐에 들어간다.
-        // 로드가 끝나기 전에 사용자가 통화를 바꿔도 순서가 뒤집히지 않는다.
-        enqueue { await $0.performLoadCurrencies() }
+        // 시작 로드는 저장 순서에 넣지 않는다. 계산이 네트워크 조회를 기다리지 않게 하려는 것이다.
+        // 로드가 끝나기 전에는 통화 목록이 비어 있어 통화를 고를 수 없으므로 순서가 꼬이지 않는다.
+        loadCurrenciesTask = Task { [weak self] in
+            await self?.performLoadCurrencies()
+        }
         observeSavedData()
     }
 
     deinit {
         observeHistoriesTask?.cancel()
         observeFavoritesTask?.cancel()
-        intentTask?.cancel()
+        loadCurrenciesTask?.cancel()
+        persistenceTask?.cancel()
+        rateFetchTask?.cancel()
     }
 
     /// 화면이 구독하는 일회성 이벤트 스트림. 구독마다 새 스트림을 반환한다.
@@ -66,28 +83,20 @@ public final class CalculatorViewModel {
         case let .moveCursor(position): handleMoveCursor(position)
         case .delete: handleDelete()
         case .clear: handleClear()
-        case .calculate: enqueue { await $0.handleCalculate() }
-        case .clearHistory: enqueue { await $0.handleClearHistory() }
+        case .calculate: handleCalculate()
+        case .clearHistory: enqueuePersistence { await $0.handleClearHistory() }
         default: sendCurrencyIntent(intent)
         }
     }
 
-    /// 비동기 의도를 앞선 의도가 끝난 뒤에 하나씩 처리한다.
+    /// 로컬 저장(기록 추가·삭제, 통화 선택, 즐겨찾기, 리뷰·광고 횟수)을 앞선 저장이 끝난 뒤에 하나씩 처리한다.
     ///
-    /// 각 핸들러는 저장·환율 조회에서 중단되는데, 그 사이 MainActor가 풀려 다음 의도가
-    /// 아직 갱신되지 않은 state를 읽는다. 그대로 두면 이런 일이 생긴다.
-    /// - "=" 연타가 같은 수식을 두 번 저장하고 반복 연산(`repeatOperation`)을 건너뛴다
-    /// - 통화를 빠르게 두 번 바꾸면 저장이 끝나는 순서에 따라 탭 순서와 다른 통화가 남고,
-    ///   환율이 이전 통화쌍 기준으로 계산된 값으로 표시된다
-    ///
-    /// 연타를 버리지 않고 이어 붙이는 이유는 "=" 반복이 반복 연산이라는 정상 기능이기 때문이다
-    /// (1+2= → 3, = → 5, = → 7). Android는 Orbit의 intent 파이프라인이 이 직렬화를 대신해 준다.
-    ///
-    /// 큐 안에서 도는 핸들러는 `enqueue`를 다시 부르면 안 된다. 자기 완료를 기다려 교착된다.
-    /// (`performFetchExchangeRate`처럼 핸들러가 부르는 함수는 평범한 메서드로 남겨 둔다.)
-    private func enqueue(_ operation: @escaping (CalculatorViewModel) async -> Void) {
-        let previousTask = intentTask
-        intentTask = Task { [weak self] in
+    /// 저장이 끝나는 순서가 탭 순서와 달라지면 "계산 → 기록 삭제 → 계산"이 뒤섞이거나 마지막에 고른 통화가 아닌 통화가
+    /// 저장된다. 화면 상태는 `send(_:)`에서 먼저 확정하고 여기에는 저장만 넣는다. 네트워크 조회를 넣으면 "="가 기다린다.
+    /// 여기서 도는 작업은 `enqueuePersistence`를 다시 부르면 안 된다. 자기 완료를 기다려 교착된다.
+    private func enqueuePersistence(_ operation: @escaping (CalculatorViewModel) async -> Void) {
+        let previousTask = persistenceTask
+        persistenceTask = Task { [weak self] in
             await previousTask?.value
             guard let self else { return }
 
@@ -99,16 +108,16 @@ public final class CalculatorViewModel {
     private func sendCurrencyIntent(_ intent: CalculatorIntent) {
         switch intent {
         case let .selectMainExchangeCurrency(currency):
-            enqueue { await $0.handleSelectMainExchangeCurrency(currency) }
+            handleSelectMainExchangeCurrency(currency)
 
         case let .selectExchangeCurrency(currency):
-            enqueue { await $0.handleSelectExchangeCurrency(currency) }
+            handleSelectExchangeCurrency(currency)
 
         case let .toggleFavorite(currencyCode):
-            enqueue { await $0.handleToggleFavorite(currencyCode) }
+            enqueuePersistence { await $0.handleToggleFavorite(currencyCode) }
 
         case .swapExchangeCurrencies:
-            enqueue { await $0.performSwapExchangeCurrencies() }
+            handleSwapExchangeCurrencies()
 
         default: break
         }
@@ -175,64 +184,45 @@ public final class CalculatorViewModel {
         state.errorMessage = nil
     }
 
-    /// 현재 표현식을 계산하고(필요한 경우 반복 연산을 적용), 화면 상태를 업데이트합니다.
+    /// 현재 수식을 계산해 결과를 바로 보여 주고, 기록 저장은 그 뒤에 저장 순서대로 한다.
     ///
-    /// 표현식이 비어 있으면 아무 작업도 하지 않습니다.
-    /// 숫자 표현식과 반복 연산이 모두 존재하는 경우, 계산 전에 반복 연산을 표현식 뒤에 추가합니다.
-    /// 계산 중 오류가 발생하면 상태를 오류로 표시하고 스낵바 사이드 이펙트를 발생시킵니다.
-    /// 계산에 성공하면 표현식은 계산된 결과로 대체되고, 해당 계산 내역이 히스토리에 추가됩니다.
-    private func handleCalculate() async {
-        let expression = state.expression
-        guard !expression.isEmpty else { return }
-
-        let shouldRepeatOperation = state.repeatOperation != nil && Double(expression) != nil
-        if !shouldRepeatOperation, !reducer.hasBinaryOperator(expression) { return }
-
-        let expressionToCalculate = shouldRepeatOperation
-            ? expression + (state.repeatOperation ?? "")
-            : expression
-
-        let result = calculatorUseCases.calculateExpression.calculate(expressionToCalculate)
-
-        if result == "Error" {
-            state.isError = true
-            state.errorMessage = L("계산 오류")
-            sideEffectBus.send(.showSnackbar(message: L("계산할 수 없는 수식입니다.")))
+    /// 결과를 저장보다 먼저 확정하므로 "="를 연달아 눌러도 다음 계산이 이전 결과를 읽어 반복 연산으로 이어진다
+    /// (1+2= → 3, = → 5). 환율 조회는 기다리지 않는다.
+    private func handleCalculate() {
+        switch reducer.calculate(state) {
+        case .ignored:
             return
+
+        case let .failed(failedState):
+            state = failedState
+            sideEffectBus.send(.showSnackbar(message: L("계산할 수 없는 수식입니다.")))
+
+        case let .succeeded(calculatedState, history):
+            state = calculatedState
+            enqueuePersistence { await $0.saveCalculation(history) }
         }
+    }
 
-        let nextRepeatOperation = calculatorUseCases.extractRepeatOperation(expressionToCalculate)
-            ?? state.repeatOperation
+    /// 계산 기록을 저장하고 계산 성공을 센다. 저장 순서(`enqueuePersistence`) 안에서 부른다.
+    ///
+    /// 기록 목록에는 저장에 성공한 뒤에만 넣는다. 저장하는 동안 목록이 그대로였을 때만 저장 전 목록에 새 기록을 붙이고,
+    /// 그사이 저장소의 기록 흐름이 목록을 바꿨으면 흐름을 따른다. 흐름이 새 기록을 먼저 내보냈을 때 중복되지 않고,
+    /// 늦게 도착한 기존 기록을 덮어쓰지도 않는다. 기록 저장에 실패해도 계산 성공은 센다.
+    private func saveCalculation(_ history: CalculatorState.HistoryItem) async {
+        let historiesBeforeSave = state.histories
 
-        let historyItem = CalculatorState.HistoryItem(
-            expression: expressionToCalculate,
-            result: result,
-        )
-        let nextHistories = Array((state.histories + [historyItem]).suffix(Self.maxHistoryCount))
-
-        var isHistorySaved = true
         do {
             try await calculatorUseCases.addHistory(
-                CalculatorHistory(expression: historyItem.expression, result: historyItem.result),
+                CalculatorHistory(expression: history.expression, result: history.result),
             )
+            if state.histories == historiesBeforeSave {
+                state.histories = Array((historiesBeforeSave + [history]).suffix(Self.maxHistoryCount))
+            }
         } catch {
-            isHistorySaved = false
             sideEffectBus.send(.showSnackbar(message: L("계산 기록을 저장하지 못했습니다.")))
         }
 
-        var newState = reducer.buildNewExpressionState(
-            currentState: state,
-            newExpression: result,
-            newCursorPos: result.count,
-        )
-        newState.previewResult = ""
-        newState.convertedPreviewAmount = ""
-        newState.repeatOperation = nextRepeatOperation
-        newState.isCalculatedResult = true
-        newState.histories = isHistorySaved ? nextHistories : state.histories
-        state = newState
-
-        // 결과를 반영한 뒤에 기록해 작업을 하나 끝낸 순간에 리뷰 창이 뜨게 한다 (Android `performReviewPrompt` 대응)
+        // 결과를 반영한 뒤에 기록해 작업을 하나 끝낸 순간에 리뷰 창이 뜨게 한다 (Android `recordCalculationSuccess` 대응)
         if await reviewPromptUseCases.recordCalculationSuccess() {
             sideEffectBus.send(.requestReview)
         }
@@ -312,31 +302,59 @@ extension CalculatorViewModel {
             state.mainExchangeCurrency = mainCurrency
             state.selectedExchangeCurrency = subCurrency
 
-            await performFetchExchangeRate()
+            restartRateFetch()
         } catch {
             sideEffectBus.send(.showSnackbar(message: error.exchangeRateErrorMessage))
         }
     }
 
-    private func performFetchExchangeRate() async {
-        guard let from = state.mainExchangeCurrency, let to = state.selectedExchangeCurrency else { return }
+    /// 지금 통화쌍의 환율 조회를 새로 시작한다. 진행 중인 조회는 취소하고 요청 번호를 올린다.
+    ///
+    /// 조회를 기다리지 않고 돌아오므로 계산·저장이 네트워크 응답에 묶이지 않는다. Firestore 요청은 취소돼도
+    /// 끝까지 응답할 수 있지만, 요청 번호가 달라 반영하지 않는다. 통화쌍이 같아도(USD → EUR → USD) 번호로 구별한다.
+    private func restartRateFetch() {
+        latestRateRequestID += 1
+        let requestID = latestRateRequestID
+        rateFetchTask?.cancel()
 
+        guard let from = state.mainExchangeCurrency, let to = state.selectedExchangeCurrency else {
+            rateFetchTask = nil
+            return
+        }
+
+        rateFetchTask = Task { [weak self] in
+            await self?.performFetchExchangeRate(requestID: requestID, from: from, to: to)
+        }
+    }
+
+    private func performFetchExchangeRate(requestID: Int, from: CurrencyInfo, to: CurrencyInfo) async {
         do {
             let rate: Double = if from.code == to.code {
                 1.0
             } else {
                 try await exchangeUseCases.getExchangeRate(from: from.code, to: to.code)
             }
+            guard isLatestRateRequest(requestID, from: from, to: to) else { return }
 
             var newState = state
             newState.exchangeRate = rate
             state = reducer.withConvertedAmounts(newState)
         } catch {
+            guard isLatestRateRequest(requestID, from: from, to: to) else { return }
+
             sideEffectBus.send(.showSnackbar(message: error.exchangeRateErrorMessage))
         }
     }
 
-    private func performSwapExchangeCurrencies() async {
+    /// 응답이 가장 최근 요청의 것이고, 취소되지 않았고, 그사이 통화쌍도 바뀌지 않았는지 본다.
+    private func isLatestRateRequest(_ requestID: Int, from: CurrencyInfo, to: CurrencyInfo) -> Bool {
+        !Task.isCancelled
+            && requestID == latestRateRequestID
+            && state.mainExchangeCurrency?.code == from.code
+            && state.selectedExchangeCurrency?.code == to.code
+    }
+
+    private func handleSwapExchangeCurrencies() {
         guard let from = state.mainExchangeCurrency, let to = state.selectedExchangeCurrency else { return }
 
         state.mainExchangeCurrency = to
@@ -344,35 +362,38 @@ extension CalculatorViewModel {
         state.exchangeRate = 0.0
         state.convertedExpressionAmount = ""
         state.convertedPreviewAmount = ""
+        restartRateFetch()
 
-        try? await currencySelectionUseCases.saveCalculatorSelection(mainCode: to.code, subCode: from.code)
-
-        await performFetchExchangeRate()
+        enqueuePersistence {
+            try? await $0.currencySelectionUseCases.saveCalculatorSelection(mainCode: to.code, subCode: from.code)
+        }
     }
 
-    private func handleSelectMainExchangeCurrency(_ currency: CurrencyInfo) async {
+    private func handleSelectMainExchangeCurrency(_ currency: CurrencyInfo) {
         guard currency.code != state.mainExchangeCurrency?.code else { return }
-
-        try? await currencySelectionUseCases.saveCalculatorMainCurrency(currency.code)
 
         state.mainExchangeCurrency = currency
         state.exchangeRate = 0.0
         state.convertedExpressionAmount = ""
         state.convertedPreviewAmount = ""
+        restartRateFetch()
 
-        await performFetchExchangeRate()
+        enqueuePersistence {
+            try? await $0.currencySelectionUseCases.saveCalculatorMainCurrency(currency.code)
+        }
     }
 
-    private func handleSelectExchangeCurrency(_ currency: CurrencyInfo) async {
+    private func handleSelectExchangeCurrency(_ currency: CurrencyInfo) {
         guard currency.code != state.selectedExchangeCurrency?.code else { return }
-
-        try? await currencySelectionUseCases.saveCalculatorSubCurrency(currency.code)
 
         state.selectedExchangeCurrency = currency
         state.exchangeRate = 0.0
         state.convertedExpressionAmount = ""
         state.convertedPreviewAmount = ""
+        restartRateFetch()
 
-        await performFetchExchangeRate()
+        enqueuePersistence {
+            try? await $0.currencySelectionUseCases.saveCalculatorSubCurrency(currency.code)
+        }
     }
 }

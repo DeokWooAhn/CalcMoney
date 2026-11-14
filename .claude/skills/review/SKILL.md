@@ -23,7 +23,8 @@ description: CalcMoney 코드를 리뷰할 때 사용한다. "코드리뷰 해�
   UIKit이 백그라운드에서 부르는 클로저에 `nonisolated`가 없으면 Swift 6 런타임이 SIGTRAP으로
   죽는다(`1b268fe`).
 - **`@MainActor`만으로는 intent 직렬화가 안 된다.** `await` 지점에서 다른 intent가 끼어든다
-  (`674116b`). 겹치면 안 되는 화면은 `CalculatorViewModel.enqueue(_:)` 패턴을 쓰는지 본다.
+  (`674116b`). 그렇다고 모든 intent를 한 큐에 넣으면 계산이 네트워크를 기다린다. 확정·저장·조회를 나눴는지 본다
+  (`CalculatorViewModel.enqueuePersistence(_:)`는 저장 전용).
 - **Orbit도 intent를 직렬화하지 않는다.** 받은 순서대로 시작만 한다. Android 계산기에서 "=" 연타가 같은 기록을
   두 번 저장했다. 저장·조회를 기다리는 인텐트는 확정·저장·조회를 나눴는지 본다(`docs/decisions/calculator-intent-ordering.md`).
 - **손으로 옮긴 매핑은 컴파일러가 안 잡는다.** 키→Intent처럼 값만 바뀌는 변환은 테스트로 덮는다.

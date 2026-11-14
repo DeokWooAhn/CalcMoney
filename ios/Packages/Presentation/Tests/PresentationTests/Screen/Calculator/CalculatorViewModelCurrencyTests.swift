@@ -32,15 +32,18 @@ struct CalculatorViewModelCurrencyTests {
 
     /// 통화 선택 두 번의 처리가 모두 끝날 때까지 기다린다.
     ///
-    /// 초기 로드와 선택 두 번이 환율을 한 번씩 조회하므로 조회가 3건이 되면 마지막 조회까지 시작된 것이다.
-    /// 선택 처리는 환율을 0으로 비운 뒤 조회하므로, 환율이 다시 채워지면 마지막 조회 결과까지 반영된 것이다.
-    /// 기대하는 결과(EUR)가 화면에 나타나기를 기다리지 않는 이유: 직렬화가 깨지면 EUR이 잠깐 반영됐다가
+    /// 선택은 화면 상태를 바로 바꾸고, 저장은 저장 순서대로, 환율 조회는 따로 돈다. 그래서 셋을 각각 기다린다.
+    /// - 저장 두 건이 모두 기록되면 저장이 끝난 것이다.
+    /// - 초기 로드와 선택 두 번이 환율을 한 번씩 조회하므로, 조회가 3건이 되고 모두 응답하면 마지막 조회까지 끝난 것이다.
+    /// - 선택은 환율을 0으로 비운 뒤 조회하므로, 환율이 다시 채워지면 마지막 조회 결과까지 반영된 것이다.
+    /// 기대하는 결과(EUR)가 화면에 나타나기를 기다리지 않는 이유: 순서가 깨지면 EUR이 잠깐 반영됐다가
     /// 늦게 끝난 USD 처리가 덮어쓰는데, 그 사이에 검증하면 버그를 놓친다.
     private static func waitForCurrencySelections(
         _ viewModel: CalculatorViewModel,
         recorder: CalculatorTestRecorder,
     ) async {
-        await recorder.waitUntil { $0.requestedRatePairs.count >= 3 }
+        await recorder.waitUntil { $0.savedMainCurrencyCodes.count >= 2 }
+        await recorder.waitUntil { $0.requestedRatePairs.count >= 3 && $0.completedRatePairs.count >= 3 }
         await waitUntil { viewModel.state.exchangeRate != 0 }
     }
 

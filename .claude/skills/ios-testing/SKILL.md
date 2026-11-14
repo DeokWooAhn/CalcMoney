@@ -37,7 +37,9 @@ func 등호_연타는_기록을_중복_저장하지_않는다() async throws { .
 
 - `@MainActor` 컨텍스트에서 실행 (ViewModel 자체가 `@MainActor`이므로)
 - `AsyncStream` 기반 side effect는 `for await`로 순회하며 검증
-- Intent 직렬화가 필요한 화면(`ios-screen` 스킬 참조)은 겹치는 intent를 연속 발행해서 순서·중복 방지를 검증 — `CalculatorViewModelCalculateTests.swift`가 실제로 등호 연타 중복 방지를 이렇게 검증함
+- intent가 겹치는 화면(`ios-screen` 스킬 참조)은 겹치는 intent를 연속 발행해서 순서·중복 방지를 검증 — `CalculatorViewModelOrderingTests.swift`(Android `CalculatorViewModelOrderingTest`와 같은 시나리오)
+  - 순서가 틀린 구현이 1분 제한까지 멈추지 않게 결과 대기에 상한을 둔다(`waitUntil(within:)`)
+  - "끝나지 않은 네트워크"는 `TestGate`로, "취소돼도 끝까지 오는 응답"은 `Task.detached` 지연으로 만든다
 
 ## 실행 (모두 `ios/`에서)
 

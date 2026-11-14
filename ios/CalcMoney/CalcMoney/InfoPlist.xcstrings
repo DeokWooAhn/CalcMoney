@@ -19,6 +19,18 @@
         }
       }
     },
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "CalcMoney"
+          }
+        }
+      }
+    },
     "NSUserTrackingUsageDescription" : {
       "comment" : "앱 추적 투명성(ATT) 시스템 동의 창에 나오는 문구. 혜택을 약속하거나 허용을 재촉하지 않는다 (App Store 심사 지침 5.1.1).",
       "extractionState" : "manual",

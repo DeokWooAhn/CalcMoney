@@ -12,6 +12,7 @@ struct ExchangeInputContainer: View {
     let onAmountChange: (String) -> Void
     let onCurrencySelected: (CurrencyInfo) -> Void
     let onToggleFavorite: (String) -> Void
+    var amountTestID: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -28,8 +29,10 @@ struct ExchangeInputContainer: View {
                     )
                     .font(.system(size: 25, weight: .semibold))
                     .keyboardType(.decimalPad)
+                    .accessibilityIdentifier(amountTestID)
                 } else {
                     Text(amount.isEmpty ? "0" : amount)
+                        .accessibilityIdentifier(amountTestID)
                         .font(.system(size: 28, weight: .semibold))
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)

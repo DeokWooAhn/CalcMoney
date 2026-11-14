@@ -25,6 +25,7 @@ appId: ${APP_ID}
     permissions: {}
     arguments:
       UI_TESTING: true
+      UI_TESTING_RATES: ${UI_TESTING_RATES || "LIVE"}
 # 보이는 순간 넘어가므로 실기기·시뮬레이터에서는 오래 걸리지 않는다. CI 에뮬레이터는 콜드 스타트가
 # 느리므로 넉넉히 둔다.
 - extendedWaitUntil:

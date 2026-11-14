@@ -35,6 +35,15 @@ maestro --device <udid> test .maestro -e APP_ID=com.deokwooahn.calcmoney
 - `UI_TESTING` 인자가 광고 동의 창과 광고 로드, 인앱 리뷰 창을 끈다. Android는 디버그 빌드에서만 받는다.
   iOS 개발 빌드는 리뷰를 요청할 때마다 창을 띄우므로, 이 인자 없이 계산을 반복하는 Flow는 리뷰 창에 막힐 수 있다.
 
+## 고정 환율 smoke
+
+`smoke_exchange_favorite.yaml`은 `UI_TESTING_RATES=FIXED_EXCHANGE_RATES`로 실행한다.
+디버그 UI 테스트에서만 USD=1,000원·AUD=500원을 공급하고, 실제 환산·즐겨찾기 저장·탭 갱신을 검증한다.
+Android는 화면 생성 전에 실제 Room 캐시에 신선한 고정 환율을 준비하고, iOS는 원격 데이터소스만 고정 구현으로 바꾼다.
+Android는 다음 일반 실행에서 테스트 캐시를 비우고, iOS는 고정 모드의 캐시를 메모리에만 둬 테스트 환율이 일반 실행에 남지 않게 한다.
+일반 실행과 `release` Flow는 기존 실제 환율 경로를 사용한다. 고정 데이터는 릴리스 빌드에서 활성화되지 않는다.
+기존 Android·iOS CI가 `smoke` 태그를 실행하므로 새 Flow도 함께 실행된다.
+
 ## id 표
 
 | 대상 | id | Android | iOS |
@@ -42,6 +51,7 @@ maestro --device <udid> test .maestro -e APP_ID=com.deokwooahn.calcmoney
 | 계산기 키 | `keypad.7`, `keypad.plus`, `keypad.equals` … | `CalculatorKey.testTag` | `CalculatorKey.testID` |
 | 하단 탭 | `tab.calculator` `tab.exchange` `tab.favorite` `tab.setting` | `BottomNavItem.testTag` | `MainTab.testID` |
 | 화면 기준점 | `screen.<탭>` | 각 Screen 루트 | `MainTab.screenTestID` |
+| 환율 금액 입력·결과 | `exchange.from.amount`, `exchange.to.amount` | `ExchangeInputContainer.amountTestTag` | `ExchangeInputContainer.amountTestID` |
 | 환율 입력 카드 | `exchange.from`, `exchange.to` | `ExchangeScreen` | `ExchangeView` |
 | 통화 선택 버튼 | `currency.selector` | `CurrencySelector` | `CurrencySelectorView` |
 | 선택 창 검색·행·하트·닫기 | `currency.search`, `currency.row.<코드>`, `favorite.toggle.<코드>`, `currency.picker.close`(iOS만) | `CurrencyPickerSheet` | `CurrencyPickerSheet` |

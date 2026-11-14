@@ -27,9 +27,13 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var uiTestingDataSetup: UiTestingDataSetup
+
     private val viewModel: MainViewModel by viewModels()
     private lateinit var adConsentManager: AdConsentManager
     private val inAppReviewLauncher by lazy { InAppReviewLauncher(this) }
@@ -55,6 +59,14 @@ class MainActivity : ComponentActivity() {
             requestAdConsent()
         }
 
+        lifecycleScope.launch {
+            val useFixedRates = isUiTesting() && intent.getStringExtra(UI_TESTING_RATES_EXTRA) == FIXED_RATES_MODE
+            uiTestingDataSetup.prepareRates(useFixedRates)
+            showContent()
+        }
+    }
+
+    private fun showContent() {
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val systemDarkTheme = isSystemInDarkTheme()
@@ -186,5 +198,7 @@ class MainActivity : ComponentActivity() {
 
         /** Maestro Flow의 `launchApp.arguments`가 넘기는 값. iOS `UITestingLaunch.argument` 대응. */
         const val UI_TESTING_EXTRA = "UI_TESTING"
+        const val UI_TESTING_RATES_EXTRA = "UI_TESTING_RATES"
+        const val FIXED_RATES_MODE = "FIXED_EXCHANGE_RATES"
     }
 }

@@ -1,0 +1,67 @@
+appId: ${APP_ID}
+name: 고정 환율로 환산하고 즐겨찾기 탭에 반영한다
+tags: [smoke]
+env:
+  UI_TESTING_RATES: FIXED_EXCHANGE_RATES
+---
+- runFlow: ../subflows/launch_clean.yaml
+- tapOn:
+    id: tab.exchange
+- extendedWaitUntil:
+    visible:
+      id: currency.selector
+      childOf:
+        id: exchange.from
+    timeout: 15000
+- tapOn:
+    id: currency.selector
+    childOf:
+      id: exchange.from
+- tapOn:
+    id: currency.row.USD
+- tapOn:
+    id: currency.selector
+    childOf:
+      id: exchange.to
+- tapOn:
+    id: currency.row.KRW
+- tapOn:
+    id: exchange.from.amount
+- eraseText
+- inputText: "12"
+- hideKeyboard
+- assertVisible:
+    id: exchange.to.amount
+    text: "12000\\.00"
+- tapOn:
+    id: currency.selector
+    childOf:
+      id: exchange.from
+- tapOn:
+    id: favorite.toggle.AUD
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+      - hideKeyboard
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: currency.picker.close
+- tapOn:
+    id: tab.favorite
+- extendedWaitUntil:
+    visible:
+      id: favorite.card.AUD
+    timeout: 10000
+- assertVisible:
+    text: "24\\.00"
+    childOf:
+      id: favorite.card.AUD
+- assertVisible:
+    text: "1 USD = 2\\.0000 AUD"
+    childOf:
+      id: favorite.card.AUD

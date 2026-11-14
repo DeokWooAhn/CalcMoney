@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -39,6 +40,7 @@ fun ExchangeInputContainer(
     isEditable: Boolean,
     label: String,
     modifier: Modifier = Modifier,
+    amountTestTag: String? = null,
 ) {
     Column(modifier = modifier) {
         Text(
@@ -70,7 +72,7 @@ fun ExchangeInputContainer(
                     ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).then(amountTestTag?.let { Modifier.testTag(it) } ?: Modifier),
                     singleLine = true,
                 )
             } else {
@@ -79,7 +81,7 @@ fun ExchangeInputContainer(
                     fontSize = 28.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).then(amountTestTag?.let { Modifier.testTag(it) } ?: Modifier),
                 )
             }
 

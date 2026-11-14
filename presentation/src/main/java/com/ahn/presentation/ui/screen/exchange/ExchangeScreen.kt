@@ -149,6 +149,7 @@ private fun ExchangeContent(
             isEditable = true,
             label = stringResource(R.string.base_amount),
             modifier = Modifier.testTag("exchange.from"),
+            amountTestTag = "exchange.from.amount",
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -170,6 +171,7 @@ private fun ExchangeContent(
             isEditable = false,
             label = stringResource(R.string.target_amount),
             modifier = Modifier.testTag("exchange.to"),
+            amountTestTag = "exchange.to.amount",
         )
 
         ExchangeRateInfo(

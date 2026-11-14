@@ -23,6 +23,7 @@ struct ExchangeView: View {
                     onAmountChange: { viewModel.send(.updateFromAmount($0)) },
                     onCurrencySelected: { viewModel.send(.selectFromCurrency($0)) },
                     onToggleFavorite: { viewModel.send(.toggleFavorite($0)) },
+                    amountTestID: "exchange.from.amount",
                 )
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("exchange.from")
@@ -41,6 +42,7 @@ struct ExchangeView: View {
                     onAmountChange: { _ in },
                     onCurrencySelected: { viewModel.send(.selectToCurrency($0)) },
                     onToggleFavorite: { viewModel.send(.toggleFavorite($0)) },
+                    amountTestID: "exchange.to.amount",
                 )
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("exchange.to")

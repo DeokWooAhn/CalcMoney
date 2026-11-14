@@ -266,6 +266,11 @@ class ExchangeViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             if (e is CancellationException) throw e
+            if (state.fromCurrency?.code != requestedFrom ||
+                state.toCurrency?.code != requestedTo
+            ) {
+                return
+            }
             reduce {
                 state.copy(
                     isLoading = false,

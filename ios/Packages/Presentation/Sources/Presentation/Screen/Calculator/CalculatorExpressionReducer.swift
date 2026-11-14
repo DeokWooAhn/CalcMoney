@@ -6,6 +6,16 @@ enum CalculatorExpressionResult {
     case maxNumberLengthExceeded
 }
 
+/// "=" 계산 결과 (Android `CalculationOutcome` 대응). 화면에 반영할 상태와, 성공했을 때 저장할 기록을 담는다.
+enum CalculationOutcome: Equatable {
+    /// 계산할 수식이 아니다. 상태를 바꾸지 않는다.
+    case ignored
+    /// 계산할 수 없는 수식이다. 오류 상태를 보여 주고 기록에 남기지 않는다.
+    case failed(CalculatorState)
+    /// 계산에 성공했다. 상태를 바로 보여 주고, 기록은 저장에 성공한 뒤 기록 목록에 넣는다.
+    case succeeded(CalculatorState, history: CalculatorState.HistoryItem)
+}
+
 /// 수식 편집 로직을 담당하는 리듀서 (Android `CalculatorExpressionReducer` 대응)
 struct CalculatorExpressionReducer {
     static let maxNumberLength = 15
@@ -14,13 +24,54 @@ struct CalculatorExpressionReducer {
 
     private let calculateExpression: CalculateExpressionUseCase
     private let convertExchangeAmount: ConvertExchangeAmountUseCase
+    private let extractRepeatOperation: ExtractRepeatOperationUseCase
 
     init(
         calculateExpression: CalculateExpressionUseCase,
         convertExchangeAmount: ConvertExchangeAmountUseCase,
+        extractRepeatOperation: ExtractRepeatOperationUseCase,
     ) {
         self.calculateExpression = calculateExpression
         self.convertExchangeAmount = convertExchangeAmount
+        self.extractRepeatOperation = extractRepeatOperation
+    }
+
+    /// "="를 눌렀을 때의 다음 상태와 저장할 기록을 정한다 (Android `CalculatorExpressionReducer.calculate` 대응)
+    ///
+    /// 상태를 바꾸거나 저장하지 않는 순수 함수다. 숫자만 남은 결과에서 다시 누르면 직전 연산(`repeatOperation`)을
+    /// 이어 붙여 계산한다.
+    func calculate(_ currentState: CalculatorState) -> CalculationOutcome {
+        let expression = currentState.expression
+        guard !expression.isEmpty else { return .ignored }
+
+        let repeatOperation = currentState.repeatOperation
+        let shouldRepeatOperation = repeatOperation != nil && Double(expression) != nil
+        if !shouldRepeatOperation, !hasBinaryOperator(expression) { return .ignored }
+
+        let expressionToCalculate = shouldRepeatOperation ? expression + (repeatOperation ?? "") : expression
+        let result = calculateExpression.calculate(expressionToCalculate)
+
+        if result == "Error" {
+            var failedState = currentState
+            failedState.isError = true
+            failedState.errorMessage = L("계산 오류")
+            return .failed(failedState)
+        }
+
+        var nextState = buildNewExpressionState(
+            currentState: currentState,
+            newExpression: result,
+            newCursorPos: result.count,
+        )
+        nextState.previewResult = ""
+        nextState.convertedPreviewAmount = ""
+        nextState.repeatOperation = extractRepeatOperation(expressionToCalculate) ?? repeatOperation
+        nextState.isCalculatedResult = true
+
+        return .succeeded(
+            nextState,
+            history: CalculatorState.HistoryItem(expression: expressionToCalculate, result: result),
+        )
     }
 
     func inputNumber(_ currentState: CalculatorState, number: String) -> CalculatorExpressionResult {

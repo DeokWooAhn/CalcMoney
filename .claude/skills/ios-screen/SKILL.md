@@ -47,7 +47,10 @@ public final class <Feature>ViewModel {
 - 상태 변경은 `@Observable` 매크로로 (Combine의 `@Published`/`ObservableObject` 사용 금지)
 - 백그라운드 Task나 UseCase 홀더처럼 관찰 대상이 아닌 저장 프로퍼티는 `@ObservationIgnored`
 - one-shot 이벤트는 `SideEffectBus<Effect>` (`Util/SideEffectBus.swift`)로 내보내고, View에서 `.task { for await effect in viewModel.sideEffects() { ... } }`로 소비 (`.onAppear` + Task 금지, 취소가 자동으로 안 붙음)
-- **비동기 intent가 겹치면 상태가 꼬이는 화면은 직렬화가 필요하다.** `@MainActor`만으로는 `await` 지점에서 다른 intent가 끼어드는 걸 막지 못함 — `CalculatorViewModel`의 `enqueue(_:)` continuation-체이닝 패턴 참조 (커밋 `674116b`가 이 문제를 실제로 겪고 고친 사례)
+- **비동기 intent가 겹치면 상태가 꼬인다.** `@MainActor`만으로는 `await` 지점에서 다른 intent가 끼어드는 걸 막지 못함(커밋 `674116b`). 그렇다고 모든 intent를 한 큐에 넣으면 계산이 네트워크 조회를 기다린다. `CalculatorViewModel`처럼 일을 셋으로 나눈다(`docs/decisions/calculator-intent-ordering.md`, Android와 같은 원칙)
+  - 확정: 결과·선택은 `await` 전에 `state`에 반영한다. 다음 intent는 반영된 상태를 읽는다
+  - 저장: 로컬 저장만 `enqueuePersistence(_:)` Task 사슬로 탭 순서대로. 사슬 안에서 다시 `enqueuePersistence`를 부르면 교착된다
+  - 조회: 기다리지 않고 따로 돌리고, 요청 번호·취소·대상(통화쌍)을 확인한 응답만 반영한다
 - 순수 상태 계산이 복잡하면 별도 struct로 추출 — `CalculatorExpressionReducer.swift` 참조
 
 ## UseCase 규칙 (`Packages/Domain/Sources/Domain/<feature>/UseCase/`)

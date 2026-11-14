@@ -5,8 +5,12 @@ import Foundation
 /// 저장·조회 호출을 순서대로 기록한다. 인텐트 직렬화 검증에 쓴다.
 actor CalculatorTestRecorder {
     private(set) var savedHistories: [CalculatorHistory] = []
+    /// 기록 저장이 끝난 순서. 추가는 `add:<수식>`, 삭제는 `clear`로 남긴다.
+    private(set) var savedOperations: [String] = []
     private(set) var savedMainCurrencyCodes: [String] = []
     private(set) var requestedRatePairs: [String] = []
+    /// 응답(성공·실패)까지 끝난 환율 조회. 요청 순서가 아니라 끝난 순서다.
+    private(set) var completedRatePairs: [String] = []
     private(set) var refreshCount = 0
 
     /// 기록이 늘 때마다 신호를 보낸다. `waitUntil(_:)`이 이 신호를 받을 때마다 조건을 다시 확인한다.
@@ -19,6 +23,17 @@ actor CalculatorTestRecorder {
 
     func recordHistory(_ history: CalculatorHistory) {
         savedHistories.append(history)
+        savedOperations.append("add:\(history.expression)")
+        changesContinuation.yield()
+    }
+
+    func recordClear() {
+        savedOperations.append("clear")
+        changesContinuation.yield()
+    }
+
+    func recordRateCompletion(_ pair: String) {
+        completedRatePairs.append(pair)
         changesContinuation.yield()
     }
 
@@ -56,19 +71,95 @@ actor CalculatorTestRecorder {
 struct FakeCalculatorHistoryRepository: CalculatorHistoryRepository {
     let recorder: CalculatorTestRecorder
     var saveDelay: Duration = .milliseconds(20)
+    /// 있으면 저장할 때 이 오류를 던진다.
+    var saveError: (any Error)?
+    /// 있으면 기록 흐름을 이 피드로 내보낸다. 없으면 흐름은 바로 끝난다.
+    var historyFeed: HistoryFeed?
 
     func histories() -> AsyncStream<[CalculatorHistory]> {
-        AsyncStream { $0.finish() }
+        historyFeed?.stream ?? AsyncStream { $0.finish() }
     }
 
     func addHistory(_ history: CalculatorHistory) async throws {
         await Task.yield()
         try? await Task.sleep(for: saveDelay)
 
+        if let saveError {
+            throw saveError
+        }
         await recorder.recordHistory(history)
+        await historyFeed?.didSave(history)
     }
 
-    func clearHistories() async throws {}
+    func clearHistories() async throws {
+        await Task.yield()
+
+        await recorder.recordClear()
+    }
+}
+
+/// 저장소의 기록 흐름을 흉내 낸다. 한 번만 저장하는 시나리오에서 쓴다.
+///
+/// `storedBeforeLaunch`는 앱을 켜기 전부터 있던 기록이다. 시작 로드가 늦은 상황을 만들려고 처음에는 내보내지 않고,
+/// 저장이 끝날 때 방금 저장한 기록과 함께 내보낸다.
+final class HistoryFeed: Sendable {
+    let stream: AsyncStream<[CalculatorHistory]>
+    private let continuation: AsyncStream<[CalculatorHistory]>.Continuation
+    private let storedBeforeLaunch: [CalculatorHistory]
+
+    init(storedBeforeLaunch: [CalculatorHistory]) {
+        (stream, continuation) = AsyncStream.makeStream()
+        self.storedBeforeLaunch = storedBeforeLaunch
+    }
+
+    /// 저장 직후 흐름을 내보내고, ViewModel이 그 목록을 받을 틈을 준 뒤 돌아온다.
+    func didSave(_ history: CalculatorHistory) async {
+        continuation.yield(storedBeforeLaunch + [history])
+        try? await Task.sleep(for: .milliseconds(20))
+    }
+}
+
+/// 환율 조회 한 번의 응답. `gate`가 있으면 열릴 때까지, `delay`가 있으면 그만큼 기다린 뒤 응답한다.
+struct RateStep {
+    var delay: Duration = .zero
+    var gate: TestGate?
+    var rate = 1.0
+    var error: (any Error)?
+}
+
+/// 통화쌍별로 몇 번째 조회에 어떻게 응답할지 정한다. 적어 두지 않은 조회는 바로 1.0을 돌려준다.
+actor RateScript {
+    private var steps: [String: [RateStep]]
+
+    init(_ steps: [String: [RateStep]] = [:]) {
+        self.steps = steps
+    }
+
+    func next(for pair: String) -> RateStep {
+        guard var queue = steps[pair], !queue.isEmpty else { return RateStep() }
+
+        let step = queue.removeFirst()
+        steps[pair] = queue
+        return step
+    }
+}
+
+/// 테스트가 열 때까지 기다리게 하는 문. 끝나지 않은 네트워크 요청을 흉내 낸다.
+actor TestGate {
+    private var isOpen = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func wait() async {
+        guard !isOpen else { return }
+
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    func open() {
+        isOpen = true
+        waiters.forEach { $0.resume() }
+        waiters.removeAll()
+    }
 }
 
 struct FakeExchangeRateRepository: ExchangeRateRepository {
@@ -77,12 +168,30 @@ struct FakeExchangeRateRepository: ExchangeRateRepository {
     var rateDate = ""
     /// 새로고침이 즉시 끝나지 않는 상황을 흉내 낸다. 호출자가 완료를 기다리는지 검증할 때 쓴다.
     var refreshDelay: Duration = .zero
+    /// 통화 목록 조회를 이 문이 열릴 때까지 붙잡아 둔다. 시작 로드가 끝나지 않은 상황을 만든다.
+    var currenciesGate: TestGate?
+    var rateScript = RateScript()
 
     func exchangeRate(from: String, to: String) async throws -> Double {
+        let pair = "\(from)->\(to)"
         await recorder.recordRatePair(from: from, to: to)
+        let step = await rateScript.next(for: pair)
         await Task.yield()
 
-        return 1.0
+        if let gate = step.gate {
+            await gate.wait()
+        }
+        if step.delay > .zero {
+            // 실제 Firestore 요청처럼 호출한 쪽이 취소해도 멈추지 않게 분리된 Task에서 기다린다.
+            let delay = step.delay
+            await Task.detached { try? await Task.sleep(for: delay) }.value
+        }
+
+        await recorder.recordRateCompletion(pair)
+        if let error = step.error {
+            throw error
+        }
+        return step.rate
     }
 
     func latestRateDate() async throws -> String {
@@ -104,7 +213,11 @@ struct FakeExchangeRateRepository: ExchangeRateRepository {
     }
 
     func supportedCurrencies() async throws -> [CurrencyInfo] {
-        currencies
+        if let currenciesGate {
+            await currenciesGate.wait()
+        }
+
+        return currencies
     }
 }
 

@@ -51,6 +51,8 @@ env:
     commands:
       - tapOn:
           id: currency.picker.close
+      # 선택창을 닫으면 입력칸 포커스가 복원돼 키보드가 탭을 가릴 수 있다.
+      - hideKeyboard
 - tapOn:
     id: tab.favorite
 - extendedWaitUntil:

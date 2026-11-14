@@ -305,7 +305,7 @@ extension CalculatorViewModel {
             state.exchangeFailure = nil
             restartRateFetch()
         } catch {
-            state.exchangeFailure = error.exchangeRateErrorMessage
+            if state.availableCurrencies.isEmpty { state.exchangeFailure = error.exchangeRateErrorMessage }
         }
     }
 

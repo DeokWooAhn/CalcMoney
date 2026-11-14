@@ -214,6 +214,9 @@ public final class ExchangeViewModel {
             state.toAmount = exchangeUseCases.exchangeAmount(fromAmount: state.fromAmount, rate: rate)
             state.failure = nil
         } catch {
+            guard state.fromCurrency?.code == requestedFrom, state.toCurrency?.code == requestedTo else {
+                return
+            }
             state.failure = ExchangeFailure(scope: .rate, message: error.exchangeRateErrorMessage)
         }
     }

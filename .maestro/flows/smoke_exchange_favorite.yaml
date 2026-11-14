@@ -51,10 +51,19 @@ env:
     commands:
       - tapOn:
           id: currency.picker.close
-      # 선택창을 닫으면 입력칸 포커스가 복원돼 키보드가 탭을 가릴 수 있다.
-      - hideKeyboard
+      # hideKeyboard의 짧은 스와이프로는 CI에서 키보드가 남아 탭을 가렸다.
+      # ScrollView의 대화형 키보드 닫기가 끝나도록 결과 요소에서 충분히 쓸어내린다.
+      - swipe:
+          from:
+            id: exchange.to.amount
+          direction: DOWN
+          duration: 1000
 - tapOn:
     id: tab.favorite
+- extendedWaitUntil:
+    visible:
+      id: screen.favorite
+    timeout: 10000
 - extendedWaitUntil:
     visible:
       id: favorite.card.AUD

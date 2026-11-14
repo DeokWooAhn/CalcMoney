@@ -70,7 +70,7 @@ Android는 다음 일반 실행에서 테스트 캐시를 비우고, iOS는 고�
 - 환율 값은 매일 바뀐다. 값이 아니라 형식을 본다.
 - 선택 창 닫기는 Android `back`, iOS `currency.picker.close`다. Android는 검색창에 입력해 키보드가 떠 있으면 첫 `back`이 키보드만 내리니 `hideKeyboard`를 먼저 한다.
 - Android `inputText`는 adb 키 입력이라 기기가 터치 모드를 벗어난다. 그 뒤 시트·대화상자가 닫히면 일부 기기(Galaxy S25)는 뒤 화면의 첫 입력칸에 기본 포커스를 줘(`ViewRootImpl.leaveTouchMode` → `restoreDefaultFocus`) 키보드가 하단 탭을 가린다. 화면 키보드로 치는 사용자에게는 생기지 않는 Flow 전용 현상이라, 탭이 안 보일 때만 `hideKeyboard`를 한 번 더 한다(`release_favorite.yaml` 참고). 에뮬레이터에서는 재현되지 않으니 실기기로 확인한다.
-- iOS도 금액을 입력하고 통화 선택창을 닫으면 입력 포커스가 복원돼 키보드가 다시 뜰 수 있다. 탭으로 이동하기 전에 `hideKeyboard`로 내린다. CI 첫 실행은 보이는 탭의 식별자가 아직 잡히지 않은 적이 있어 iOS 스크립트에서 UI 테스트 모드로 사전 실행한다.
+- iOS도 금액을 입력하고 통화 선택창을 닫으면 입력 포커스가 복원돼 키보드가 다시 뜰 수 있다. CI에서는 `hideKeyboard`가 완료돼도 키보드가 남았으므로, 결과 요소 `exchange.to.amount`에서 아래로 충분히 스와이프해 ScrollView의 대화형 키보드 닫기를 끝낸 뒤 탭으로 이동한다. CI 첫 실행은 보이는 탭의 식별자가 아직 잡히지 않은 적이 있어 iOS 스크립트에서 UI 테스트 모드로 사전 실행한다.
 - 통화 목록은 160개 안팎이다. `scrollUntilVisible` 기본 20초로는 뒤쪽 통화에 닿지 못하니, 스크롤하지 말고 `currency.search`에 통화 코드를 입력해 찾는다.
 - 즐겨찾기 화면은 기준 통화와 같은 통화를 카드로 만들지 않는다. 즐겨찾기 Flow에서 그 통화를 기준 통화로 고르지 않는다.
 

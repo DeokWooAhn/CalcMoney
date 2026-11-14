@@ -1,5 +1,6 @@
 package com.ahn.presentation.ui.screen.calculator
 
+import android.util.Log
 import com.ahn.domain.ads.usecase.InterstitialAdUseCases
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.domain.currency.model.CalculatorCurrencySelection
@@ -40,6 +41,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -943,6 +946,37 @@ class CalculatorViewModelTest : BehaviorSpec({
                                 UiText.StringResource(R.string.invalid_expression),
                             ),
                         )
+                    }
+                }
+            }
+        }
+    }
+
+    Given("계산기에서 통화 목록 로드가 실패할 때") {
+        When("ViewModel이 생성되면") {
+            Then("환율 실패 상태가 되고 스낵바는 뜨지 않아야 한다") {
+                runTest {
+                    mockkStatic(Log::class)
+                    try {
+                        every { Log.e(any<String>(), any<String>(), any<Throwable>()) } returns 0
+                        coEvery { getSupportedCurrenciesUseCase() } throws Exception("Network Error")
+
+                        createViewModel().test(this) {
+                            expectInitialState()
+
+                            runOnCreate()
+
+                            expectState {
+                                copy(
+                                    exchangeFailure = UiText.StringResource(
+                                        R.string.exchange_rate_temporarily_unavailable,
+                                    ),
+                                )
+                            }
+                            cancelAndIgnoreRemainingItems()
+                        }
+                    } finally {
+                        unmockkStatic(Log::class)
                     }
                 }
             }

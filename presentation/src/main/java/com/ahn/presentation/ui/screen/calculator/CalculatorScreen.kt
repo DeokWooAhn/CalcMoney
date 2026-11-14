@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -74,6 +75,7 @@ import com.ahn.presentation.ui.component.CurrencyPickerSheet
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.DeleteCalculatorButton
 import com.ahn.presentation.ui.component.KeyPressColors
+import com.ahn.presentation.ui.component.LoadFailureMessage
 import com.ahn.presentation.ui.theme.DestructiveKeyPressGlowSoft
 import com.ahn.presentation.ui.theme.buttonFunction
 import com.ahn.presentation.ui.theme.buttonOperator
@@ -140,13 +142,23 @@ fun CalculatorScreen(
                 .padding(16.dp, 5.dp, 16.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            CalculatorCurrencySelectorRow(
-                state = state,
-                onIntent = onIntent,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 3.dp),
-            )
+            Column {
+                CalculatorCurrencySelectorRow(
+                    state = state,
+                    onIntent = onIntent,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 3.dp),
+                )
+
+                state.exchangeFailure?.let { failure ->
+                    LoadFailureMessage(
+                        message = failure.asString(LocalContext.current),
+                        onRetry = { onIntent(CalculatorContract.Intent.RetryExchange) },
+                        testTagName = "calculator.failure",
+                    )
+                }
+            }
 
             CalculatorDisplay(
                 state = state,

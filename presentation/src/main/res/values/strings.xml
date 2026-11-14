@@ -36,10 +36,11 @@
     <string name="load_currency_list_failed">Could not load the currency list: %1$s</string>
     <string name="load_exchange_rate_failed">Could not get exchange rates. %1$s</string>
     <string name="exchange_rate_not_ready">Exchange rates are not ready yet. Please check again later.</string>
-    <string name="exchange_rate_network_unavailable">No internet connection. Check your connection and try again.</string>
-    <string name="exchange_rate_temporarily_unavailable">Exchange rates are temporarily unavailable. Please try again later.</string>
+    <string name="exchange_rate_network_unavailable">No internet connection.\nCheck your connection and try again.</string>
+    <string name="exchange_rate_temporarily_unavailable">Exchange rates are temporarily unavailable.\nPlease try again later.</string>
     <string name="exchange_rate_not_found">No exchange rate was found for the selected currency.</string>
     <string name="exchange_rate_refresh_success">Exchange rates have been refreshed.</string>
+    <string name="exchange_rate_retry">Try again</string>
     <string name="exchange_rate_date">Rate date: %1$s</string>
     <string name="refreshing_exchange_rates">Refreshing exchange rates.</string>
     <string name="calculator_history_delete_failed">Could not delete calculation history.</string>

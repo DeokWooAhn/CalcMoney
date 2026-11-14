@@ -722,9 +722,8 @@ class ExchangeViewModelTest : BehaviorSpec({
 
     Given("통화 목록 로드가 실패할 때") {
         When("ViewModel이 생성되면") {
-            Then("에러 스낵바 SideEffect가 발생해야 한다") {
+            Then("통화 목록 실패 상태가 되고 스낵바는 뜨지 않아야 한다") {
                 runTest {
-                    // 테스트가 본격적으로 시작되는 여기서 예외를 던지도록 덮어씌움
                     coEvery { getSupportedCurrenciesUseCase() } throws Exception("Network Error")
 
                     val viewModel = createViewModel()
@@ -736,17 +735,17 @@ class ExchangeViewModelTest : BehaviorSpec({
 
                         expectState { copy(isLoading = true) }
 
-                        // 에러가 발생하여 캐치(catch) 블록으로 이동, 로딩만 꺼지고 상태는 그대로
-                        expectState { copy(isLoading = false) }
-
-                        // 4. 에러 스낵바 SideEffect 발생 검증
-                        expectSideEffect(
-                            ExchangeContract.SideEffect.ShowSnackBar(
-                                UiText.StringResource(
-                                    R.string.exchange_rate_temporarily_unavailable,
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                failure = ExchangeContract.Failure(
+                                    scope = ExchangeContract.Failure.Scope.CURRENCIES,
+                                    message = UiText.StringResource(
+                                        R.string.exchange_rate_temporarily_unavailable,
+                                    ),
                                 ),
-                            ),
-                        )
+                            )
+                        }
                         cancelAndIgnoreRemainingItems()
                     }
                 }
@@ -756,9 +755,8 @@ class ExchangeViewModelTest : BehaviorSpec({
 
     Given("환율 API 호출이 실패할 때") {
         When("ViewModel이 생성되면") {
-            Then("에러 스낵바 SideEffect가 발생해야 한다") {
+            Then("환율 실패 상태가 되고 스낵바는 뜨지 않아야 한다") {
                 runTest {
-                    // 환율 API만 실패하도록 덮어씨움
                     coEvery { getExchangeRateUseCase(any(), any()) } throws Exception("Network Error")
 
                     val viewModel = createViewModel()
@@ -778,18 +776,18 @@ class ExchangeViewModelTest : BehaviorSpec({
                             )
                         }
 
-                        // ─── [3단계: 환율 로드 (여기서 실패)] ───
                         expectState { copy(isLoading = true) }
-                        expectState { copy(isLoading = false) } // 실패해서 로딩만 꺼짐
-
-                        // SideEffect 검증
-                        expectSideEffect(
-                            ExchangeContract.SideEffect.ShowSnackBar(
-                                UiText.StringResource(
-                                    R.string.exchange_rate_temporarily_unavailable,
+                        expectState {
+                            copy(
+                                isLoading = false,
+                                failure = ExchangeContract.Failure(
+                                    scope = ExchangeContract.Failure.Scope.RATE,
+                                    message = UiText.StringResource(
+                                        R.string.exchange_rate_temporarily_unavailable,
+                                    ),
                                 ),
-                            ),
-                        )
+                            )
+                        }
                         cancelAndIgnoreRemainingItems()
                     }
                 }

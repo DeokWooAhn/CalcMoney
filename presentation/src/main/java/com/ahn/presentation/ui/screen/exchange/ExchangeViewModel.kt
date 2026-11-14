@@ -128,6 +128,7 @@ class ExchangeViewModel @Inject constructor(
                     fromCurrency = selectedCurrencies.from,
                     toCurrency = selectedCurrencies.to,
                     isLoading = false,
+                    failure = null,
                 )
             }
 
@@ -136,12 +137,15 @@ class ExchangeViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            reduce { state.copy(isLoading = false) }
-            postSideEffect(
-                ExchangeContract.SideEffect.ShowSnackBar(
-                    e.toExchangeRateErrorUiText(),
-                ),
-            )
+            reduce {
+                state.copy(
+                    isLoading = false,
+                    failure = ExchangeContract.Failure(
+                        scope = ExchangeContract.Failure.Scope.CURRENCIES,
+                        message = e.toExchangeRateErrorUiText(),
+                    ),
+                )
+            }
         }
     }
 
@@ -256,17 +260,21 @@ class ExchangeViewModel @Inject constructor(
                     exchangeRateDate = rateDate,
                     exchangeRateFetchedAt = fetchedAt,
                     isLoading = false,
+                    failure = null,
                     toAmount = exchangeUseCases.exchangeAmount(state.fromAmount, rate),
                 )
             }
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            reduce { state.copy(isLoading = false) }
-            postSideEffect(
-                ExchangeContract.SideEffect.ShowSnackBar(
-                    e.toExchangeRateErrorUiText(),
-                ),
-            )
+            reduce {
+                state.copy(
+                    isLoading = false,
+                    failure = ExchangeContract.Failure(
+                        scope = ExchangeContract.Failure.Scope.RATE,
+                        message = e.toExchangeRateErrorUiText(),
+                    ),
+                )
+            }
         }
     }
 
@@ -299,6 +307,7 @@ class ExchangeViewModel @Inject constructor(
                     exchangeRateDate = rateDate,
                     exchangeRateFetchedAt = fetchedAt,
                     isLoading = false,
+                    failure = null,
                     toAmount = exchangeUseCases.exchangeAmount(state.fromAmount, rate),
                 )
             }

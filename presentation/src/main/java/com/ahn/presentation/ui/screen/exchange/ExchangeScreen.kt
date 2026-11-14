@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +42,7 @@ import com.ahn.presentation.R
 import com.ahn.presentation.ui.component.AdMobBanner
 import com.ahn.presentation.ui.component.CustomSnackbarHost
 import com.ahn.presentation.ui.component.ExchangeInputContainer
+import com.ahn.presentation.ui.component.LoadFailureMessage
 import com.ahn.presentation.util.formatExchangeRateDate
 import com.ahn.presentation.util.rememberShowSnackbar
 import org.orbitmvi.orbit.compose.collectAsState
@@ -129,6 +131,23 @@ private fun ExchangeContent(
     onIntent: (ExchangeContract.Intent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    val failure = state.failure
+
+    if (failure?.scope == ExchangeContract.Failure.Scope.CURRENCIES) {
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            LoadFailureMessage(
+                message = failure.message.asString(context),
+                onRetry = { onIntent(ExchangeContract.Intent.LoadCurrencies) },
+                testTagName = "exchange.failure",
+            )
+        }
+        return
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -174,12 +193,20 @@ private fun ExchangeContent(
             amountTestTag = "exchange.to.amount",
         )
 
-        ExchangeRateInfo(
-            fromCurrency = state.fromCurrency,
-            toCurrency = state.toCurrency,
-            exchangeRate = state.exchangeRate,
-            exchangeRateDateText = exchangeRateDateText,
-        )
+        if (failure?.scope == ExchangeContract.Failure.Scope.RATE) {
+            LoadFailureMessage(
+                message = failure.message.asString(context),
+                onRetry = { onIntent(ExchangeContract.Intent.RefreshExchangeRates) },
+                testTagName = "exchange.rate.failure",
+            )
+        } else {
+            ExchangeRateInfo(
+                fromCurrency = state.fromCurrency,
+                toCurrency = state.toCurrency,
+                exchangeRate = state.exchangeRate,
+                exchangeRateDateText = exchangeRateDateText,
+            )
+        }
     }
 }
 

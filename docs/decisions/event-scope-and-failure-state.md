@@ -65,7 +65,21 @@ State가 실패를 담아야 한다. `isLoading`만으로는 화면이 "데이�
   - `CalculatorContract.State.exchangeFailure`와 `Intent.RetryExchange`.
     `CalculatorViewModel`의 `performLoadCurrencies`·`performFetchExchangeRate` 실패가 상태로 간다.
     계산·저장·즐겨찾기 실패는 스낵바 그대로다
-- iOS: `ios/Packages/Presentation/Sources/Presentation/Util/SideEffectBus.swift` — 아직 고치지 않았다
+- iOS — 2026-11-15 적용함
+  - `ExchangeState.failure`와 `ExchangeFailure(scope:message:)`. `Scope`는 `currencies`와 `rate`
+  - `ExchangeViewModel`: `performLoadCurrencies`·`performFetchExchangeRate` 실패가 상태로 간다.
+    `performRefreshExchangeRates`와 `handleToggleFavorite`은 스낵바 그대로다
+  - `Component/LoadFailureMessage.swift`: 문구·아이콘·다시 시도를 묶은 공통 표시
+  - `ExchangeView`: `currencies`면 화면 전체, `rate`면 환율 정보 자리. 당겨서 새로고침은 그대로 둔다
+  - `FavoriteView`: 추측으로 실패 문구를 띄우던 마지막 분기 앞에 실제 실패 분기를 뒀다
+  - `SettingView`: 환율 일회성 이벤트 구독을 지웠다
+  - `CalculatorState.exchangeFailure`와 `CalculatorIntent.retryExchange`
+  - `SideEffectBus.swift`는 그대로다. 버스의 동작이 아니라 무엇을 버스에 보낼지를 바꿨다
+  - 오류 문구 두 개에 줄바꿈을 넣었다(`Localizable.xcstrings`의 키도 함께 바뀜)
+
+  iOS에는 Android에 없는 것이 둘 있어 그대로 살렸다. `ExchangeView`의 당겨서 새로고침(`.refreshable`)과
+  `isLoading` 동안 도는 `ProgressView`다. 그래서 Android에서 본 "다시 시도를 눌러도 눌린 티가 안 난다"는
+  문제가 iOS에는 없다.
 
 ## 확인 방법
 
@@ -84,7 +98,21 @@ State가 실패를 담아야 한다. `isLoading`만으로는 화면이 "데이�
   - 즐겨찾기 화면의 실패 분기. 즐겨찾기가 하나도 없으면 "즐겨찾기 없음"이 먼저 걸려서,
     즐겨찾기 코드는 있는데 환율을 못 받은 상태를 에뮬레이터에서 만들지 못했다
   - 좁은 폭, 글자 크게 설정, 다크 모드에서의 모양
-  - iOS는 손대지 않았다
+  - iOS 화면은 눈으로 확인하지 않았다. 시뮬레이터로 돌려 보지 않았다
+
+- **스낵바를 상태로 바꾸면 요청 순서 검사가 더 중요해진다** (2026-11-15, CodeRabbit이 찾음)
+  환율 조회의 성공 경로에는 "응답이 왔을 때 통화쌍이 이미 바뀌었으면 반영하지 않는다"는 검사가 있었지만
+  실패 경로에는 없었다. 스낵바일 때는 지난 요청의 오류가 잠깐 떴다 사라질 뿐이었는데,
+  상태로 바꾸자 성공한 화면 위에 실패 표시가 **남는** 문제가 됐다.
+  두 플랫폼의 환율 조회 catch에 성공 경로와 같은 가드를 넣었다.
+  계산기의 통화 목록 로드는 요청 번호가 없어, 목록을 이미 받았으면 늦은 실패를 반영하지 않는 것으로 갈음했다.
+
+  이 시나리오를 고정하는 테스트는 아직 없다. 환율 화면 테스트가 실패 경로 전용으로 짜여 있어
+  성공 경로를 타는 mock을 새로 갖춰야 한다. 다음에 할 일이다.
+  iOS 계산기 쪽은 `CalculatorViewModelOrderingTests`의 4-2가 `exchangeFailure == nil`까지 본다.
+
+- **남은 빚**: `CalculatorViewModel.swift`(iOS)가 SwiftLint 한도인 400줄에 딱 닿아 있다.
+  이번에 빈 줄을 줄여 맞췄다. 다음에 손댈 때는 환율 조회 흐름을 별도 파일로 빼는 편이 좋다.
 
 - **계산기도 같은 기준으로 고쳤다** (2026-11-15)
   에뮬레이터 확인에서 계산기 탭에만 스낵바가 남아 있는 것을 보고 함께 적용했다.

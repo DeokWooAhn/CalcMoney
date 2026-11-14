@@ -136,12 +136,13 @@ public final class ExchangeViewModel {
             state.availableCurrencies = currencies
             state.fromCurrency = selected.from
             state.toCurrency = selected.to
+            state.failure = nil
 
             if selected.from != nil, selected.to != nil {
                 await performFetchExchangeRate()
             }
         } catch {
-            sideEffectBus.send(.showSnackbar(message: error.exchangeRateErrorMessage))
+            state.failure = ExchangeFailure(scope: .currencies, message: error.exchangeRateErrorMessage)
         }
     }
 
@@ -211,8 +212,12 @@ public final class ExchangeViewModel {
             state.exchangeRateDate = rateDate
             state.exchangeRateFetchedAt = fetchedAt
             state.toAmount = exchangeUseCases.exchangeAmount(fromAmount: state.fromAmount, rate: rate)
+            state.failure = nil
         } catch {
-            sideEffectBus.send(.showSnackbar(message: error.exchangeRateErrorMessage))
+            guard state.fromCurrency?.code == requestedFrom, state.toCurrency?.code == requestedTo else {
+                return
+            }
+            state.failure = ExchangeFailure(scope: .rate, message: error.exchangeRateErrorMessage)
         }
     }
 
@@ -242,6 +247,7 @@ public final class ExchangeViewModel {
             state.exchangeRateDate = rateDate
             state.exchangeRateFetchedAt = fetchedAt
             state.toAmount = exchangeUseCases.exchangeAmount(fromAmount: state.fromAmount, rate: rate)
+            state.failure = nil
 
             sideEffectBus.send(.showSnackbar(message: L("환율 정보를 새로고침했습니다.")))
         } catch {

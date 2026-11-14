@@ -52,6 +52,13 @@ struct CalculatorView: View {
             )
             .padding(.top, 4)
 
+            if let failure = viewModel.state.exchangeFailure {
+                LoadFailureMessage(message: failure) {
+                    viewModel.send(.retryExchange)
+                }
+                .accessibilityIdentifier("calculator.failure")
+            }
+
             CalculatorDisplayView(state: viewModel.state, colors: colors)
                 .frame(maxHeight: .infinity)
                 .padding(.vertical, 16)

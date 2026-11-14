@@ -32,6 +32,7 @@ struct FavoriteView: View {
                 exchangeState: exchangeState,
                 favoriteState: favoriteState,
                 onRemoveFavorite: { exchangeViewModel.send(.toggleFavorite($0)) },
+                onRetry: { exchangeViewModel.send(.refreshExchangeRates) },
             )
         }
         .padding(.horizontal, 10)
@@ -90,6 +91,7 @@ private struct FavoriteRateContent: View {
     let exchangeState: ExchangeState
     let favoriteState: FavoriteState
     let onRemoveFavorite: (String) -> Void
+    let onRetry: () -> Void
 
     var body: some View {
         if !favoriteState.items.isEmpty {
@@ -107,6 +109,11 @@ private struct FavoriteRateContent: View {
                 Text(L("현재 기준 통화가 \(baseCode)입니다.\n다른 통화를 즐겨찾기에 추가해 주세요."))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+            }
+        } else if let failure = exchangeState.failure {
+            CenteredMessage {
+                LoadFailureMessage(message: failure.message, onRetry: onRetry)
+                    .accessibilityIdentifier("favorite.failure")
             }
         } else {
             CenteredMessage { Text(L("환율 정보를 불러올 수 없습니다.")).foregroundStyle(.secondary) }

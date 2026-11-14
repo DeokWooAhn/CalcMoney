@@ -29,6 +29,7 @@ public struct CalculatorState: Equatable {
     public var histories: [HistoryItem] = []
     public var isError = false
     public var errorMessage: String?
+    public var exchangeFailure: String?
 
     public init() {}
 }

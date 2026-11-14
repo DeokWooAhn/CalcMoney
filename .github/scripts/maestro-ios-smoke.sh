@@ -14,10 +14,6 @@ trap 'kill "$LOG_PID" 2>/dev/null || true' EXIT
 
 xcrun simctl install "$UDID" "$APP_PATH"
 
-# 첫 실행의 SwiftUI 탭 식별자가 준비되지 않는 콜드 스타트 비용을 먼저 치른다.
-# Flow는 clearState로 다시 시작하므로 사전 실행 데이터는 검증에 사용하지 않는다.
-xcrun simctl launch --terminate-running-process "$UDID" "$APP_ID" UI_TESTING
-
 maestro --device "$UDID" test .maestro \
   --include-tags="$MAESTRO_TAGS" \
   -e APP_ID="$APP_ID" \

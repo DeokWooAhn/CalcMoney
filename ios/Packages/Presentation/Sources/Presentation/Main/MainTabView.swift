@@ -46,6 +46,10 @@ public struct MainTabView: View {
                 .tag(tab)
             }
         }
+        .background {
+            TabBarAccessibilityIdentifiers()
+                .frame(width: 0, height: 0)
+        }
         .preferredColorScheme(mainViewModel.themeMode.colorScheme)
         .task {
             // Google 정책: 앱 시작 시마다 동의 상태를 갱신한다.

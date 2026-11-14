@@ -25,6 +25,24 @@ final class CalcMoneyUITests: XCTestCase {
     }
 
     @MainActor
+    func test첫_실행부터_네_탭을_식별자로_찾고_환율로_이동한다() {
+        let app = launchApp()
+
+        for identifier in ["tab.calculator", "tab.exchange", "tab.favorite", "tab.setting"] {
+            XCTAssertTrue(
+                app.tabBars.buttons[identifier].waitForExistence(timeout: Self.waitTimeout),
+                "첫 실행부터 실제 탭 항목에 식별자가 있어야 한다: \(identifier)",
+            )
+        }
+
+        app.tabBars.buttons["tab.exchange"].tap()
+        XCTAssertTrue(
+            app.staticTexts["기준 금액"].waitForExistence(timeout: Self.waitTimeout),
+            "식별자로 누른 실제 환율 탭이 화면을 전환해야 한다",
+        )
+    }
+
+    @MainActor
     func test계산기에서_기본_계산이_동작한다() {
         let app = launchApp()
 

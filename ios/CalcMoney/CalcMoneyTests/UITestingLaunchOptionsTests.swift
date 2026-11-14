@@ -12,8 +12,21 @@ struct UITestingLaunchOptionsTests {
         #expect(!options.usesFixedRates)
     }
 
+    @Test("초기화가 비활성이면 기존 설정을 보존한다", arguments: [[], ["UI_TESTING"], ["UI_TESTING_RESET"]])
+    func 비활성_초기화는_설정을_보존한다(arguments: [String]) throws {
+        let prefix = "test.\(UUID().uuidString)"
+        let domain = "\(prefix).currency_selection"
+        let defaults = try #require(UserDefaults(suiteName: domain))
+        defer { UserDefaults.standard.removePersistentDomain(forName: domain) }
+        defaults.set("existing", forKey: "state")
+
+        UITestingLaunchOptions(arguments: arguments).preparePreferences(prefix: prefix)
+
+        #expect(defaults.string(forKey: "state") == "existing")
+    }
+
     @Test("명시적인 초기화는 앱의 설정만 지우고 다른 도메인은 보존한다")
-    func 초기화는_앱_소유_도메인만_지운다() {
+    func 초기화는_앱_소유_도메인만_지운다() throws {
         let prefix = "test.\(UUID().uuidString)"
         let other = "\(prefix).unrelated"
         defer {
@@ -21,15 +34,17 @@ struct UITestingLaunchOptionsTests {
                 UserDefaults.standard.removePersistentDomain(forName: "\(prefix).\(name)")
             }
         }
-        for name in UITestingLaunchOptions.preferenceSuites + ["unrelated"] {
-            UserDefaults(suiteName: "\(prefix).\(name)")?.set("existing", forKey: "state")
+        let suites = try UITestingLaunchOptions.preferenceSuites.map { name in
+            try #require(UserDefaults(suiteName: "\(prefix).\(name)"))
         }
+        let unrelated = try #require(UserDefaults(suiteName: other))
+        for defaults in suites + [unrelated] { defaults.set("existing", forKey: "state") }
         let options = UITestingLaunchOptions(arguments: ["UI_TESTING", "UI_TESTING_RESET"])
         options.preparePreferences(prefix: prefix)
-        for name in UITestingLaunchOptions.preferenceSuites {
-            #expect(UserDefaults(suiteName: "\(prefix).\(name)")?.string(forKey: "state") == nil)
+        for defaults in suites {
+            #expect(defaults.string(forKey: "state") == nil)
         }
-        #expect(UserDefaults(suiteName: other)?.string(forKey: "state") == "existing")
+        #expect(unrelated.string(forKey: "state") == "existing")
         #expect(!options.usesFixedRates)
     }
 

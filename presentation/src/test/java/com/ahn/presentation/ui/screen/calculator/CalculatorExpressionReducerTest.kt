@@ -1,6 +1,7 @@
 package com.ahn.presentation.ui.screen.calculator
 
 import com.ahn.domain.calculator.usecase.CalculateExpressionUseCase
+import com.ahn.domain.calculator.usecase.ExtractRepeatOperationUseCase
 import com.ahn.domain.exchange.usecase.ConvertExchangeAmountUseCase
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -16,6 +17,7 @@ class CalculatorExpressionReducerTest : BehaviorSpec({
     fun createReducer() = CalculatorExpressionReducer(
         calculateExpression = calculateExpressionUseCase,
         convertExchangeAmount = convertExchangeAmountUseCase,
+        extractRepeatOperation = ExtractRepeatOperationUseCase(),
     )
 
     fun updatedState(result: CalculatorExpressionResult): CalculatorContract.State {

@@ -16,13 +16,30 @@ import com.ahn.presentation.util.UiText
 import com.ahn.presentation.util.deviceCurrencyCode
 import com.ahn.presentation.util.toExchangeRateErrorUiText
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.container
 
+/**
+ * 계산기 화면 ViewModel
+ *
+ * Orbit은 인텐트를 받은 순서대로 시작만 하고 각자 코루틴으로 돌린다. 한 인텐트가 저장·조회를 기다리는 사이
+ * 다음 인텐트가 끼어들므로, 겹쳐도 순서가 지켜지도록 일을 셋으로 나눈다.
+ *
+ * - **확정**: 계산 결과·통화 선택은 첫 중단 지점 전에 `reduce`로 반영한다. 다음 인텐트는 반영된 상태를 읽는다.
+ * - **저장**: 로컬 저장은 [persistenceMutex] 안에서 탭한 순서대로 처리한다.
+ * - **조회**: 환율 조회는 기다리지 않고 따로 돌린다. 마지막 요청의 응답만 반영한다([restartRateFetch]).
+ *
+ * iOS `CalculatorViewModel`도 같은 동작을 지킨다. 두 플랫폼이 같은 시나리오로 검증한다(`CalculatorViewModelOrderingTest`).
+ */
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
     private val calculatorUseCases: CalculatorUseCases,
@@ -47,7 +64,20 @@ class CalculatorViewModel @Inject constructor(
     private val expressionReducer = CalculatorExpressionReducer(
         calculateExpression = calculatorUseCases.calculateExpression,
         convertExchangeAmount = exchangeUseCases.convertExchangeAmount,
+        extractRepeatOperation = calculatorUseCases.extractRepeatOperation,
     )
+
+    /**
+     * 로컬 저장(기록 추가·삭제, 통화 선택, 즐겨찾기, 리뷰·광고 횟수)을 탭한 순서대로 하나씩 처리한다.
+     *
+     * 인텐트는 첫 중단 지점까지 이어서 실행되므로, 상태를 확정한 뒤 다른 중단 없이 곧바로 잠금을 요청하면
+     * 잠금을 기다리는 순서가 탭 순서와 같다. [Mutex]는 먼저 기다린 쪽에 먼저 잠금을 준다.
+     */
+    private val persistenceMutex = Mutex()
+
+    /** 가장 최근 환율 조회의 번호. 이 번호와 다른 요청의 응답은 버린다. */
+    private val latestRateRequestId = AtomicLong(0L)
+    private val rateFetchJob = AtomicReference<Job?>(null)
 
     fun updateCursorPosition(newCursorPosition: Int) = intent {
         reduce {
@@ -83,25 +113,27 @@ class CalculatorViewModel @Inject constructor(
     }
 
     private fun handleToggleFavorite(currencyCode: String) = intent {
-        val wasFavorite = currencyCode in state.favoriteCurrencyCodes
+        persistenceMutex.withLock {
+            val wasFavorite = currencyCode in state.favoriteCurrencyCodes
 
-        runCatching {
-            favoriteUseCases.toggleFavoriteCurrency(currencyCode)
-        }.onSuccess {
-            postSideEffect(
-                CalculatorContract.SideEffect.ShowSnackBar(
-                    UiText.StringResource(
-                        if (wasFavorite) R.string.favorite_removed else R.string.favorite_added,
+            runCatching {
+                favoriteUseCases.toggleFavoriteCurrency(currencyCode)
+            }.onSuccess {
+                postSideEffect(
+                    CalculatorContract.SideEffect.ShowSnackBar(
+                        UiText.StringResource(
+                            if (wasFavorite) R.string.favorite_removed else R.string.favorite_added,
+                        ),
                     ),
-                ),
-            )
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-            postSideEffect(
-                CalculatorContract.SideEffect.ShowSnackBar(
-                    UiText.StringResource(R.string.favorite_change_failed),
-                ),
-            )
+                )
+            }.onFailure { e ->
+                if (e is CancellationException) throw e
+                postSideEffect(
+                    CalculatorContract.SideEffect.ShowSnackBar(
+                        UiText.StringResource(R.string.favorite_change_failed),
+                    ),
+                )
+            }
         }
     }
 
@@ -161,90 +193,73 @@ class CalculatorViewModel @Inject constructor(
     }
 
     /**
-     * 현재 표현식을 계산하고(필요한 경우 반복 연산을 적용), 화면 상태를 업데이트합니다.
+     * 현재 수식을 계산해 결과를 바로 보여 주고, 기록 저장은 그 뒤에 저장 순서대로 한다.
      *
-     * 표현식이 비어 있으면 이 intent는 아무 작업도 하지 않습니다.
-     * 숫자 표현식과 반복 연산이 모두 존재하는 경우, 계산 전에 반복 연산을 표현식 뒤에 추가합니다.
-     * 계산 중 오류가 발생하면 상태를 오류로 표시하고 스낵바 사이드 이펙트를 발생시킵니다.
-     * 계산에 성공하면 표현식은 계산된 결과로 대체되고,
-     * 미리보기/변환된 미리보기 값은 초기화되며,
-     * 반복 연산이 업데이트되고,
-     * 결과는 계산 완료된 결과로 표시되며,
-     * 해당 계산 내역이 히스토리에 추가됩니다.
+     * 결과를 저장보다 먼저 확정하므로 "="를 연달아 눌러도 다음 계산이 이전 결과를 읽어 반복 연산으로 이어진다.
+     * 환율 조회는 기다리지 않는다.
      */
     private fun handleCalculate() = intent {
-        val expression = state.expression
-        if (expression.isEmpty()) return@intent
-
-        val shouldRepeatOperation = state.repeatOperation != null && expression.toDoubleOrNull() != null
-        if (!shouldRepeatOperation && !expressionReducer.hasBinaryOperator(expression)) return@intent
-
-        val expressionToCalculate =
-            if (shouldRepeatOperation) {
-                expression + state.repeatOperation
-            } else {
-                expression
+        // reduce는 StateFlow.update라 다른 변경과 겹치면 블록을 다시 실행한다. 블록 안에서는 계산만 하고,
+        // 저장·이벤트는 블록 밖에서 마지막 실행(실제로 반영된 실행)이 남긴 결과로 처리한다.
+        var outcome: CalculationOutcome = CalculationOutcome.Ignored
+        reduce {
+            outcome = expressionReducer.calculate(state)
+            when (val calculated = outcome) {
+                CalculationOutcome.Ignored -> state
+                is CalculationOutcome.Failed -> calculated.state
+                is CalculationOutcome.Succeeded -> calculated.state
             }
+        }
 
-        val result = calculatorUseCases.calculateExpression(expressionToCalculate)
+        when (val committed = outcome) {
+            CalculationOutcome.Ignored -> Unit
 
-        if (result == "Error") {
-            reduce {
-                state.copy(
-                    isError = true,
-                    errorMessage = UiText.StringResource(R.string.calculator_error),
-                )
-            }
-
-            postSideEffect(
+            is CalculationOutcome.Failed -> postSideEffect(
                 CalculatorContract.SideEffect.ShowSnackBar(
                     UiText.StringResource(R.string.invalid_expression),
                 ),
             )
-            return@intent
+
+            is CalculationOutcome.Succeeded -> persistenceMutex.withLock { saveCalculation(committed.history) }
         }
+    }
 
-        val nextRepeatOperation = calculatorUseCases.extractRepeatOperation(expressionToCalculate)
-            ?: state.repeatOperation
-
-        val historyItem = CalculatorContract.HistoryItem(
-            expression = expressionToCalculate,
-            result = result,
-        )
-
-        val nextHistories = (state.histories + historyItem).takeLast(MAX_HISTORY_COUNT)
-
-        val isHistorySaved = runCatching {
-            calculatorUseCases.addHistory(
-                CalculatorHistory(
-                    expression = historyItem.expression,
-                    result = historyItem.result,
-                ),
-            )
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
+    /**
+     * 계산 기록을 저장하고 계산 성공을 셉니다. [persistenceMutex] 안에서 부릅니다.
+     *
+     * 기록 목록에는 저장에 성공한 뒤에만 넣습니다. 저장하는 동안 목록이 그대로였을 때만 저장 전 목록에 새 기록을 붙이고,
+     * 그사이 저장소의 기록 흐름이 목록을 바꿨으면 흐름을 따릅니다. 흐름이 새 기록을 먼저 내보냈을 때 중복되지 않고,
+     * 늦게 도착한 기존 기록을 덮어쓰지도 않습니다. 기록 저장에 실패해도 계산 성공은 셉니다.
+     */
+    private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.saveCalculation(
+        history: CalculatorContract.HistoryItem,
+    ) {
+        val historiesBeforeSave = state.histories
+        val isHistorySaved = try {
+            calculatorUseCases.addHistory(CalculatorHistory(expression = history.expression, result = history.result))
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             Log.e("CalculatorViewModel", "Failed to save calculator history.", e)
             postSideEffect(
                 CalculatorContract.SideEffect.ShowSnackBar(
                     UiText.StringResource(R.string.calculator_history_save_failed),
                 ),
             )
-        }.isSuccess
+            false
+        }
 
-        reduce {
-            expressionReducer.buildNewExpressionState(
-                currentState = state,
-                newExpression = result,
-                newCursorPos = result.length,
-            ).copy(
-                expression = result,
-                cursorPosition = result.length,
-                previewResult = "",
-                convertedPreviewAmount = "",
-                repeatOperation = nextRepeatOperation,
-                isCalculatedResult = true,
-                histories = if (isHistorySaved) nextHistories else state.histories,
-            )
+        if (isHistorySaved) {
+            reduce {
+                // 저장하는 동안 기록 흐름(observeSavedData)이 목록을 바꿨다면 그 목록이 저장소를 따른 것이다.
+                // 덮어쓰면 그사이 들어온 기존 기록이 빠지므로 그대로 둔다. 저장소는 저장이 끝나면 새 목록을 내보낸다.
+                if (state.histories == historiesBeforeSave) {
+                    state.copy(histories = (historiesBeforeSave + history).takeLast(MAX_HISTORY_COUNT))
+                } else {
+                    state
+                }
+            }
         }
 
         recordCalculationSuccess()
@@ -255,7 +270,6 @@ class CalculatorViewModel @Inject constructor(
      *
      * 결과를 화면에 반영한 뒤에 호출해 작업을 하나 끝낸 순간에 창이 뜨게 합니다. 전면 광고는 계산기를 떠날 때
      * [com.ahn.presentation.main.MainViewModel]이 정하므로 여기서는 횟수만 셉니다.
-     * 기록 저장에 실패해도 계산 흐름에는 영향을 주지 않습니다.
      */
     private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.recordCalculationSuccess() {
         val shouldRequestReview = try {
@@ -284,22 +298,22 @@ class CalculatorViewModel @Inject constructor(
         try {
             val currencies = exchangeUseCases.getSupportedCurrencies()
             val deviceCurrencyCode = deviceCurrencyCode()
-            val savedSelection = getSavedCalculatorSelectionOrNull()
-
-            val mainCurrency = resolveCalculatorMainCurrency(
-                currencies = currencies,
-                currentCurrency = state.mainExchangeCurrency,
-                savedSelection = savedSelection,
-                deviceCurrencyCode = deviceCurrencyCode,
-            )
-            val subCurrency = resolveCalculatorSubCurrency(
-                currencies = currencies,
-                currentCurrency = state.selectedExchangeCurrency,
-                savedSelection = savedSelection,
-                mainCurrency = mainCurrency,
-            )
+            val savedSelection = currencySelectionUseCases.getCalculatorSelectionOrNull()
 
             reduce {
+                val mainCurrency = resolveCalculatorMainCurrency(
+                    currencies = currencies,
+                    currentCurrency = state.mainExchangeCurrency,
+                    savedSelection = savedSelection,
+                    deviceCurrencyCode = deviceCurrencyCode,
+                )
+                val subCurrency = resolveCalculatorSubCurrency(
+                    currencies = currencies,
+                    currentCurrency = state.selectedExchangeCurrency,
+                    savedSelection = savedSelection,
+                    mainCurrency = mainCurrency,
+                )
+
                 state.copy(
                     availableCurrencies = currencies,
                     mainExchangeCurrency = mainCurrency,
@@ -307,7 +321,7 @@ class CalculatorViewModel @Inject constructor(
                 )
             }
 
-            performFetchExchangeRate()
+            restartRateFetch(state.mainExchangeCurrency, state.selectedExchangeCurrency)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             postSideEffect(
@@ -324,21 +338,28 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
-    private suspend fun getSavedCalculatorSelectionOrNull(): CalculatorCurrencySelection? {
-        return try {
-            currencySelectionUseCases.getCalculatorSelection()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.w("CalculatorViewModel", "Failed to load saved calculator currency selection.", e)
+    /**
+     * 통화쌍의 환율 조회를 새로 시작한다. 진행 중인 조회는 취소하고 요청 번호를 올린다.
+     *
+     * 조회를 기다리지 않고 돌아오므로 계산·저장이 네트워크 응답에 묶이지 않는다. 취소가 늦어 이전 응답이 도착해도
+     * 요청 번호가 달라 반영하지 않는다. 통화쌍이 같아도(USD → EUR → USD) 번호로 구별한다.
+     */
+    private fun restartRateFetch(from: CurrencyInfo?, to: CurrencyInfo?) {
+        val requestId = latestRateRequestId.incrementAndGet()
+        val nextJob = if (from != null && to != null) {
+            intent { performFetchExchangeRate(requestId, from, to) }
+        } else {
             null
         }
+
+        rateFetchJob.getAndSet(nextJob)?.cancel()
     }
 
-    private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.performFetchExchangeRate() {
-        val from = state.mainExchangeCurrency ?: return
-        val to = state.selectedExchangeCurrency ?: return
-
+    private suspend fun Syntax<CalculatorContract.State, CalculatorContract.SideEffect>.performFetchExchangeRate(
+        requestId: Long,
+        from: CurrencyInfo,
+        to: CurrencyInfo,
+    ) {
         try {
             val rate = if (from.code == to.code) {
                 1.0
@@ -347,17 +368,22 @@ class CalculatorViewModel @Inject constructor(
             }
 
             reduce {
-                expressionReducer.run {
-                    state.copy(exchangeRate = rate).withConvertedAmounts()
+                if (state.isLatestRateRequest(requestId, latestRateRequestId.get(), from, to)) {
+                    expressionReducer.run { state.copy(exchangeRate = rate).withConvertedAmounts() }
+                } else {
+                    state
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            if (e is CancellationException) throw e
-            postSideEffect(
-                CalculatorContract.SideEffect.ShowSnackBar(
-                    e.toExchangeRateErrorUiText(),
-                ),
-            )
+            if (state.isLatestRateRequest(requestId, latestRateRequestId.get(), from, to)) {
+                postSideEffect(
+                    CalculatorContract.SideEffect.ShowSnackBar(
+                        e.toExchangeRateErrorUiText(),
+                    ),
+                )
+            }
         }
     }
 
@@ -377,23 +403,20 @@ class CalculatorViewModel @Inject constructor(
                 convertedPreviewAmount = "",
             )
         }
+        restartRateFetch(to, from)
 
-        saveCalculatorSelectionBestEffort {
-            currencySelectionUseCases.saveCalculatorSelection(
-                mainCode = to.code,
-                subCode = from.code,
-            )
+        persistenceMutex.withLock {
+            saveCalculatorSelectionBestEffort {
+                currencySelectionUseCases.saveCalculatorSelection(
+                    mainCode = to.code,
+                    subCode = from.code,
+                )
+            }
         }
-
-        performFetchExchangeRate()
     }
 
     private fun handleSelectMainExchangeCurrency(currency: CurrencyInfo) = intent {
         if (currency.code == state.mainExchangeCurrency?.code) return@intent
-
-        saveCalculatorSelectionBestEffort {
-            currencySelectionUseCases.saveCalculatorMainCurrency(currency.code)
-        }
 
         reduce {
             state.copy(
@@ -403,16 +426,17 @@ class CalculatorViewModel @Inject constructor(
                 convertedPreviewAmount = "",
             )
         }
+        restartRateFetch(state.mainExchangeCurrency, state.selectedExchangeCurrency)
 
-        performFetchExchangeRate()
+        persistenceMutex.withLock {
+            saveCalculatorSelectionBestEffort {
+                currencySelectionUseCases.saveCalculatorMainCurrency(currency.code)
+            }
+        }
     }
 
     private fun handleSelectExchangeCurrency(currency: CurrencyInfo) = intent {
         if (currency.code == state.selectedExchangeCurrency?.code) return@intent
-
-        saveCalculatorSelectionBestEffort {
-            currencySelectionUseCases.saveCalculatorSubCurrency(currency.code)
-        }
 
         reduce {
             state.copy(
@@ -422,32 +446,30 @@ class CalculatorViewModel @Inject constructor(
                 convertedPreviewAmount = "",
             )
         }
+        restartRateFetch(state.mainExchangeCurrency, state.selectedExchangeCurrency)
 
-        performFetchExchangeRate()
-    }
-
-    private suspend fun saveCalculatorSelectionBestEffort(action: suspend () -> Unit) {
-        try {
-            action()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.w("CalculatorViewModel", "Failed to save calculator currency selection.", e)
+        persistenceMutex.withLock {
+            saveCalculatorSelectionBestEffort {
+                currencySelectionUseCases.saveCalculatorSubCurrency(currency.code)
+            }
         }
     }
 
     private fun handleClearHistory() = intent {
-        runCatching {
-            calculatorUseCases.clearHistory()
-        }.onSuccess {
-            reduce { state.copy(histories = emptyList()) }
-        }.onFailure { e ->
-            Log.e("CalculatorViewModel", "Failed to clear calculator history.", e)
-            postSideEffect(
-                CalculatorContract.SideEffect.ShowSnackBar(
-                    UiText.StringResource(R.string.calculator_history_delete_failed),
-                ),
-            )
+        persistenceMutex.withLock {
+            runCatching {
+                calculatorUseCases.clearHistory()
+            }.onSuccess {
+                reduce { state.copy(histories = emptyList()) }
+            }.onFailure { e ->
+                if (e is CancellationException) throw e
+                Log.e("CalculatorViewModel", "Failed to clear calculator history.", e)
+                postSideEffect(
+                    CalculatorContract.SideEffect.ShowSnackBar(
+                        UiText.StringResource(R.string.calculator_history_delete_failed),
+                    ),
+                )
+            }
         }
     }
 
@@ -470,6 +492,39 @@ class CalculatorViewModel @Inject constructor(
                 )
             }
         }
+    }
+}
+
+/** 응답이 가장 최근 요청의 것이고, 그사이 통화쌍도 바뀌지 않았는지 본다. */
+private fun CalculatorContract.State.isLatestRateRequest(
+    requestId: Long,
+    latestRequestId: Long,
+    from: CurrencyInfo,
+    to: CurrencyInfo,
+): Boolean {
+    return requestId == latestRequestId &&
+        mainExchangeCurrency?.code == from.code &&
+        selectedExchangeCurrency?.code == to.code
+}
+
+private suspend fun CurrencySelectionUseCases.getCalculatorSelectionOrNull(): CalculatorCurrencySelection? {
+    return try {
+        getCalculatorSelection()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.w("CalculatorViewModel", "Failed to load saved calculator currency selection.", e)
+        null
+    }
+}
+
+private suspend fun saveCalculatorSelectionBestEffort(action: suspend () -> Unit) {
+    try {
+        action()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.w("CalculatorViewModel", "Failed to save calculator currency selection.", e)
     }
 }
 

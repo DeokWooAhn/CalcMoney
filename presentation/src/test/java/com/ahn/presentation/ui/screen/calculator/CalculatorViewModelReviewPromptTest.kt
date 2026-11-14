@@ -126,8 +126,11 @@ class CalculatorViewModelReviewPromptTest :
                     previewResult = "",
                     repeatOperation = "+1",
                     isCalculatedResult = true,
-                    histories = listOf(CalculatorContract.HistoryItem(expression = "1+1", result = "2")),
                 )
+            }
+            // 기록은 저장에 성공한 뒤에 목록에 들어간다.
+            expectState {
+                copy(histories = histories + CalculatorContract.HistoryItem("1+1", "2"))
             }
         }
 

@@ -24,6 +24,11 @@ ViewModel·Contract·UseCase·Repository의 모양은 `:konsist` 테스트(`kons
 - 진입점은 단일 `fun processIntent(intent: ...)` — when으로 private `handleX()`에 분배
 - `handleX()`가 `intent { }` 블록을 열고, 실제 로직은 private `suspend fun Syntax<State, SideEffect>.performX()` 헬퍼로
 - 순수 상태 계산이 복잡하면 별도 plain class로 추출 (예: `CalculatorExpressionReducer.kt`)
+- **Orbit은 인텐트를 직렬화하지 않는다.** 받은 순서대로 시작만 하고, 한 인텐트가 `await`에서 멈추면 다음 인텐트가 끼어든다.
+  저장·조회를 기다리는 인텐트가 겹치는 화면은 `CalculatorViewModel`처럼 일을 셋으로 나눈다(`docs/decisions/calculator-intent-ordering.md`).
+  - 확정: 결과는 첫 `await` 전에 `reduce`로 반영한다. `reduce` 안에서는 순수 계산만 한다. `StateFlow.update`라 다시 실행될 수 있다
+  - 저장: 로컬 저장은 `Mutex` 안에서. 상태를 확정한 뒤 다른 `await` 없이 바로 잠금을 요청해야 탭 순서가 지켜진다
+  - 조회: 기다리지 않고 따로 돌리고, 요청 번호·취소·대상(통화쌍)을 확인한 응답만 반영한다
 - 예외: `MainViewModel`과 `FavoriteViewModel`은 Orbit이 아닌 plain StateFlow — 새 화면에서 따라하지 말 것
   - `MainViewModel`: Activity 범위에서 테마·인앱 리뷰·전면 광고·크래시 단서를 다룬다. 화면의 Intent·SideEffect가 없다
   - `FavoriteViewModel`: 공유 `ExchangeViewModel`의 상태를 받아 즐겨찾기 환율 목록만 계산하는 보조 ViewModel이다.

@@ -30,6 +30,9 @@ Given("선택한 통화가 즐겨찾기에 없는 상태에서") {
 - `runTest(testDispatcher)` + `advanceUntilIdle()`
 - UseCase 홀더는 mock하지 말고 **실제로 생성하되 멤버 UseCase만 mock** (`createViewModel()` 헬퍼 패턴)
 - Orbit 검증에는 `orbit-test` 사용 (`ExchangeViewModelTest.kt` 참조)
+- 인텐트가 겹치는 순서 테스트는 `CalculatorViewModelOrderingTest.kt`를 본다. orbit-test에는 함정이 둘 있다
+  - 컨테이너가 `backgroundScope`에서 돌아 `advanceUntilIdle()`이 지연을 흘리지 않는다. `advanceTimeBy` + `runCurrent`로 흘린다
+  - `expectNoItems()`는 남은 항목이 있으면 그 항목을 꺼낸 채 실패한다. 남은 항목을 모을 때 끝 확인에 쓰지 않는다
 
 ## 실행
 

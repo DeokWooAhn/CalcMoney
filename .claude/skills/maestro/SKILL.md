@@ -35,6 +35,15 @@ maestro --device <udid> test .maestro -e APP_ID=com.deokwooahn.calcmoney
 - `UI_TESTING` 인자가 광고 동의 창과 광고 로드, 인앱 리뷰 창을 끈다. Android는 디버그 빌드에서만 받는다.
   iOS 개발 빌드는 리뷰를 요청할 때마다 창을 띄우므로, 이 인자 없이 계산을 반복하는 Flow는 리뷰 창에 막힐 수 있다.
 
+## 고정 환율 smoke
+
+`smoke_exchange_favorite.yaml`은 `UI_TESTING_RATES=FIXED_EXCHANGE_RATES`로 실행한다.
+디버그 UI 테스트에서만 USD=1,000원·AUD=500원을 공급하고, 실제 환산·즐겨찾기 저장·탭 갱신을 검증한다.
+Android는 화면 생성 전에 실제 Room 캐시에 신선한 고정 환율을 준비하고, iOS는 원격 데이터소스만 고정 구현으로 바꾼다.
+Android는 다음 일반 실행에서 테스트 캐시를 비우고, iOS는 고정 모드의 캐시를 메모리에만 둬 테스트 환율이 일반 실행에 남지 않게 한다.
+일반 실행과 `release` Flow는 기존 실제 환율 경로를 사용한다. 고정 데이터는 릴리스 빌드에서 활성화되지 않는다.
+기존 Android·iOS CI가 `smoke` 태그를 실행하므로 새 Flow도 함께 실행된다.
+
 ## id 표
 
 | 대상 | id | Android | iOS |
@@ -42,6 +51,7 @@ maestro --device <udid> test .maestro -e APP_ID=com.deokwooahn.calcmoney
 | 계산기 키 | `keypad.7`, `keypad.plus`, `keypad.equals` … | `CalculatorKey.testTag` | `CalculatorKey.testID` |
 | 하단 탭 | `tab.calculator` `tab.exchange` `tab.favorite` `tab.setting` | `BottomNavItem.testTag` | `MainTab.testID` |
 | 화면 기준점 | `screen.<탭>` | 각 Screen 루트 | `MainTab.screenTestID` |
+| 환율 금액 입력·결과 | `exchange.from.amount`, `exchange.to.amount` | `ExchangeInputContainer.amountTestTag` | `ExchangeInputContainer.amountTestID` |
 | 환율 입력 카드 | `exchange.from`, `exchange.to` | `ExchangeScreen` | `ExchangeView` |
 | 통화 선택 버튼 | `currency.selector` | `CurrencySelector` | `CurrencySelectorView` |
 | 선택 창 검색·행·하트·닫기 | `currency.search`, `currency.row.<코드>`, `favorite.toggle.<코드>`, `currency.picker.close`(iOS만) | `CurrencyPickerSheet` | `CurrencyPickerSheet` |
@@ -60,6 +70,8 @@ maestro --device <udid> test .maestro -e APP_ID=com.deokwooahn.calcmoney
 - 환율 값은 매일 바뀐다. 값이 아니라 형식을 본다.
 - 선택 창 닫기는 Android `back`, iOS `currency.picker.close`다. Android는 검색창에 입력해 키보드가 떠 있으면 첫 `back`이 키보드만 내리니 `hideKeyboard`를 먼저 한다.
 - Android `inputText`는 adb 키 입력이라 기기가 터치 모드를 벗어난다. 그 뒤 시트·대화상자가 닫히면 일부 기기(Galaxy S25)는 뒤 화면의 첫 입력칸에 기본 포커스를 줘(`ViewRootImpl.leaveTouchMode` → `restoreDefaultFocus`) 키보드가 하단 탭을 가린다. 화면 키보드로 치는 사용자에게는 생기지 않는 Flow 전용 현상이라, 탭이 안 보일 때만 `hideKeyboard`를 한 번 더 한다(`release_favorite.yaml` 참고). 에뮬레이터에서는 재현되지 않으니 실기기로 확인한다.
+- iOS도 금액을 입력하고 통화 선택창을 닫으면 입력 포커스가 복원돼 키보드가 다시 뜰 수 있다. CI에서는 `hideKeyboard`가 완료돼도 키보드가 남았으므로, 결과 요소 `exchange.to.amount`에서 아래로 충분히 스와이프해 ScrollView의 대화형 키보드 닫기를 끝낸 뒤 탭으로 이동한다.
+- iOS의 탭 식별자는 `TabBarAccessibilityIdentifiers`가 `UITabBarItem`과 실제 탭 버튼 양쪽에 붙인다. XCTest는 항목의 식별자를 찾지만 Maestro에는 실제 버튼의 식별자가 필요하다. SwiftUI Label의 식별자도 유지한다. 앱 실행 직후 네 탭을 식별자로 찾고 이동하는 UI 테스트와 Maestro smoke로 이 계약을 확인한다.
 - 통화 목록은 160개 안팎이다. `scrollUntilVisible` 기본 20초로는 뒤쪽 통화에 닿지 못하니, 스크롤하지 말고 `currency.search`에 통화 코드를 입력해 찾는다.
 - 즐겨찾기 화면은 기준 통화와 같은 통화를 카드로 만들지 않는다. 즐겨찾기 Flow에서 그 통화를 기준 통화로 고르지 않는다.
 

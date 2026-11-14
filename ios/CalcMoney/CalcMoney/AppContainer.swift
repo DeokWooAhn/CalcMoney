@@ -1,5 +1,6 @@
 import Data
 import Domain
+import Foundation
 import OSLog
 import Presentation
 
@@ -58,10 +59,8 @@ private struct Repositories {
 
     init() {
         // GoogleService-Info.plist가 없으면 원격 환율은 "준비 안 됨" 상태로 동작한다.
-        let isFirebaseConfigured = FirebaseBootstrap.configureIfAvailable()
-        let remoteDataSource: any ExchangeRateRemoteDataSource = isFirebaseConfigured
-            ? FirestoreExchangeRateDataSource()
-            : UnavailableExchangeRateRemoteDataSource()
+        let isFirebaseConfigured = !Self.usesFixedRates && FirebaseBootstrap.configureIfAvailable()
+        let remoteDataSource = Self.makeRemoteDataSource(isFirebaseConfigured: isFirebaseConfigured)
         // Crashlytics는 Firebase를 초기화하기 전에 부르면 크래시하므로 초기화했을 때만 쓴다.
         crashBreadcrumbs = isFirebaseConfigured ? FirebaseCrashBreadcrumbs() : NoOpCrashBreadcrumbs()
 
@@ -87,7 +86,7 @@ private struct Repositories {
         let logger = Logger(subsystem: "com.deokwooahn.calcmoney", category: "AppContainer")
 
         do {
-            return try ExchangeRateLocalDataSource.make()
+            return try ExchangeRateLocalDataSource.make(inMemory: usesFixedRates)
         } catch {
             logger.error("Falling back to in-memory exchange rate cache: \(error.localizedDescription)")
         }
@@ -99,7 +98,50 @@ private struct Repositories {
             fatalError("Failed to create the exchange rate cache store: \(error)")
         }
     }
+
+    private static var usesFixedRates: Bool {
+        #if DEBUG
+            let arguments = ProcessInfo.processInfo.arguments
+            return arguments.contains("UI_TESTING") && arguments.contains("FIXED_EXCHANGE_RATES")
+        #else
+            return false
+        #endif
+    }
+
+    private static func makeRemoteDataSource(isFirebaseConfigured: Bool) -> any ExchangeRateRemoteDataSource {
+        #if DEBUG
+            if usesFixedRates { return FixedExchangeRateDataSource() }
+        #endif
+        return isFirebaseConfigured ? FirestoreExchangeRateDataSource() : UnavailableExchangeRateRemoteDataSource()
+    }
 }
+
+#if DEBUG
+    /// 환율 원본만 고정하고 실제 Repository·UseCase·화면의 연결을 검증한다.
+    private struct FixedExchangeRateDataSource: ExchangeRateRemoteDataSource {
+        func fetchExchangeRates() async throws -> [ExchangeRateData] {
+            let fetchedAt = Int(Date().timeIntervalSince1970 * 1000)
+            return [
+                ExchangeRateData(
+                    code: "USD",
+                    currencyUnit: "USD",
+                    currencyName: "미국 달러",
+                    baseRate: 1000,
+                    fetchedAt: fetchedAt,
+                    rateDate: "2026-10-15",
+                ),
+                ExchangeRateData(
+                    code: "AUD",
+                    currencyUnit: "AUD",
+                    currencyName: "호주 달러",
+                    baseRate: 500,
+                    fetchedAt: fetchedAt,
+                    rateDate: "2026-10-15",
+                ),
+            ]
+        }
+    }
+#endif
 
 /// Domain 유스케이스 묶음 모음 (Android의 UseCases 그룹 대응)
 private struct UseCases {

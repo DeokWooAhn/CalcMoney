@@ -67,6 +67,9 @@ private final nonisolated class OnceResumer: Sendable {
 ///
 /// 관찰 추적 대신 폴링한다. 일어나지 않을 변화를 기다리는 것이라 깨울 알림이 없다.
 /// 중간의 `sleep`이 MainActor 를 놓아 주므로 검사 대상 Task 가 그동안 진행한다.
+///
+/// 취소되면 `sleep`이 곧바로 던지므로, 오류를 삼키면 기한까지 쉬지 않고 돈다.
+/// 조건을 마지막으로 한 번 더 보고 끝낸다.
 @MainActor
 @discardableResult
 func waitUntil(_ condition: () -> Bool, within limit: Duration) async -> Bool {
@@ -75,7 +78,11 @@ func waitUntil(_ condition: () -> Bool, within limit: Duration) async -> Bool {
         if condition() {
             return true
         }
-        try? await Task.sleep(for: .milliseconds(5))
+        do {
+            try await Task.sleep(for: .milliseconds(5))
+        } catch {
+            return condition()
+        }
     }
     return condition()
 }

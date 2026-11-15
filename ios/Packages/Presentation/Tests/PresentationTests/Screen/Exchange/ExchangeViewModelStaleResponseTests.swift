@@ -11,6 +11,8 @@ struct ExchangeViewModelStaleResponseTests {
     private static let jpy = CurrencyInfo(code: "JPY", displayCode: "JPY", name: "엔", flagEmoji: "🇯🇵")
 
     private static let jpyRate = 9.0
+    /// "일어나지 않아야 한다"를 검사할 때 기다리는 상한. 응답이 하나 처리되기에 넉넉하다.
+    private static let settleLimit = Duration.milliseconds(200)
 
     private static func makeViewModel(
         recorder: CalculatorTestRecorder,
@@ -60,6 +62,36 @@ struct ExchangeViewModelStaleResponseTests {
     func 지난_요청의_실패는_반영되지_않는다() async {
         let recorder = CalculatorTestRecorder()
         let staleGate = TestGate()
+        let viewModel = Self.makeViewModel(
+            recorder: recorder,
+            rateScript: RateScript([
+                "USD->KRW": [RateStep(gate: staleGate, error: ExchangeRateError.temporarilyUnavailable())],
+                "USD->JPY": [RateStep(rate: Self.jpyRate)],
+            ]),
+        )
+
+        await recorder.waitUntil { $0.requestedRatePairs.contains("USD->KRW") }
+
+        viewModel.send(.selectToCurrency(Self.jpy))
+        #expect(await waitUntil { viewModel.state.exchangeRate == Self.jpyRate })
+        #expect(viewModel.state.failure == nil)
+
+        await staleGate.open()
+        await recorder.waitUntil { $0.completedRatePairs.contains("USD->KRW") }
+        let failureAppeared = await waitUntil(
+            { viewModel.state.failure != nil },
+            within: Self.settleLimit,
+        )
+
+        #expect(failureAppeared == false)
+        #expect(viewModel.state.toCurrency?.code == "JPY")
+        #expect(viewModel.state.exchangeRate == Self.jpyRate)
+    }
+
+    @Test("지난 요청의 응답은 그 사이 시작된 요청의 로딩 표시를 끄지 않는다")
+    func 지난_응답은_현재_요청의_로딩을_끄지_않는다() async {
+        let recorder = CalculatorTestRecorder()
+        let staleGate = TestGate()
         let currentGate = TestGate()
         let viewModel = Self.makeViewModel(
             recorder: recorder,
@@ -73,17 +105,20 @@ struct ExchangeViewModelStaleResponseTests {
 
         viewModel.send(.selectToCurrency(Self.jpy))
         await recorder.waitUntil { $0.requestedRatePairs.contains("USD->JPY") }
-        #expect(viewModel.state.toCurrency?.code == "JPY")
         #expect(viewModel.state.isLoading == true)
 
         await staleGate.open()
         await recorder.waitUntil { $0.completedRatePairs.contains("USD->KRW") }
-        #expect(await waitUntil { !viewModel.state.isLoading })
+        let loadingStopped = await waitUntil(
+            { !viewModel.state.isLoading },
+            within: Self.settleLimit,
+        )
 
-        #expect(viewModel.state.failure == nil)
+        #expect(loadingStopped == false)
 
         await currentGate.open()
-        #expect(await waitUntil { viewModel.state.exchangeRate == Self.jpyRate })
+        #expect(await waitUntil { !viewModel.state.isLoading })
+        #expect(viewModel.state.exchangeRate == Self.jpyRate)
         #expect(viewModel.state.failure == nil)
     }
 

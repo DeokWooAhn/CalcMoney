@@ -58,3 +58,24 @@ private final nonisolated class OnceResumer: Sendable {
         continuation?.resume()
     }
 }
+
+/// 조건이 상한 안에 참이 되면 `true`, 끝내 안 되면 `false`를 반환한다.
+///
+/// "일어나지 않아야 한다"를 검사할 때 쓴다. 그런 조건은 상태가 바뀌지 않으므로
+/// 상한 없는 `waitUntil(_:)`로는 기다릴 수 없고, 기다리지 않고 바로 보면
+/// 아직 처리되기 전이라 통과해 버린다.
+///
+/// 관찰 추적 대신 폴링한다. 일어나지 않을 변화를 기다리는 것이라 깨울 알림이 없다.
+/// 중간의 `sleep`이 MainActor 를 놓아 주므로 검사 대상 Task 가 그동안 진행한다.
+@MainActor
+@discardableResult
+func waitUntil(_ condition: () -> Bool, within limit: Duration) async -> Bool {
+    let deadline = ContinuousClock.now + limit
+    while ContinuousClock.now < deadline {
+        if condition() {
+            return true
+        }
+        try? await Task.sleep(for: .milliseconds(5))
+    }
+    return condition()
+}

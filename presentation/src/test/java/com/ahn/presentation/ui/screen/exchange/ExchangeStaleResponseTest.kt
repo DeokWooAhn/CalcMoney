@@ -165,6 +165,45 @@ class ExchangeStaleResponseTest : BehaviorSpec({
         }
     }
 
+    Given("이전 통화쌍 조회가 실패해도 새 조회가 아직 끝나지 않았을 때") {
+        When("이전 조회의 실패 응답이 먼저 도착하면") {
+            Then("진행 중인 조회의 로딩 표시가 꺼지지 않아야 한다") {
+                runTest(testDispatcher) {
+                    coEvery { getExchangeRateUseCase("USD", "JPY") } coAnswers {
+                        delay(SLOW_RESPONSE_MILLIS * 2)
+                        JPY_RATE
+                    }
+                    val viewModel = createViewModel()
+
+                    viewModel.test(this) {
+                        expectInitialState()
+                        runOnCreate()
+                        runCurrent()
+
+                        viewModel.processIntent(ExchangeContract.Intent.SelectToCurrency(jpy))
+                        runCurrent()
+
+                        viewModel.container.stateFlow.value.isLoading shouldBe true
+
+                        advanceTimeBy(SLOW_RESPONSE_MILLIS)
+                        runCurrent()
+
+                        viewModel.container.stateFlow.value.isLoading shouldBe true
+                        viewModel.container.stateFlow.value.failure shouldBe null
+
+                        advanceTimeBy(SLOW_RESPONSE_MILLIS)
+                        runCurrent()
+
+                        viewModel.container.stateFlow.value.isLoading shouldBe false
+                        viewModel.container.stateFlow.value.exchangeRate shouldBe JPY_RATE
+                        viewModel.container.stateFlow.value.failure shouldBe null
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+    }
+
     Given("환율 조회가 느리게 실패하는 환율 화면에서") {
         When("사용자가 통화를 바꾸지 않은 채 그 조회가 실패하면") {
             Then("요청한 통화쌍 그대로이므로 실패 상태가 되어야 한다") {

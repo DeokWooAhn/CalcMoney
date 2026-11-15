@@ -12,6 +12,22 @@ public struct ExchangeState: Equatable {
     public var exchangeRateDate = ""
     public var exchangeRateFetchedAt = 0
     public var isLoading = false
+    public var failure: ExchangeFailure?
 
     public init() {}
+}
+
+public struct ExchangeFailure: Equatable {
+    public enum Scope {
+        case currencies
+        case rate
+    }
+
+    public let scope: Scope
+    public let message: String
+
+    public init(scope: Scope, message: String) {
+        self.scope = scope
+        self.message = message
+    }
 }

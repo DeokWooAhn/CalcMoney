@@ -13,41 +13,15 @@ struct ExchangeView: View {
 
         ScrollView {
             VStack(spacing: 16) {
-                ExchangeInputContainer(
-                    label: L("기준 금액"),
-                    amount: state.fromAmount,
-                    currency: state.fromCurrency,
-                    availableCurrencies: state.availableCurrencies,
-                    favoriteCurrencyCodes: state.favoriteCurrencyCodes,
-                    isEditable: true,
-                    onAmountChange: { viewModel.send(.updateFromAmount($0)) },
-                    onCurrencySelected: { viewModel.send(.selectFromCurrency($0)) },
-                    onToggleFavorite: { viewModel.send(.toggleFavorite($0)) },
-                    amountTestID: "exchange.from.amount",
-                )
-                .accessibilityElement(children: .contain)
-                .accessibilityIdentifier("exchange.from")
-
-                SwapCurrencyButton {
-                    viewModel.send(.swapCurrencies)
+                if let failure = state.failure, failure.scope == .currencies {
+                    LoadFailureMessage(message: failure.message) {
+                        viewModel.send(.loadCurrencies)
+                    }
+                    .padding(.top, 72)
+                    .accessibilityIdentifier("exchange.failure")
+                } else {
+                    exchangeBody(state: state)
                 }
-
-                ExchangeInputContainer(
-                    label: L("받을 금액"),
-                    amount: state.toAmount,
-                    currency: state.toCurrency,
-                    availableCurrencies: state.availableCurrencies,
-                    favoriteCurrencyCodes: state.favoriteCurrencyCodes,
-                    isEditable: false,
-                    onAmountChange: { _ in },
-                    onCurrencySelected: { viewModel.send(.selectToCurrency($0)) },
-                    onToggleFavorite: { viewModel.send(.toggleFavorite($0)) },
-                    amountTestID: "exchange.to.amount",
-                )
-                .accessibilityElement(children: .contain)
-                .accessibilityIdentifier("exchange.to")
-
-                ExchangeRateInfoView(state: state)
             }
             .padding(.horizontal, 10)
             .padding(.top, 8)
@@ -79,6 +53,52 @@ struct ExchangeView: View {
         .navigationTitle(L("환율"))
         .navigationBarTitleDisplayMode(.inline)
         .scrollDismissesKeyboard(.interactively)
+    }
+
+    @ViewBuilder
+    private func exchangeBody(state: ExchangeState) -> some View {
+        ExchangeInputContainer(
+            label: L("기준 금액"),
+            amount: state.fromAmount,
+            currency: state.fromCurrency,
+            availableCurrencies: state.availableCurrencies,
+            favoriteCurrencyCodes: state.favoriteCurrencyCodes,
+            isEditable: true,
+            onAmountChange: { viewModel.send(.updateFromAmount($0)) },
+            onCurrencySelected: { viewModel.send(.selectFromCurrency($0)) },
+            onToggleFavorite: { viewModel.send(.toggleFavorite($0)) },
+            amountTestID: "exchange.from.amount",
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("exchange.from")
+
+        SwapCurrencyButton {
+            viewModel.send(.swapCurrencies)
+        }
+
+        ExchangeInputContainer(
+            label: L("받을 금액"),
+            amount: state.toAmount,
+            currency: state.toCurrency,
+            availableCurrencies: state.availableCurrencies,
+            favoriteCurrencyCodes: state.favoriteCurrencyCodes,
+            isEditable: false,
+            onAmountChange: { _ in },
+            onCurrencySelected: { viewModel.send(.selectToCurrency($0)) },
+            onToggleFavorite: { viewModel.send(.toggleFavorite($0)) },
+            amountTestID: "exchange.to.amount",
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("exchange.to")
+
+        if let failure = state.failure, failure.scope == .rate {
+            LoadFailureMessage(message: failure.message) {
+                viewModel.send(.refreshExchangeRates)
+            }
+            .accessibilityIdentifier("exchange.rate.failure")
+        } else {
+            ExchangeRateInfoView(state: state)
+        }
     }
 }
 

@@ -135,6 +135,7 @@ struct CalculatorViewModelOrderingTests {
 
         #expect(viewModel.state.exchangeRate == 3.0)
         #expect(sideEffects.snackbarMessages.isEmpty)
+        #expect(viewModel.state.exchangeFailure == nil)
     }
 
     @Test("5. 시작 로드가 끝나지 않아도 = 결과가 바로 나온다")

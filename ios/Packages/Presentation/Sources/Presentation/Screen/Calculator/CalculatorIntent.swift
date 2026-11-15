@@ -21,4 +21,5 @@ public enum CalculatorIntent: Equatable {
     case selectExchangeCurrency(CurrencyInfo)
     case toggleFavorite(String)
     case swapExchangeCurrencies
+    case retryExchange
 }

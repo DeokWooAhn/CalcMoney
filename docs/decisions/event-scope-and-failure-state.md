@@ -107,9 +107,16 @@ State가 실패를 담아야 한다. `isLoading`만으로는 화면이 "데이�
   두 플랫폼의 환율 조회 catch에 성공 경로와 같은 가드를 넣었다.
   계산기의 통화 목록 로드는 요청 번호가 없어, 목록을 이미 받았으면 늦은 실패를 반영하지 않는 것으로 갈음했다.
 
-  이 시나리오를 고정하는 테스트는 아직 없다. 환율 화면 테스트가 실패 경로 전용으로 짜여 있어
-  성공 경로를 타는 mock을 새로 갖춰야 한다. 다음에 할 일이다.
+  2026-11-15 두 플랫폼에 이 시나리오를 고정하는 테스트를 넣었다.
+  Android `ExchangeStaleResponseTest`, iOS `ExchangeViewModelStaleResponseTests`다.
+  각각 가드를 지우면 실패하는 것까지 확인했고, 통화쌍이 그대로일 때는 실패가 보여야 한다는
+  대조 시나리오를 함께 둬서 가드가 정상 실패까지 막지 않는지도 본다.
   iOS 계산기 쪽은 `CalculatorViewModelOrderingTests`의 4-2가 `exchangeFailure == nil`까지 본다.
+
+  iOS 쪽은 처음에 가드를 지워도 통과했다. 지난 요청이 무시되면 상태가 바뀌지 않아
+  "바뀌지 않음"을 기다릴 수 없어서다. `performFetchExchangeRate`의 `defer { isLoading = false }`가
+  가드로 빠져나간 뒤에도 돌기 때문에, 새 요청을 문 뒤에 붙잡아 두고 `isLoading`이 꺼지는 것을
+  지난 요청의 처리 완료 신호로 삼아 풀었다. 늦은 응답을 검사하는 테스트는 이 신호부터 정해야 한다.
 
 - **남은 빚**: `CalculatorViewModel.swift`(iOS)가 SwiftLint 한도인 400줄에 딱 닿아 있다.
   이번에 빈 줄을 줄여 맞췄다. 다음에 손댈 때는 환율 조회 흐름을 별도 파일로 빼는 편이 좋다.

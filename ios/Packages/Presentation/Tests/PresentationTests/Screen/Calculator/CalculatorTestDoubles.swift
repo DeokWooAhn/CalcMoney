@@ -240,6 +240,7 @@ struct FakeCurrencySelectionRepository: CurrencySelectionRepository {
     var savedSelection = CalculatorCurrencySelection(mainCode: nil, subCode: nil)
     /// 통화 코드별 저장 지연. 저장이 끝나는 순서를 탭 순서와 어긋나게 만들어 레이스를 재현한다.
     var saveDelays: [String: Duration] = [:]
+    var savedExchangeSelection = ExchangeCurrencySelection(fromCode: nil, toCode: nil)
 
     func calculatorSelection() async throws -> CalculatorCurrencySelection {
         savedSelection
@@ -259,7 +260,7 @@ struct FakeCurrencySelectionRepository: CurrencySelectionRepository {
     func saveCalculatorSelection(mainCode _: String, subCode _: String) async throws {}
 
     func exchangeSelection() async throws -> ExchangeCurrencySelection {
-        ExchangeCurrencySelection(fromCode: nil, toCode: nil)
+        savedExchangeSelection
     }
 
     func saveExchangeFromCurrencyCode(_: String) async throws {}

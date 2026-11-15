@@ -47,10 +47,18 @@ public final class <Feature>ViewModel {
 - 상태 변경은 `@Observable` 매크로로 (Combine의 `@Published`/`ObservableObject` 사용 금지)
 - 백그라운드 Task나 UseCase 홀더처럼 관찰 대상이 아닌 저장 프로퍼티는 `@ObservationIgnored`
 - one-shot 이벤트는 `SideEffectBus<Effect>` (`Util/SideEffectBus.swift`)로 내보내고, View에서 `.task { for await effect in viewModel.sideEffects() { ... } }`로 소비 (`.onAppear` + Task 금지, 취소가 자동으로 안 붙음)
+- **SideEffect는 사용자가 한 동작의 결과에만 쓴다.** 당겨서 새로고침·즐겨찾기 토글처럼 사용자가 한 일의 성공·실패가 여기에 든다.
+  시작 로드나 값이 바뀌며 딸려 도는 조회처럼 **자동으로 돌아간 일의 실패는 `State`에 담는다**
+  (`ExchangeState.failure`, `CalculatorState.exchangeFailure`).
+  `SideEffectBus`는 구독자가 없으면 64개까지 쌓았다가 다음 구독자에게 보내므로, 보지도 않던 화면의 오류가
+  나중에 엉뚱한 탭에서 뜬다. 공유 `ExchangeViewModel`을 세 탭이 각자 구독해 더 잘 드러난다.
+  기준과 표시 방법은 `docs/decisions/event-scope-and-failure-state.md`. 공통 표시는 `Component/LoadFailureMessage.swift`
 - **비동기 intent가 겹치면 상태가 꼬인다.** `@MainActor`만으로는 `await` 지점에서 다른 intent가 끼어드는 걸 막지 못함(커밋 `674116b`). 그렇다고 모든 intent를 한 큐에 넣으면 계산이 네트워크 조회를 기다린다. `CalculatorViewModel`처럼 일을 셋으로 나눈다(`docs/decisions/calculator-intent-ordering.md`, Android와 같은 원칙)
   - 확정: 결과·선택은 `await` 전에 `state`에 반영한다. 다음 intent는 반영된 상태를 읽는다
   - 저장: 로컬 저장만 `enqueuePersistence(_:)` Task 사슬로 탭 순서대로. 사슬 안에서 다시 `enqueuePersistence`를 부르면 교착된다
-  - 조회: 기다리지 않고 따로 돌리고, 요청 번호·취소·대상(통화쌍)을 확인한 응답만 반영한다
+  - 조회: 기다리지 않고 따로 돌리고, 요청 번호·취소·대상(통화쌍)을 확인한 응답만 반영한다.
+    **성공 경로뿐 아니라 `catch`에도 같은 확인을 둔다.** 실패를 `State`에 담으면 지난 요청의 실패가
+    이미 성공한 화면 위에 남는다. 스낵바일 때는 잠깐 떴다 사라져 드러나지 않던 문제다
 - 순수 상태 계산이 복잡하면 별도 struct로 추출 — `CalculatorExpressionReducer.swift` 참조
 
 ## UseCase 규칙 (`Packages/Domain/Sources/Domain/<feature>/UseCase/`)

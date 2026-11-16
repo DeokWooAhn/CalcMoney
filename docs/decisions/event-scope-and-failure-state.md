@@ -107,9 +107,32 @@ State가 실패를 담아야 한다. `isLoading`만으로는 화면이 "데이�
   두 플랫폼의 환율 조회 catch에 성공 경로와 같은 가드를 넣었다.
   계산기의 통화 목록 로드는 요청 번호가 없어, 목록을 이미 받았으면 늦은 실패를 반영하지 않는 것으로 갈음했다.
 
-  이 시나리오를 고정하는 테스트는 아직 없다. 환율 화면 테스트가 실패 경로 전용으로 짜여 있어
-  성공 경로를 타는 mock을 새로 갖춰야 한다. 다음에 할 일이다.
+  2026-11-15 두 플랫폼에 이 시나리오를 고정하는 테스트를 넣었다.
+  Android `ExchangeStaleResponseTest`, iOS `ExchangeViewModelStaleResponseTests`다.
+  각각 가드를 지우면 실패하는 것까지 확인했고, 통화쌍이 그대로일 때는 실패가 보여야 한다는
+  대조 시나리오를 함께 둬서 가드가 정상 실패까지 막지 않는지도 본다.
   iOS 계산기 쪽은 `CalculatorViewModelOrderingTests`의 4-2가 `exchangeFailure == nil`까지 본다.
+
+  iOS 쪽은 처음에 가드를 지워도 통과했다. 지난 요청이 무시되면 상태가 바뀌지 않아
+  "바뀌지 않음"을 기다릴 수 없어서다. 처음에는 `performFetchExchangeRate`의
+  `defer { isLoading = false }`가 가드로 빠져나간 뒤에도 도는 것을 처리 완료 신호로 삼았는데,
+  **그것 자체가 버그였다**(CodeRabbit이 찾음). 지난 응답이 그 사이 시작된 요청의 스피너까지 꺼 버린다.
+  신호로 쓰면 버그를 정답으로 고정하게 된다.
+
+  "일어나지 않아야 한다"는 상한 있는 대기로 직접 검사한다
+  (`ObservationWait.swift`의 `waitUntil(_:within:)`). 관찰 추적 대신 폴링하는데,
+  일어나지 않을 변화에는 깨울 알림이 없기 때문이다.
+
+- **지난 응답이 현재 요청의 로딩 표시를 끄던 것을 고쳤다** (2026-11-15, iOS만)
+  `performFetchExchangeRate`가 `defer { state.isLoading = false }`로 해제를 한 곳에 모았는데,
+  가드로 빠져나간 지난 응답도 그 `defer`를 지난다. 그래서 통화를 바꿔 새 조회가 도는 중에
+  지난 응답이 도착하면 스피너가 일찍 사라졌다. 초기 로드가 환율 조회를 품고 있어 중첩 호출도 같았다.
+
+  진행 중인 요청을 세어 모두 끝났을 때만 끈다(`beginLoading`·`endLoading`).
+  통화쌍만 보는 조건으로는 중첩 호출을 못 잡는다.
+
+  **Android에는 이 문제가 없다.** 통화 목록을 받은 직후 로딩을 끄고 환율 조회가 다시 켜는 구조라
+  중첩이 겹치지 않고, 가드로 `return`하면 `isLoading`을 건드리지 않는다. 고친 iOS가 Android와 같아졌다.
 
 - **남은 빚**: `CalculatorViewModel.swift`(iOS)가 SwiftLint 한도인 400줄에 딱 닿아 있다.
   이번에 빈 줄을 줄여 맞췄다. 다음에 손댈 때는 환율 조회 흐름을 별도 파일로 빼는 편이 좋다.

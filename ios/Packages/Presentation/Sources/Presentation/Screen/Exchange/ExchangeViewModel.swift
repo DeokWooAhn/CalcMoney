@@ -17,6 +17,7 @@ public final class ExchangeViewModel {
     @ObservationIgnored private let sideEffectBus = SideEffectBus<ExchangeSideEffect>()
     @ObservationIgnored private var observeFavoritesTask: Task<Void, Never>?
     @ObservationIgnored private var loadCurrenciesTask: Task<Void, Never>?
+    @ObservationIgnored private var inFlightLoadCount = 0
 
     public init(
         exchangeUseCases: ExchangeUseCases,
@@ -120,8 +121,8 @@ public final class ExchangeViewModel {
     }
 
     private func performLoadCurrencies() async {
-        state.isLoading = true
-        defer { state.isLoading = false }
+        beginLoading()
+        defer { endLoading() }
 
         do {
             let currencies = try await exchangeUseCases.getSupportedCurrencies()
@@ -192,10 +193,8 @@ public final class ExchangeViewModel {
         let requestedFrom = fromCurrency.code
         let requestedTo = toCurrency.code
 
-        state.isLoading = true
-        // 아래 stale 응답 가드가 조기 반환하므로 해제를 각 경로에 흩어 두면 빠뜨리기 쉽다.
-        // 실제로 그 경로에서 스피너가 계속 도는 상태로 남을 수 있어 한 곳에 모은다.
-        defer { state.isLoading = false }
+        beginLoading()
+        defer { endLoading() }
 
         do {
             // 여기서 일시 중단(suspend)되어 응답을 기다림 (동시성 꼬임 방지)
@@ -204,7 +203,7 @@ public final class ExchangeViewModel {
             let fetchedAt = try await exchangeUseCases.getLatestFetchedAt()
 
             // 응답이 돌아왔을 때 상태가 이미 바뀌었으면 적용하지 않음
-            guard state.fromCurrency?.code == requestedFrom, state.toCurrency?.code == requestedTo else {
+            guard isCurrentRequest(from: requestedFrom, to: requestedTo) else {
                 return
             }
 
@@ -214,16 +213,37 @@ public final class ExchangeViewModel {
             state.toAmount = exchangeUseCases.exchangeAmount(fromAmount: state.fromAmount, rate: rate)
             state.failure = nil
         } catch {
-            guard state.fromCurrency?.code == requestedFrom, state.toCurrency?.code == requestedTo else {
+            guard isCurrentRequest(from: requestedFrom, to: requestedTo) else {
                 return
             }
             state.failure = ExchangeFailure(scope: .rate, message: error.exchangeRateErrorMessage)
         }
     }
 
-    private func performRefreshExchangeRates() async {
+    private func isCurrentRequest(from: String, to: String) -> Bool {
+        state.fromCurrency?.code == from && state.toCurrency?.code == to
+    }
+
+    /// 로딩 표시는 진행 중인 요청이 모두 끝났을 때만 끈다.
+    ///
+    /// 해제를 각 경로에 흩어 두면 빠뜨려 스피너가 계속 도는 상태로 남기 쉬우므로 `defer`로 모으는데,
+    /// 그대로 두면 지난 요청이 끝나면서 그 사이 시작된 요청의 스피너까지 꺼 버린다.
+    /// 초기 로드가 환율 조회를 품고 있어 중첩 호출도 같은 문제를 일으킨다.
+    private func beginLoading() {
+        inFlightLoadCount += 1
         state.isLoading = true
-        defer { state.isLoading = false }
+    }
+
+    private func endLoading() {
+        inFlightLoadCount = max(0, inFlightLoadCount - 1)
+        if inFlightLoadCount == 0 {
+            state.isLoading = false
+        }
+    }
+
+    private func performRefreshExchangeRates() async {
+        beginLoading()
+        defer { endLoading() }
 
         do {
             try await exchangeUseCases.refreshExchangeRates()

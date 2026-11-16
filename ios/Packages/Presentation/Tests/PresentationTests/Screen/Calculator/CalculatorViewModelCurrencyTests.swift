@@ -11,10 +11,21 @@ struct CalculatorViewModelCurrencyTests {
     private static let eur = CurrencyInfo(code: "EUR", displayCode: "EUR", name: "유로", flagEmoji: "🇪🇺")
     private static let jpy = CurrencyInfo(code: "JPY", displayCode: "JPY", name: "엔", flagEmoji: "🇯🇵")
 
-    private static func makeViewModel(recorder: CalculatorTestRecorder) -> CalculatorViewModel {
+    /// 통화쌍마다 다른 값을 줘서 화면에 반영된 환율이 어느 쌍의 것인지 값만 보고 가릴 수 있게 한다.
+    private static let usdRate = 150.0
+    private static let eurRate = 160.0
+
+    private static func makeViewModel(
+        recorder: CalculatorTestRecorder,
+        rateScript: RateScript = RateScript(),
+    ) -> CalculatorViewModel {
         CalculatorTestEnvironment.makeViewModel(
             history: FakeCalculatorHistoryRepository(recorder: recorder),
-            exchangeRate: FakeExchangeRateRepository(recorder: recorder, currencies: [krw, usd, eur, jpy]),
+            exchangeRate: FakeExchangeRateRepository(
+                recorder: recorder,
+                currencies: [krw, usd, eur, jpy],
+                rateScript: rateScript,
+            ),
             currencySelection: FakeCurrencySelectionRepository(
                 recorder: recorder,
                 // 저장된 선택을 고정해 초기 통화가 기기 로케일에 좌우되지 않게 한다.
@@ -84,7 +95,13 @@ struct CalculatorViewModelCurrencyTests {
     @Test("환율은 마지막에 고른 통화쌍으로 조회된다")
     func 환율은_마지막_통화쌍으로_조회된다() async {
         let recorder = CalculatorTestRecorder()
-        let viewModel = Self.makeViewModel(recorder: recorder)
+        let viewModel = Self.makeViewModel(
+            recorder: recorder,
+            rateScript: RateScript([
+                "USD->JPY": [RateStep(rate: Self.usdRate)],
+                "EUR->JPY": [RateStep(rate: Self.eurRate)],
+            ]),
+        )
 
         await Self.waitForInitialLoad(viewModel)
 
@@ -93,9 +110,13 @@ struct CalculatorViewModelCurrencyTests {
 
         await Self.waitForCurrencySelections(viewModel, recorder: recorder)
 
-        // 화면에 남은 통화와 마지막으로 조회한 환율의 통화쌍이 어긋나면 안 된다.
+        // 화면에 남은 통화와 화면에 반영된 환율의 통화쌍이 어긋나면 안 된다.
+        //
+        // 요청이 기록된 순서로 보지 않는다. 앞선 선택의 조회는 취소돼도 이미 시작했으면 기록되고,
+        // 두 Task 중 어느 쪽이 먼저 기록에 닿을지는 정해져 있지 않다. 반영된 값으로 봐야 한다.
         let pairs = await recorder.requestedRatePairs
-        #expect(pairs.last == "EUR->JPY")
+        #expect(pairs.contains("EUR->JPY"))
         #expect(viewModel.state.mainExchangeCurrency?.code == "EUR")
+        #expect(viewModel.state.exchangeRate == Self.eurRate)
     }
 }

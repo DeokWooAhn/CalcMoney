@@ -142,6 +142,7 @@ private fun ExchangeContent(
             LoadFailureMessage(
                 message = failure.message.asString(context),
                 onRetry = { onIntent(ExchangeContract.Intent.LoadCurrencies) },
+                isRetrying = state.isLoading,
                 testTagName = "exchange.failure",
             )
         }
@@ -197,6 +198,7 @@ private fun ExchangeContent(
             LoadFailureMessage(
                 message = failure.message.asString(context),
                 onRetry = { onIntent(ExchangeContract.Intent.RefreshExchangeRates) },
+                isRetrying = state.isLoading,
                 testTagName = "exchange.rate.failure",
             )
         } else {

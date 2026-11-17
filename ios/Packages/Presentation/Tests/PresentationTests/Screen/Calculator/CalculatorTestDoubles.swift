@@ -168,8 +168,12 @@ struct FakeExchangeRateRepository: ExchangeRateRepository {
     var rateDate = ""
     /// 새로고침이 즉시 끝나지 않는 상황을 흉내 낸다. 호출자가 완료를 기다리는지 검증할 때 쓴다.
     var refreshDelay: Duration = .zero
+    /// 새로고침을 이 문이 열릴 때까지 붙잡아 둔다. 다시 시도가 진행 중인 상황을 만든다.
+    var refreshGate: TestGate?
     /// 통화 목록 조회를 이 문이 열릴 때까지 붙잡아 둔다. 시작 로드가 끝나지 않은 상황을 만든다.
     var currenciesGate: TestGate?
+    /// 통화 목록 조회를 늘 실패시킨다. 네트워크가 끊긴 채 캐시도 없는 상황을 만든다.
+    var currenciesError: (any Error)?
     var rateScript = RateScript()
 
     func exchangeRate(from: String, to: String) async throws -> Double {
@@ -205,6 +209,7 @@ struct FakeExchangeRateRepository: ExchangeRateRepository {
     func refreshExchangeRates() async throws {
         await Task.yield()
 
+        await refreshGate?.wait()
         if refreshDelay > .zero {
             try? await Task.sleep(for: refreshDelay)
         }
@@ -215,6 +220,9 @@ struct FakeExchangeRateRepository: ExchangeRateRepository {
     func supportedCurrencies() async throws -> [CurrencyInfo] {
         if let currenciesGate {
             await currenciesGate.wait()
+        }
+        if let currenciesError {
+            throw currenciesError
         }
 
         return currencies

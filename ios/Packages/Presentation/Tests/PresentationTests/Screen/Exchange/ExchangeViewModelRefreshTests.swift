@@ -9,13 +9,21 @@ struct ExchangeViewModelRefreshTests {
     private static let krw = CurrencyInfo(code: "KRW", displayCode: "KRW", name: "원", flagEmoji: "🇰🇷")
     private static let usd = CurrencyInfo(code: "USD", displayCode: "USD", name: "달러", flagEmoji: "🇺🇸")
 
-    private static func makeViewModel(recorder: CalculatorTestRecorder) -> ExchangeViewModel {
+    private static func makeViewModel(
+        recorder: CalculatorTestRecorder,
+        refreshGate: TestGate? = nil,
+        currenciesError: (any Error)? = nil,
+        rateScript: RateScript = RateScript(),
+    ) -> ExchangeViewModel {
         let exchangeRepository = FakeExchangeRateRepository(
             recorder: recorder,
             currencies: [krw, usd],
             rateDate: "2026-08-06",
             // 새로고침이 즉시 끝나지 않게 해서 완료를 기다리는지 확인한다.
             refreshDelay: .milliseconds(80),
+            refreshGate: refreshGate,
+            currenciesError: currenciesError,
+            rateScript: rateScript,
         )
         let favoriteRepository = FakeFavoriteCurrencyRepository()
         let selectionRepository = FakeCurrencySelectionRepository(recorder: recorder)
@@ -105,5 +113,75 @@ struct ExchangeViewModelRefreshTests {
         await viewModel.refreshExchangeRates()
 
         #expect(viewModel.state.isLoading == false)
+    }
+
+    // MARK: - 실패 상태에서 다시 시도
+
+    @Test("환율을 못 받은 상태에서 다시 시도하는 동안 실패 표시와 즐겨찾기 입력이 그대로다")
+    func 환율_실패_중_다시_시도하는_동안_실패와_즐겨찾기_입력이_그대로다() async {
+        let recorder = CalculatorTestRecorder()
+        let refreshGate = TestGate()
+        let unavailable = ExchangeRateError.temporarilyUnavailable()
+        // 시작 로드와 새로고침이 각각 한 번씩 환율을 조회하고 둘 다 실패한다.
+        let viewModel = Self.makeViewModel(
+            recorder: recorder,
+            refreshGate: refreshGate,
+            rateScript: RateScript(["USD->KRW": [RateStep(error: unavailable), RateStep(error: unavailable)]]),
+        )
+
+        await Self.assertRetryKeepsFailure(
+            viewModel: viewModel,
+            recorder: recorder,
+            refreshGate: refreshGate,
+            scope: .rate,
+        )
+    }
+
+    @Test("통화 목록을 못 받은 상태에서 다시 시도하는 동안 실패 표시와 즐겨찾기 입력이 그대로다")
+    func 통화_목록_실패_중_다시_시도하는_동안_실패와_즐겨찾기_입력이_그대로다() async {
+        let recorder = CalculatorTestRecorder()
+        let refreshGate = TestGate()
+        let viewModel = Self.makeViewModel(
+            recorder: recorder,
+            refreshGate: refreshGate,
+            currenciesError: ExchangeRateError.temporarilyUnavailable(),
+        )
+
+        await Self.assertRetryKeepsFailure(
+            viewModel: viewModel,
+            recorder: recorder,
+            refreshGate: refreshGate,
+            scope: .currencies,
+        )
+    }
+
+    /// 즐겨찾기 화면의 실패 분기는 `FavoriteRateInputSnapshot`이 바뀌지 않아야 새로고침 내내 유지된다.
+    /// 바뀌면 즐겨찾기 다시 계산이 돌면서 `favoriteState.isLoading` 분기가 먼저 걸려
+    /// 다시 시도 버튼과 그 진행 표시가 사라진다.
+    /// 새로고침이 실패로 끝나도 실패 표시는 남고, 결과는 스낵바로만 알린다.
+    private static func assertRetryKeepsFailure(
+        viewModel: ExchangeViewModel,
+        recorder: CalculatorTestRecorder,
+        refreshGate: TestGate,
+        scope: ExchangeFailure.Scope,
+    ) async {
+        #expect(await waitUntil { viewModel.state.failure != nil && !viewModel.state.isLoading })
+        #expect(viewModel.state.failure?.scope == scope)
+        let inputBeforeRetry = FavoriteRateInputSnapshot(viewModel.state)
+
+        viewModel.send(.refreshExchangeRates)
+        #expect(await waitUntil { viewModel.state.isLoading })
+
+        // 새로고침이 문 앞에 멈춰 있는 동안. 다시 시도 버튼이 진행 표시를 보여야 하는 구간이다.
+        #expect(viewModel.state.failure?.scope == scope)
+        #expect(FavoriteRateInputSnapshot(viewModel.state) == inputBeforeRetry)
+
+        await refreshGate.open()
+        #expect(await waitUntil { !viewModel.state.isLoading })
+
+        let refreshCount = await recorder.refreshCount
+        #expect(refreshCount == 1)
+        #expect(viewModel.state.failure?.scope == scope)
+        #expect(FavoriteRateInputSnapshot(viewModel.state) == inputBeforeRetry)
     }
 }

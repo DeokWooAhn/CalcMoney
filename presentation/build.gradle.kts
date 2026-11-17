@@ -98,6 +98,7 @@ android {
     }
 
     testOptions {
+        unitTests.isIncludeAndroidResources = true
         unitTests.all {
             it.useJUnitPlatform()
         }
@@ -107,6 +108,17 @@ android {
 // debug만 묶는다. release variant 태스크는 이름에 Release가 들어가 AdMob 시크릿 검증에 걸린다.
 kover {
     currentProject {
+        // Robolectric이 화면 파일을 로드하면 루트 annotatedBy(Composable)이 람다 본문을 빼지 못해 수치가 떨어진다.
+        // 루트 리포트 필터도 로드된 클래스에는 듣지 않았다(2026-11-17 측정, docs/decisions/compose-ui-tests-robolectric.md).
+        // UI 전용 파일은 계측에서 뺀다. Compose UI 테스트로 새 UI 파일을 다루면 여기에 더한다.
+        instrumentation {
+            excludedClasses.addAll(
+                "com.ahn.presentation.*ScreenKt*",
+                "com.ahn.presentation.ui.component.LoadFailureMessageKt*",
+                "com.ahn.presentation.ui.component.AdMobBannerKt*",
+                "com.ahn.presentation.ui.component.CustomSnackbarKt*",
+            )
+        }
         createVariant("unit") {
             add("debug")
         }
@@ -145,6 +157,15 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+
+    // Compose UI 테스트: Robolectric으로 JVM에서 실행한다.
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    // 테스트용 ComponentActivity를 manifest에 넣는다. testImplementation이라 앱 디버그 APK에는 섞이지 않는다.
+    testImplementation(libs.androidx.compose.ui.test.manifest)
+    testImplementation(libs.robolectric)
+    // JUnit4 테스트를 기존 JUnit5 플랫폼에서 실행한다.
+    testRuntimeOnly(libs.junit.vintage.engine)
 
     // Orbit MVI
     implementation(libs.orbit.viewmodel)

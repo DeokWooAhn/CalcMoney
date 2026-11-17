@@ -43,7 +43,9 @@ Given("선택한 통화가 즐겨찾기에 없는 상태에서") {
 - 노드는 화면에 이미 붙은 `testTag`(Maestro와 같은 `영역.이름` 규칙)로 먼저 찾는다. 문구는 리소스에서 읽고 문자열을 테스트에 박지 않는다.
 - 테스트 이름은 백틱 안 한국어 문장으로 쓴다. JVM 테스트라 공백을 쓸 수 있다.
 - 대조 시나리오를 함께 둔다. 한쪽 단언만으로는 늘 같은 값을 내는 구현도 통과한다.
-- 첫 실행 때 Robolectric이 Android 런타임 jar(약 225MB)를 `~/.m2`에 받는다.
+- 테스트 SDK는 `presentation/src/test/resources/robolectric.properties`에서 34로 고정한다. Robolectric은 SDK 35 이상을 Java 21에서만 돌리는데 프로젝트·CI는 JDK 17이다.
+  로컬 Gradle이 JDK 21(Android Studio의 JBR 21 등)로 돌면 이 고정이 없어도 통과해 CI 실패를 놓친다. CI와 같은 JDK 17로도 돌려 본다.
+- 첫 실행 때 Robolectric이 Android 런타임 jar(SDK 34 기준 약 150MB)를 `~/.m2`에 받는다.
 - 테스트를 더할 때는 아래 "실행"의 커버리지 확인 절차에 따라 전후 수치와 새로 집계된 클래스를 확인한다.
 - 레퍼런스:
   - `presentation/src/test/java/com/ahn/presentation/ui/component/LoadFailureMessageTest.kt`

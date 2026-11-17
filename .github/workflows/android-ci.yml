@@ -85,18 +85,18 @@ jobs:
             app/manifestShield/releaseAndroidManifest.sources.txt
           ./gradlew --no-daemon :app:dependencyGuard :app:manifestShield
 
-      # Robolectric 버전과 SDK를 읽어 런타임 jar가 바뀌면 새 캐시를 저장한다.
+      # Robolectric 버전과 테스트 SDK(robolectric.properties의 sdk)를 읽어 런타임 jar가 바뀌면 새 캐시를 저장한다.
       - name: Read Robolectric version and SDK
         id: robolectric
         run: |
           ROBOLECTRIC_VERSION=$(grep -E '^robolectric = "' gradle/libs.versions.toml | cut -d'"' -f2)
           test -n "$ROBOLECTRIC_VERSION"
           echo "version=$ROBOLECTRIC_VERSION" >> "$GITHUB_OUTPUT"
-          ROBOLECTRIC_SDK=$(grep -E '^\s*compileSdk = ' presentation/build.gradle.kts | grep -oE '[0-9]+$')
+          ROBOLECTRIC_SDK=$(grep -E '^sdk=' presentation/src/test/resources/robolectric.properties | cut -d= -f2)
           test -n "$ROBOLECTRIC_SDK"
           echo "sdk=$ROBOLECTRIC_SDK" >> "$GITHUB_OUTPUT"
 
-      # Robolectric은 첫 실행 때 약 225MB의 Android 런타임 jar를 받으므로 캐시한다.
+      # Robolectric은 첫 실행 때 Android 런타임 jar(SDK 34 기준 약 150MB)를 받으므로 캐시한다.
       - name: Cache Robolectric runtime
         uses: actions/cache@v4
         with:

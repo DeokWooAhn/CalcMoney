@@ -25,8 +25,13 @@
 - Compose BOM이 고른 `ui-test-junit4`는 1.9.0, JUnit4는 4.13.2였다.
   `ui-test-manifest`를 빼면 실패했고 `testImplementation`으로 넣으면 성공했다.
   테스트용 `ComponentActivity`는 필요하지만 앱 디버그 APK에 넣을 필요는 없다.
-- SDK 36의 `android-all-instrumented/16-robolectric-13921718-2-i7` 런타임 jar 약 225MB를
-  첫 실행 때 `~/.m2`에 받았다. CI에서는 `~/.m2/repository/org/robolectric`을 캐시한다.
+- 테스트 SDK는 `presentation/src/test/resources/robolectric.properties`에서 34로 고정한다.
+  고정하지 않으면 Robolectric이 `compileSdk`인 36을 고르는데, SDK 35 이상은 Java 21이 필요하다.
+  CI(JDK 17)에서 두 테스트 클래스가 `Failed to create a Robolectric sandbox: Android SDK 36 requires Java 21 (have Java 17)`로
+  실패했고, 로컬에서 JDK 17로 같은 실패를 재현했다. 처음 시험과 로컬 검증은 Gradle이 JBR 21로 돌아 이 문제가 드러나지 않았다.
+  SDK 34로 고정한 뒤 JDK 17·21 모두에서 통과했다. 프로젝트와 CI의 JVM 17 기준을 바꾸지 않으려고 CI를 JDK 21로 올리지 않았다.
+- SDK 34 런타임 jar(`android-all-instrumented/14-robolectric-10818077-i7`, 약 144MB)를 첫 실행 때 `~/.m2`에 받는다.
+  CI에서는 `~/.m2/repository/org/robolectric`을 Robolectric 버전과 테스트 SDK를 키로 캐시한다.
 - `LoadFailureMessage`는 재시도 중 버튼 비활성·진행 표시를 제공한다.
   `FavoriteScreen`은 상태를 받는 공개 함수이고 `canRequestAds = false`로 광고 요청 없이 그릴 수 있다.
   따라서 기기 없이 실패 분기와 재시도 동작을 시맨틱 수준에서 검사할 수 있다.
@@ -61,6 +66,7 @@
 ## 확인하지 않은 것
 
 - Kover(0.9.11)가 로드된 클래스에 리포트 필터를 적용하지 못하는 원인.
+- 앱이 대상으로 하는 SDK 36과 테스트 SDK 34의 프레임워크 차이가 Compose 시맨틱 결과에 영향을 주는지. 지금 테스트는 34에서만 돈다.
 - 즐겨찾기 재시도 중 표시: `FavoriteScreen.kt`의 `FavoriteLoadFailure`는 `LoadFailureMessage`에
   `isRetrying`을 넘기지 않아 다시 시도를 누른 뒤에도 버튼이 켜져 있고 진행 표시가 없다.
   환율 화면은 `isRetrying = state.isLoading`을 넘긴다. `FavoriteScreenTest`는 재시도 중

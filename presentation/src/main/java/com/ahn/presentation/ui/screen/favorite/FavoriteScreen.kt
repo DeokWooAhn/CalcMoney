@@ -216,8 +216,11 @@ private fun ColumnScope.FavoriteRateContent(
             stringResource(R.string.favorite_only_base_currency, favoriteState.baseOnlyFavoriteCode),
         )
 
+        // 다시 시도는 환율 새로고침이라 즐겨찾기 상태가 아니라 환율 상태의 isLoading을 본다.
+        // 새로고침 동안 즐겨찾기 입력은 그대로여서 favoriteState.isLoading이 켜지지 않고 이 분기가 유지된다.
         failure != null -> FavoriteLoadFailure(
             message = failure.message.asString(context),
+            isRetrying = exchangeState.isLoading,
             onRetry = { onExchangeIntent(ExchangeContract.Intent.RefreshExchangeRates) },
         )
 
@@ -228,6 +231,7 @@ private fun ColumnScope.FavoriteRateContent(
 @Composable
 private fun ColumnScope.FavoriteLoadFailure(
     message: String,
+    isRetrying: Boolean,
     onRetry: () -> Unit,
 ) {
     Box(
@@ -239,6 +243,7 @@ private fun ColumnScope.FavoriteLoadFailure(
         LoadFailureMessage(
             message = message,
             onRetry = onRetry,
+            isRetrying = isRetrying,
             testTagName = "favorite.failure",
         )
     }

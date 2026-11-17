@@ -71,7 +71,10 @@ struct FavoriteView: View {
 }
 
 /// Android `LaunchedEffect` 키 대응 — 환율 상태 중 즐겨찾기 계산에 필요한 부분만 비교한다.
-private struct FavoriteRateInputSnapshot: Equatable {
+///
+/// 새로고침 동안 이 값이 바뀌지 않아야 실패 표시의 진행 상태가 끝까지 보인다.
+/// `ExchangeViewModelRefreshTests`가 그것을 이 타입으로 직접 확인하므로 `private`으로 두지 않는다.
+struct FavoriteRateInputSnapshot: Equatable {
     let fromCurrency: CurrencyInfo?
     let favoriteCurrencyCodes: [String]
     let availableCurrencies: [CurrencyInfo]
@@ -111,8 +114,11 @@ private struct FavoriteRateContent: View {
                     .multilineTextAlignment(.center)
             }
         } else if let failure = exchangeState.failure {
+            // 새로고침은 성공하기 전까지 `isLoading` 말고는 상태를 바꾸지 않는다.
+            // 그래서 `FavoriteRateInputSnapshot`이 그대로라 위의 `favoriteState.isLoading` 분기가 끼어들지 않고,
+            // 진행 표시가 이 분기에서 끝까지 보인다.
             CenteredMessage {
-                LoadFailureMessage(message: failure.message, onRetry: onRetry)
+                LoadFailureMessage(message: failure.message, isRetrying: exchangeState.isLoading, onRetry: onRetry)
                     .accessibilityIdentifier("favorite.failure")
             }
         } else {

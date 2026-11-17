@@ -78,8 +78,19 @@ State가 실패를 담아야 한다. `isLoading`만으로는 화면이 "데이�
   - 오류 문구 두 개에 줄바꿈을 넣었다(`Localizable.xcstrings`의 키도 함께 바뀜)
 
   iOS에는 Android에 없는 것이 둘 있어 그대로 살렸다. `ExchangeView`의 당겨서 새로고침(`.refreshable`)과
-  `isLoading` 동안 도는 `ProgressView`다. 그래서 Android에서 본 "다시 시도를 눌러도 눌린 티가 안 난다"는
-  문제가 iOS에는 없다.
+  `isLoading` 동안 도는 `ProgressView`다. 다만 그 `ProgressView`는 환율 화면에만 있어서,
+  Android에서 본 "다시 시도를 눌러도 눌린 티가 안 난다"는 문제가 iOS에도 있었다(2026-11-17 확인).
+  즐겨찾기 화면은 눌러도 아무 변화가 없었고, `send`가 Task만 띄우고 돌아오므로 연타하면 새로고침이 여러 번 나갔다.
+  환율 화면도 오른쪽 위 표시만 돌 뿐 버튼은 켜져 있었다.
+
+  2026-11-17 Android와 같게 `LoadFailureMessage`에 `isRetrying`을 더했다. 진행 중에는 버튼을 끄고
+  글자 앞에 강조색 진행 표시를 둔다. 환율 화면 두 곳과 즐겨찾기 화면이 `ExchangeState.isLoading`을 넘긴다.
+  즐겨찾기 화면은 새로고침 동안 `FavoriteRateInputSnapshot`이 바뀌지 않아 실패 분기가 끝까지 유지된다.
+  `ExchangeViewModelRefreshTests`가 이것을 확인한다.
+  계산기는 `CalculatorState`에 로딩 값이 없어 그대로다(Android도 같다).
+  진행 표시는 버튼 밖에 둔다. 버튼 안에 두면 비활성 버튼의 회색을 따라가 `tint`가 먹지 않는다.
+  이때 호출부의 `accessibilityIdentifier`(`favorite.failure` 등)가 안쪽 `failure.retry`를 덮어
+  Maestro가 다시 시도 버튼을 찾지 못하던 것도 함께 고쳤다(`accessibilityElement(children: .contain)`).
 
 ## 확인 방법
 

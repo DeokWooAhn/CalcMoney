@@ -14,7 +14,7 @@ struct ExchangeView: View {
         ScrollView {
             VStack(spacing: 16) {
                 if let failure = state.failure, failure.scope == .currencies {
-                    LoadFailureMessage(message: failure.message) {
+                    LoadFailureMessage(message: failure.message, isRetrying: state.isLoading) {
                         viewModel.send(.loadCurrencies)
                     }
                     .padding(.top, 72)
@@ -92,7 +92,7 @@ struct ExchangeView: View {
         .accessibilityIdentifier("exchange.to")
 
         if let failure = state.failure, failure.scope == .rate {
-            LoadFailureMessage(message: failure.message) {
+            LoadFailureMessage(message: failure.message, isRetrying: state.isLoading) {
                 viewModel.send(.refreshExchangeRates)
             }
             .accessibilityIdentifier("exchange.rate.failure")

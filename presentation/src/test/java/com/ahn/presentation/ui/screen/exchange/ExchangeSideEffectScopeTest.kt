@@ -57,6 +57,7 @@ import org.orbitmvi.orbit.test.test
  * 자동으로 돈 일의 실패는 side effect로 나가지 않고, 사용자가 누른 새로고침의 실패만 나간다는 것을 고정한다.
  * 그 위에서 Orbit의 side effect가 구독 공백 중 버퍼링되어 다음 구독자에게 발생 순서대로 전달되는지,
  * 동시 구독자가 둘이면 이벤트 하나를 합쳐 한 번만 받는 fan-out인지도 함께 본다. 수신자는 보장하지 않는다.
+ * 합계만 보면 구독자가 하나뿐이어도 통과하므로, 받은 쪽을 끊고 남은 쪽이 다음 이벤트를 받는 것까지 본다.
  * 기준은 `docs/decisions/event-scope-and-failure-state.md`.
  *
  * 첫 시나리오는 orbit-test가 LazyCreate를 우회한 라이브러리 수준 검사이며, 앱의 초기 로드 시점을 재현하지 않는다.
@@ -220,8 +221,8 @@ class ExchangeSideEffectScopeTest : BehaviorSpec({
     }
 
     Given("같은 환율 ViewModel의 side effect를 동시에 구독하는 구독자 둘이 있을 때") {
-        When("사용자가 누른 새로고침이 실패해 이벤트 하나가 발생하면") {
-            Then("어느 구독자가 받든 둘이 합쳐 실패 이벤트를 한 번만 받아야 한다") {
+        When("사용자가 누른 새로고침이 실패한 뒤 받은 쪽만 구독을 끊고 다시 실패하면") {
+            Then("첫 실패는 둘이 합쳐 한 번만 받고, 다음 실패는 남은 구독자가 받아야 한다") {
                 runTest(testDispatcher) {
                     val viewModel = createViewModel()
                     val firstReceived = mutableListOf<ExchangeContract.SideEffect>()
@@ -252,6 +253,21 @@ class ExchangeSideEffectScopeTest : BehaviorSpec({
 
                             coVerify(exactly = 1) { refreshExchangeRatesUseCase() }
                             (firstReceived + secondReceived) shouldBe listOf(refreshFailure)
+
+                            // 합계만 보면 구독자가 하나뿐이어도 통과한다. 받은 쪽만 끊고 한 번 더 실패시켜
+                            // 못 받은 쪽도 실제로 구독 중이었음을 확인한다. 누가 먼저 받는지는 보장하지 않으므로 그때그때 가른다.
+                            val (receivedSubscriber, waitingReceived) = if (firstReceived.isNotEmpty()) {
+                                firstSubscriber to secondReceived
+                            } else {
+                                secondSubscriber to firstReceived
+                            }
+                            receivedSubscriber.cancelAndJoin()
+
+                            viewModel.processIntent(ExchangeContract.Intent.RefreshExchangeRates)
+                            awaitRequestFailure(viewModel)
+
+                            coVerify(exactly = 2) { refreshExchangeRatesUseCase() }
+                            waitingReceived shouldBe listOf(refreshFailure)
                         } finally {
                             firstSubscriber.cancelAndJoin()
                             secondSubscriber.cancelAndJoin()

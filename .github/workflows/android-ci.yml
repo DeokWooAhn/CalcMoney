@@ -228,6 +228,11 @@ jobs:
       EMULATOR_RAM_SIZE: 4096M
       # AVD 생성 옵션이나 스냅샷 만드는 방법을 바꾸면 올린다. 캐시 키에 들어가 스냅샷을 새로 만든다.
       AVD_CACHE_VERSION: 2
+      # 에뮬레이터 빌드를 고정한다. 고정하지 않으면 android-emulator-runner가 실행마다 최신 에뮬레이터를 받아,
+      # 버전이 바뀐 날부터 캐시 스냅샷을 쓸 수 없고("Snapshot file cannot be used, incompatible version") 매번 처음부터
+      # 부팅한다. 그러면 부팅 직후 런처 ANR 창이 Flow를 덮는다(2026-11-23 android-v1.5.0 태그에서 두 번 연속 실패).
+      # 16970787 = 37.3.10.0. 올리면 캐시 키가 바뀌어 스냅샷을 새로 만든다.
+      EMULATOR_BUILD: '16970787'
       APP_ID: com.ahn.calcmoney
       # smoke Flow는 네트워크가 필요 없다. release Flow(Firestore 필요)는 CI에서 돌리지 않는다.
       MAESTRO_TAGS: smoke
@@ -268,7 +273,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ env.API_LEVEL }}-google_apis-x86_64-v${{ env.AVD_CACHE_VERSION }}
+          key: avd-${{ env.API_LEVEL }}-google_apis-x86_64-v${{ env.AVD_CACHE_VERSION }}-emulator-${{ env.EMULATOR_BUILD }}
 
       # 캐시가 없을 때만 AVD를 만들고 부팅 스냅샷을 남긴다. 다음 실행부터는 스냅샷에서 바로 뜬다.
       # 부팅 직후 바로 찍으면 밀린 작업(GMS 초기화, dexopt)까지 스냅샷에 담겨 매 실행마다 되풀이되므로,
@@ -280,6 +285,7 @@ jobs:
           api-level: ${{ env.API_LEVEL }}
           target: google_apis
           arch: x86_64
+          emulator-build: ${{ env.EMULATOR_BUILD }}
           cores: ${{ env.EMULATOR_CORES }}
           ram-size: ${{ env.EMULATOR_RAM_SIZE }}
           force-avd-creation: false
@@ -293,6 +299,7 @@ jobs:
           api-level: ${{ env.API_LEVEL }}
           target: google_apis
           arch: x86_64
+          emulator-build: ${{ env.EMULATOR_BUILD }}
           cores: ${{ env.EMULATOR_CORES }}
           ram-size: ${{ env.EMULATOR_RAM_SIZE }}
           force-avd-creation: false

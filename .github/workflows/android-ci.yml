@@ -261,6 +261,22 @@ jobs:
           curl -fsSL "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
+      # android-emulator-runner는 실행할 때마다 에뮬레이터를 최신으로 설치한다. 버전이 바뀌면 캐시의 스냅샷을 쓸 수 없어
+      # ("Snapshot file cannot be used, incompatible version") 매번 처음부터 부팅하고, 부팅 직후 런처 ANR 창이 Flow를 덮는다
+      # (2026-11-23 android-v1.5.0 태그에서 두 번 연속 실패). 같은 최신 버전을 먼저 설치하고 그 버전을 캐시 키에 넣어,
+      # 에뮬레이터가 바뀌면 스냅샷을 새로 만든다.
+      - name: Install emulator and read its version
+        id: emulator
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install emulator --channel=0 > /dev/null
+          VERSION=$("$ANDROID_HOME/emulator/emulator" -version | sed -n 's/.*emulator version \([0-9.]*\).*/\1/p' | head -n 1)
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not read the emulator version"
+            exit 1
+          fi
+          echo "Emulator $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Restore AVD cache
         id: avd-cache
         uses: actions/cache@v4
@@ -268,7 +284,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ env.API_LEVEL }}-google_apis-x86_64-v${{ env.AVD_CACHE_VERSION }}
+          key: avd-${{ env.API_LEVEL }}-google_apis-x86_64-v${{ env.AVD_CACHE_VERSION }}-emulator-${{ steps.emulator.outputs.version }}
 
       # 캐시가 없을 때만 AVD를 만들고 부팅 스냅샷을 남긴다. 다음 실행부터는 스냅샷에서 바로 뜬다.
       # 부팅 직후 바로 찍으면 밀린 작업(GMS 초기화, dexopt)까지 스냅샷에 담겨 매 실행마다 되풀이되므로,

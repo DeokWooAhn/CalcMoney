@@ -14,6 +14,10 @@ adb logcat -v threadtime >"$OUT/logcat.txt" 2>&1 &
 LOGCAT_PID=$!
 trap 'kill "$LOGCAT_PID" 2>/dev/null || true' EXIT
 
+# AVD 캐시의 디스크에 예전 실행이 설치한 앱이 남아 있을 수 있다. 스냅샷 복원에 실패하고 디스크 그대로 뜨면 보인다.
+# CI는 실행마다 새 디버그 키로 서명하므로 덮어쓰기 설치가 서명 불일치로 거부된다
+# (INSTALL_FAILED_UPDATE_INCOMPATIBLE, 2026-11-20 master). 그래서 먼저 지운다. 없으면 아무 일도 하지 않는다.
+adb uninstall "$APP_ID" >/dev/null 2>&1 || true
 adb install -r "$APK"
 
 # 설치 직후 첫 실행은 dex 검증·파일 캐시 적재 때문에 유난히 느리다. Flow가 아니라 여기서 그 비용을 치른다.

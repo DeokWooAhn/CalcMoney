@@ -65,7 +65,7 @@ App Store Connect가 버전 번호를 `1.0`으로 만들어 두는데, 빌드의
 | 스크린샷 | iPhone 6.3형(필수, 1206×2622): `iphone63-0{1,2,3,4}.png`, iPhone 6.9형(선택, 1320×2868): `iphone-0{1,2,3,4}.png`, iPad 13형(필수): `ipad-0{1,2,3,4}.png` (영어는 `../app-store-en/`). 2026-10-30 기준 App Store Connect의 iPhone 필수 크기는 "Dynamic Island 지원 iPhone(중형 디스플레이)"라 6.9형 이미지를 `sips -z 2622 1206`으로 줄여 만들었다 |
 | 프로모션 텍스트·설명·키워드 | 언어별 listing 파일. 설명에 `★`를 넣으면 "유효하지 않은 문자"로 저장되지 않는다 |
 | 지원 URL | https://deokwooahn.github.io/CalcMoney/support.html |
-| 마케팅 URL | 비워 둔다 |
+| 마케팅 URL | https://deokwooahn.github.io/CalcMoney/support.html (언어마다). **비워 두면 AdMob 앱 인증이 실패한다.** AdMob은 App Store 앱의 개발자 웹사이트를 마케팅 URL에서 찾고, 그 호스트 루트의 `app-ads.txt`(https://deokwooahn.github.io/app-ads.txt)를 확인한다. 2026-11-23 1.0.0을 비워 둔 채 출시해 AdMob iOS 앱이 "광고 게재가 제한됨"으로 남았다. 출시된 버전에서는 고칠 수 없어 1.0.1에 넣고, 출시 뒤 AdMob 앱 설정에서 "업데이트 확인"을 누른다(최대 24시간) |
 | 저작권 | `2026 DeokWoo Ahn`. 판매자 이름(비즈니스 화면의 법적 이름)과 맞춘다 |
 | 빌드 | Xcode Archive로 올린 빌드. 수출 규정은 앱 타깃 빌드 설정의 `INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO`로 미리 답해 두어 빌드마다 묻지 않는다. 빌드 번호(앱 타깃의 `CURRENT_PROJECT_VERSION`)는 iOS 배포 자동화가 없어 올릴 때마다 손으로 1씩 올린다. 이미 올린 번호는 다시 쓸 수 없다 |
 | 버전 출시 | **이 버전을 수동으로 출시**. 첫 출시는 승인 뒤 TestFlight·실기기 확인을 한 번 더 하고 내보낸다 |

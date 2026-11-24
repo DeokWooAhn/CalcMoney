@@ -50,3 +50,4 @@
 | [event-scope-and-failure-state.md](event-scope-and-failure-state.md) | 자동으로 돈 일의 실패는 화면 상태로, 스낵바는 사용자가 한 동작에만 쓴다 |
 | [compose-ui-tests-robolectric.md](compose-ui-tests-robolectric.md) | Compose UI 테스트는 Robolectric으로 src/test에 두고 계측 테스트는 두지 않는다 |
 | [china-mainland-not-distributed.md](china-mainland-not-distributed.md) | iOS 앱을 중국 본토 App Store에는 내지 않는다(Google 서비스 차단, ICP·보안 평가) |
+| [exchange-rate-remote-retry-cooldown.md](exchange-rate-remote-retry-cooldown.md) | 환율 캐시가 만료돼도 원격 조회는 5분에 한 번만 다시 시도한다(캐시 없음·수동 새로고침 제외) |

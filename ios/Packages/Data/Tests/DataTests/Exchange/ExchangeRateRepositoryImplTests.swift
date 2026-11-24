@@ -294,24 +294,6 @@ private actor HeldFailingRemoteDataSource: ExchangeRateRemoteDataSource {
     }
 }
 
-/// 원격 호출 횟수를 기록하는 스텁. result가 nil이면 오류를 던진다.
-private actor RemoteDataSourceStub: ExchangeRateRemoteDataSource {
-    private let result: [ExchangeRateData]?
-    private(set) var fetchCallCount = 0
-
-    init(result: [ExchangeRateData]?) {
-        self.result = result
-    }
-
-    func fetchExchangeRates() async throws -> [ExchangeRateData] {
-        fetchCallCount += 1
-
-        guard let result else { throw ExchangeRateError.networkUnavailable() }
-
-        return result
-    }
-}
-
 /// 남긴 크래시 단서를 기록하는 대역
 private final class RecordingCrashBreadcrumbs: CrashBreadcrumbs {
     private let state = OSAllocatedUnfairLock(initialState: [String]())

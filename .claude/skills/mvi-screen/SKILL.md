@@ -39,10 +39,9 @@ ViewModel·Contract·UseCase·Repository의 모양은 `:konsist` 테스트(`kons
   - 조회: 기다리지 않고 따로 돌리고, 요청 번호·취소·대상(통화쌍)을 확인한 응답만 반영한다.
     **성공 경로뿐 아니라 실패 경로(`catch`)에도 같은 확인을 둔다.** 실패를 State에 담으면
     지난 요청의 실패가 이미 성공한 화면 위에 남는다. 스낵바일 때는 잠깐 떴다 사라져 드러나지 않던 문제다
-- 예외: `MainViewModel`과 `FavoriteViewModel`은 Orbit이 아닌 plain StateFlow — 새 화면에서 따라하지 말 것
+- 예외: `MainViewModel`은 Orbit이 아닌 plain StateFlow — 새 화면에서 따라하지 말 것
   - `MainViewModel`: Activity 범위에서 테마·인앱 리뷰·전면 광고·크래시 단서를 다룬다. 화면의 Intent·SideEffect가 없다
-  - `FavoriteViewModel`: 공유 `ExchangeViewModel`의 상태를 받아 즐겨찾기 환율 목록만 계산하는 보조 ViewModel이다.
-    자체 Intent·SideEffect가 없어 `FavoriteContract`도 `State`만 둔다
+- 즐겨찾기 카드는 공유 `ExchangeViewModel`이 `FavoriteRatesLoader`로 만들어 `ExchangeContract.State.favoriteRates`에 둔다(화면은 그리기만 한다)
 
 ## Compose 작성 규칙 (Screen 파일)
 

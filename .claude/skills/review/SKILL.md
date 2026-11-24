@@ -39,7 +39,7 @@ description: CalcMoney 코드를 리뷰할 때 사용한다. "코드리뷰 해�
   `FavoriteScreen`(`it.currency.code`)이 그 예다. `CalculatorHistory`처럼 값이 같은 항목이
   중복 저장될 수 있는 목록에 내용 기반 키를 주면 "Key was already used"로 죽는다.
   식별자가 없으면 키를 지어내지 말고 모델에 id를 넣는 쪽을 검토한다.
-- 리소스 정리 경로. `AdMobBanner`의 `DisposableEffect`, `FavoriteViewModel`의 `loadJob?.cancel()`이
+- 리소스 정리 경로. `AdMobBanner`의 `DisposableEffect`, `ExchangeViewModel`의 즐겨찾기 환율 `collectLatest`(입력이 바뀌면 앞 조회 취소)가
   기준이다. 리스너·플레이어·Job을 새로 잡으면 해제 경로가 있는지 본다.
 - 로딩·빈 상태·에러·오프라인이 모두 표현되는지. 환율 실패는 `NotReady`, `NetworkUnavailable`,
   `RateNotFound`로 갈라진다.

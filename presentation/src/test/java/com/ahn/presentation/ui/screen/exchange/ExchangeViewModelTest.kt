@@ -883,6 +883,10 @@ class ExchangeViewModelTest : BehaviorSpec({
                         }
                         // performLoadCurrencies + 환율 완료 후 observeFavorites()에서 [USD] 반영
                         expectState { copy(favoriteCurrencyCodes = listOf("USD")) }
+                        // 즐겨찾기가 기준 통화(USD) 하나뿐이라 즐겨찾기 카드 상태가 안내 상태로 바뀐다
+                        expectState {
+                            copy(favoriteRates = ExchangeContract.FavoriteRates(baseOnlyFavoriteCode = "USD"))
+                        }
 
                         containerHost.processIntent(ExchangeContract.Intent.ToggleFavorite("USD"))
 
@@ -890,6 +894,8 @@ class ExchangeViewModelTest : BehaviorSpec({
                             ExchangeContract.SideEffect.ShowSnackBar(UiText.StringResource(R.string.favorite_removed)),
                         )
                         expectState { copy(favoriteCurrencyCodes = emptyList()) }
+                        // 즐겨찾기가 비면 안내 상태가 풀려 기본값으로 돌아간다
+                        expectState { copy(favoriteRates = ExchangeContract.FavoriteRates()) }
                         cancelAndIgnoreRemainingItems()
                     }
                 }

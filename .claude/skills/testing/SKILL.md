@@ -25,9 +25,11 @@ Given("선택한 통화가 즐겨찾기에 없는 상태에서") {
 
 ## ViewModel 테스트
 
-- 정석 레퍼런스: `presentation/src/test/java/com/ahn/presentation/ui/screen/favorite/FavoriteViewModelTest.kt`
-- `StandardTestDispatcher` + `Dispatchers.setMain/resetMain`을 `beforeEach`/`afterEach`에서
-- `runTest(testDispatcher)` + `advanceUntilIdle()`
+- 정석 레퍼런스: `presentation/src/test/java/com/ahn/presentation/ui/screen/exchange/ExchangeFavoriteRatesTest.kt`
+  (Orbit 상태 전이, 조회를 `CompletableDeferred`로 멈춰 순서를 강제하는 법). ViewModel 밖으로 뺀 상태 없는 규칙은
+  `FavoriteRatesLoaderTest.kt`처럼 ViewModel 없이 따로 본다
+- `Dispatchers.setMain/resetMain`을 `beforeEach`/`afterEach`에서. 기본은 `UnconfinedTestDispatcher`,
+  지연·응답 순서를 흘려야 하면 `StandardTestDispatcher` + `runTest(testDispatcher)` (`ExchangeStaleResponseTest.kt`)
 - UseCase 홀더는 mock하지 말고 **실제로 생성하되 멤버 UseCase만 mock** (`createViewModel()` 헬퍼 패턴)
 - Orbit 검증에는 `orbit-test` 사용 (`ExchangeViewModelTest.kt` 참조)
 - 인텐트가 겹치는 순서 테스트는 `CalculatorViewModelOrderingTest.kt`를 본다. orbit-test에는 함정이 둘 있다

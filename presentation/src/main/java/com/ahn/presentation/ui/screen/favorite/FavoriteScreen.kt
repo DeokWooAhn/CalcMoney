@@ -31,8 +31,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -48,7 +46,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.ahn.presentation.R
 import com.ahn.presentation.ui.component.AdMobBanner
 import com.ahn.presentation.ui.component.CustomSnackbarHost
@@ -64,11 +61,9 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 @Composable
 fun FavoriteRoute(
     exchangeViewModel: ExchangeViewModel,
-    favoriteViewModel: FavoriteViewModel = hiltViewModel(),
     canRequestAds: Boolean = false,
 ) {
     val exchangeState by exchangeViewModel.collectAsState()
-    val favoriteState by favoriteViewModel.state.collectAsState()
     val snackBarHostState = remember { SnackbarHostState() }
     val showSnackbar = rememberShowSnackbar(snackBarHostState)
 
@@ -78,29 +73,8 @@ fun FavoriteRoute(
         }
     }
 
-    LaunchedEffect(
-        exchangeState.fromCurrency,
-        exchangeState.favoriteCurrencyCodes,
-        exchangeState.availableCurrencies,
-        exchangeState.exchangeRateDate,
-        exchangeState.exchangeRateFetchedAt,
-    ) {
-        favoriteViewModel.onExchangeStateChanged(
-            fromCurrency = exchangeState.fromCurrency,
-            favoriteCurrencyCodes = exchangeState.favoriteCurrencyCodes,
-            availableCurrencies = exchangeState.availableCurrencies,
-            exchangeRateDate = exchangeState.exchangeRateDate,
-            exchangeRateFetchedAt = exchangeState.exchangeRateFetchedAt,
-        )
-    }
-
-    LaunchedEffect(exchangeState.fromAmount) {
-        favoriteViewModel.onBaseAmountChanged(exchangeState.fromAmount)
-    }
-
     FavoriteScreen(
         exchangeState = exchangeState,
-        favoriteState = favoriteState,
         canRequestAds = canRequestAds,
         onExchangeIntent = exchangeViewModel::processIntent,
         snackbarHostState = snackBarHostState,
@@ -110,7 +84,6 @@ fun FavoriteRoute(
 @Composable
 fun FavoriteScreen(
     exchangeState: ExchangeContract.State,
-    favoriteState: FavoriteContract.State,
     canRequestAds: Boolean = false,
     onExchangeIntent: (ExchangeContract.Intent) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
@@ -129,7 +102,6 @@ fun FavoriteScreen(
     ) { paddingValues ->
         FavoriteContent(
             exchangeState = exchangeState,
-            favoriteState = favoriteState,
             onExchangeIntent = onExchangeIntent,
             modifier = Modifier.padding(paddingValues),
         )
@@ -157,7 +129,6 @@ private fun FavoriteTopBar() {
 @Composable
 private fun FavoriteContent(
     exchangeState: ExchangeContract.State,
-    favoriteState: FavoriteContract.State,
     onExchangeIntent: (ExchangeContract.Intent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -182,7 +153,6 @@ private fun FavoriteContent(
 
         FavoriteRateContent(
             exchangeState = exchangeState,
-            favoriteState = favoriteState,
             onExchangeIntent = onExchangeIntent,
         )
     }
@@ -191,33 +161,33 @@ private fun FavoriteContent(
 @Composable
 private fun ColumnScope.FavoriteRateContent(
     exchangeState: ExchangeContract.State,
-    favoriteState: FavoriteContract.State,
     onExchangeIntent: (ExchangeContract.Intent) -> Unit,
 ) {
     val context = LocalContext.current
     val failure = exchangeState.failure
+    val favoriteRates = exchangeState.favoriteRates
 
     when {
-        favoriteState.items.isNotEmpty() -> FavoriteRateGrid(
-            items = favoriteState.items,
-            isRefreshing = favoriteState.isLoading,
+        favoriteRates.items.isNotEmpty() -> FavoriteRateGrid(
+            items = favoriteRates.items,
+            isRefreshing = favoriteRates.isLoading,
             onRemoveFavorite = { currencyCode ->
                 onExchangeIntent(ExchangeContract.Intent.ToggleFavorite(currencyCode))
             },
         )
 
-        favoriteState.isLoading -> FavoriteLoading()
+        favoriteRates.isLoading -> FavoriteLoading()
 
         exchangeState.favoriteCurrencyCodes.isEmpty() -> FavoriteEmptyMessage(
             stringResource(R.string.empty_favorite_currency),
         )
 
-        favoriteState.baseOnlyFavoriteCode != null -> FavoriteEmptyMessage(
-            stringResource(R.string.favorite_only_base_currency, favoriteState.baseOnlyFavoriteCode),
+        favoriteRates.baseOnlyFavoriteCode != null -> FavoriteEmptyMessage(
+            stringResource(R.string.favorite_only_base_currency, favoriteRates.baseOnlyFavoriteCode),
         )
 
         // 다시 시도는 환율 새로고침이라 즐겨찾기 상태가 아니라 환율 상태의 isLoading을 본다.
-        // 새로고침 동안 즐겨찾기 입력은 그대로여서 favoriteState.isLoading이 켜지지 않고 이 분기가 유지된다.
+        // 새로고침 동안 즐겨찾기 입력은 그대로여서 favoriteRates.isLoading이 켜지지 않고 이 분기가 유지된다.
         failure != null -> FavoriteLoadFailure(
             message = failure.message.asString(context),
             isRetrying = exchangeState.isLoading,
@@ -280,7 +250,7 @@ private fun ColumnScope.FavoriteEmptyMessage(message: String) {
 
 @Composable
 private fun ColumnScope.FavoriteRateGrid(
-    items: List<FavoriteContract.Item>,
+    items: List<ExchangeContract.FavoriteRateItem>,
     isRefreshing: Boolean = false,
     onRemoveFavorite: (String) -> Unit,
 ) {
@@ -323,7 +293,7 @@ private fun ColumnScope.FavoriteRateGrid(
 
 @Composable
 private fun FavoriteRateCard(
-    item: FavoriteContract.Item,
+    item: ExchangeContract.FavoriteRateItem,
     onRemoveFavorite: () -> Unit,
 ) {
     val currencyName = item.currency.localizedName()
@@ -405,7 +375,6 @@ private fun FavoriteRateCard(
 private fun FavoriteScreenPreview() {
     FavoriteScreen(
         exchangeState = ExchangeContract.State(),
-        favoriteState = FavoriteContract.State(),
         onExchangeIntent = {},
         snackbarHostState = remember { SnackbarHostState() },
     )
@@ -416,7 +385,7 @@ private fun FavoriteScreenPreview() {
 private fun FavoriteRateCardPreview() {
     MaterialTheme {
         FavoriteRateCard(
-            item = FavoriteContract.Item(
+            item = ExchangeContract.FavoriteRateItem(
                 currency = com.ahn.domain.currency.model.CurrencyInfo(
                     code = "USD",
                     displayCode = "USD",

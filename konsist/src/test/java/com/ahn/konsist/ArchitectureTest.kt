@@ -123,8 +123,6 @@ class ArchitectureTest : BehaviorSpec({
 /** Orbit ContainerHost를 쓰지 않는 ViewModel과 그 이유. 새 화면은 여기에 더하지 않는다. */
 private val NON_ORBIT_VIEW_MODELS = mapOf(
     "MainViewModel" to "Activity 범위에서 테마·인앱 리뷰·전면 광고·크래시 단서를 다룬다. 화면의 Intent·SideEffect가 없다",
-    "FavoriteViewModel" to "공유 ExchangeViewModel의 상태를 받아 즐겨찾기 환율 목록만 계산하는 보조 ViewModel이다. " +
-        "자체 Intent·SideEffect가 없어 FavoriteContract도 State만 둔다",
 )
 
 /** operator fun invoke 대신 이름 있는 함수를 쓰는 UseCase와 그 이유. */

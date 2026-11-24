@@ -169,6 +169,119 @@ class ExchangeRateRepositoryImplTest :
                 }
             }
 
+            context("캐시 만료 후 원격 조회를 막 시도했으면") {
+                lateinit var clock: MutableClock
+                lateinit var cooldownRepository: ExchangeRateRepositoryImpl
+
+                beforeTest {
+                    clock = MutableClock(testClock.millis())
+                    cooldownRepository = ExchangeRateRepositoryImpl(
+                        remoteDataSource = remoteDataSource,
+                        localDataSource = localDataSource,
+                        crashBreadcrumbs = crashBreadcrumbs,
+                        clock = clock,
+                    )
+                    coEvery { localDataSource.getCachedRates() } returns listOf(
+                        usdEntity(baseRate = 1300.0, fetchedAt = oldFetchedAt()),
+                    )
+                    coEvery { localDataSource.getLatestFetchedAt() } returns oldFetchedAt()
+                    coEvery { localDataSource.replaceRates(any()) } just Runs
+                }
+
+                it("실패 직후 5분 안의 연속 조회는 원격을 다시 부르지 않고 만료된 캐시를 쓴다") {
+                    runTest {
+                        coEvery { remoteDataSource.fetchExchangeRates() } throws IOException("network error")
+
+                        cooldownRepository.getExchangeRate(from = "USD", to = "KRW") shouldBeExactly 1300.0
+                        clock.currentMillis += REMOTE_RETRY_COOLDOWN_MS - 1
+                        cooldownRepository.getExchangeRate(from = "USD", to = "KRW") shouldBeExactly 1300.0
+                        cooldownRepository.getSupportedCurrencies().map { it.code }.shouldContainExactly("KRW", "USD")
+
+                        coVerify(exactly = 1) { remoteDataSource.fetchExchangeRates() }
+                    }
+                }
+
+                it("실패 뒤 5분이 지나면 원격을 다시 부른다") {
+                    runTest {
+                        coEvery { remoteDataSource.fetchExchangeRates() } throws IOException("network error")
+
+                        cooldownRepository.getExchangeRate(from = "USD", to = "KRW")
+                        clock.currentMillis += REMOTE_RETRY_COOLDOWN_MS
+                        cooldownRepository.getExchangeRate(from = "USD", to = "KRW")
+
+                        coVerify(exactly = 2) { remoteDataSource.fetchExchangeRates() }
+                    }
+                }
+
+                it("원격 조회가 성공했어도 받은 문서가 만료 상태면 5분 안에는 원격을 다시 부르지 않는다") {
+                    runTest {
+                        coEvery { remoteDataSource.fetchExchangeRates() } returns listOf(
+                            usdEntity(baseRate = 1300.0, fetchedAt = oldFetchedAt()),
+                        )
+
+                        cooldownRepository.getExchangeRate(from = "USD", to = "KRW")
+                        cooldownRepository.getExchangeRate(from = "USD", to = "KRW")
+
+                        coVerify(exactly = 1) { remoteDataSource.fetchExchangeRates() }
+                    }
+                }
+
+                it("실패 직후에도 수동 새로고침은 원격을 부른다") {
+                    runTest {
+                        coEvery { remoteDataSource.fetchExchangeRates() } throws IOException("network error")
+
+                        cooldownRepository.getExchangeRate(from = "USD", to = "KRW")
+                        shouldThrow<IOException> {
+                            cooldownRepository.refreshExchangeRates()
+                        }
+
+                        coVerify(exactly = 2) { remoteDataSource.fetchExchangeRates() }
+                    }
+                }
+
+                it("수동 새로고침이 실패한 직후의 조회는 원격을 다시 부르지 않는다") {
+                    runTest {
+                        coEvery { remoteDataSource.fetchExchangeRates() } throws IOException("network error")
+
+                        shouldThrow<IOException> {
+                            cooldownRepository.refreshExchangeRates()
+                        }
+                        cooldownRepository.getExchangeRate(from = "USD", to = "KRW") shouldBeExactly 1300.0
+
+                        coVerify(exactly = 1) { remoteDataSource.fetchExchangeRates() }
+                    }
+                }
+
+                it("기기 시각이 마지막 시도보다 이전으로 돌아가면 원격을 다시 부른다") {
+                    runTest {
+                        coEvery { remoteDataSource.fetchExchangeRates() } throws IOException("network error")
+
+                        cooldownRepository.getExchangeRate(from = "USD", to = "KRW")
+                        clock.currentMillis -= 1
+                        cooldownRepository.getExchangeRate(from = "USD", to = "KRW")
+
+                        coVerify(exactly = 2) { remoteDataSource.fetchExchangeRates() }
+                    }
+                }
+
+                it("캐시가 없으면 실패가 이어져도 호출마다 원격을 시도한다") {
+                    runTest {
+                        coEvery { localDataSource.getCachedRates() } returns emptyList()
+                        coEvery { localDataSource.getLatestFetchedAt() } returns 0L
+                        coEvery { remoteDataSource.fetchExchangeRates() } throws IOException("network error")
+
+                        shouldThrow<IOException> {
+                            cooldownRepository.getExchangeRate(from = "USD", to = "KRW")
+                        }
+                        shouldThrow<IOException> {
+                            cooldownRepository.getSupportedCurrencies()
+                        }
+
+                        coVerify(exactly = 2) { remoteDataSource.fetchExchangeRates() }
+                    }
+                }
+            }
+
             context("환율 새로고침을 요청하면") {
                 it("Firebase 서버 캐시에서 최신 환율을 가져와 로컬 캐시를 교체한다") {
                     runTest {
@@ -213,6 +326,17 @@ private fun usdEntity(
         fetchedAt = fetchedAt,
         rateDate = "20260601",
     )
+}
+
+private const val REMOTE_RETRY_COOLDOWN_MS = 5 * 60 * 1000L
+
+/** 테스트가 시각을 앞뒤로 옮길 수 있는 시계 */
+private class MutableClock(var currentMillis: Long) : Clock() {
+    override fun getZone(): ZoneId = ZoneId.of("Asia/Seoul")
+
+    override fun withZone(zone: ZoneId?): Clock = this
+
+    override fun instant(): Instant = Instant.ofEpochMilli(currentMillis)
 }
 
 private fun oldFetchedAt(): Long {

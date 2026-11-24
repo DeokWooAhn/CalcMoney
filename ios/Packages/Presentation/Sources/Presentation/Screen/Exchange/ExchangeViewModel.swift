@@ -9,7 +9,10 @@ import Observation
 @MainActor
 @Observable
 public final class ExchangeViewModel {
-    public private(set) var state = ExchangeState()
+    /// 바뀔 때마다 즐겨찾기 카드를 다시 모을지 한 곳에서 판단한다(`ExchangeViewModel+FavoriteRates.swift`).
+    public private(set) var state = ExchangeState() {
+        didSet { stateDidChangeForFavoriteRates() }
+    }
 
     @ObservationIgnored private let exchangeUseCases: ExchangeUseCases
     @ObservationIgnored private let favoriteUseCases: FavoriteUseCases
@@ -19,6 +22,16 @@ public final class ExchangeViewModel {
     @ObservationIgnored private var loadCurrenciesTask: Task<Void, Never>?
     @ObservationIgnored private var inFlightLoadCount = 0
 
+    // 즐겨찾기 카드 상태. 확장 파일(`ExchangeViewModel+FavoriteRates.swift`)이 쓰므로 `private`으로 두지 않는다.
+    @ObservationIgnored let favoriteRatesLoader: FavoriteRatesLoader
+    @ObservationIgnored var favoriteRatesTask: Task<Void, Never>?
+    /// 마지막으로 본 즐겨찾기 입력. 이 값이 바뀔 때만 환율을 다시 모은다.
+    @ObservationIgnored var observedFavoriteRateInput: FavoriteRateInput?
+    /// 마지막으로 본 기준 금액. 금액만 바뀌면 다시 조회하지 않고 카드만 다시 만든다.
+    @ObservationIgnored var observedFavoriteBaseAmount: String?
+    /// 마지막으로 조회를 마친 입력과 환율. 없으면 아직 조회를 마친 적이 없거나 카드를 비운 상태다.
+    @ObservationIgnored var loadedFavoriteRates: LoadedFavoriteRates?
+
     public init(
         exchangeUseCases: ExchangeUseCases,
         favoriteUseCases: FavoriteUseCases,
@@ -27,6 +40,10 @@ public final class ExchangeViewModel {
         self.exchangeUseCases = exchangeUseCases
         self.favoriteUseCases = favoriteUseCases
         self.currencySelectionUseCases = currencySelectionUseCases
+        favoriteRatesLoader = FavoriteRatesLoader(
+            exchangeUseCases: exchangeUseCases,
+            favoriteUseCases: favoriteUseCases,
+        )
 
         loadCurrenciesTask = Task { await performLoadCurrencies() }
         observeFavorites()
@@ -35,6 +52,7 @@ public final class ExchangeViewModel {
     deinit {
         observeFavoritesTask?.cancel()
         loadCurrenciesTask?.cancel()
+        favoriteRatesTask?.cancel()
     }
 
     public func sideEffects() -> AsyncStream<ExchangeSideEffect> {
@@ -268,11 +286,22 @@ public final class ExchangeViewModel {
             state.exchangeRateFetchedAt = fetchedAt
             state.toAmount = exchangeUseCases.exchangeAmount(fromAmount: state.fromAmount, rate: rate)
             state.failure = nil
+            state.ratesRefreshCount += 1
 
             sideEffectBus.send(.showSnackbar(message: L("환율 정보를 새로고침했습니다.")))
         } catch {
             sideEffectBus.send(.showSnackbar(message: error.exchangeRateErrorMessage))
         }
+    }
+
+    /// 즐겨찾기 카드 상태가 실제로 바뀔 때만 대입한다. 같은 값을 다시 넣어 관찰자를 깨우지 않는다.
+    ///
+    /// `state`의 setter는 이 파일 밖에 열려 있지 않아 확장 파일은 이 함수로만 카드를 바꾼다.
+    func reduceFavoriteRates(_ transform: (FavoriteRates) -> FavoriteRates) {
+        let next = transform(state.favoriteRates)
+        guard next != state.favoriteRates else { return }
+
+        state.favoriteRates = next
     }
 
     private func exchangeRateOrDefault(

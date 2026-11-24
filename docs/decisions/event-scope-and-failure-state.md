@@ -85,7 +85,7 @@ State가 실패를 담아야 한다. `isLoading`만으로는 화면이 "데이�
 
   2026-11-17 Android와 같게 `LoadFailureMessage`에 `isRetrying`을 더했다. 진행 중에는 버튼을 끄고
   글자 앞에 강조색 진행 표시를 둔다. 환율 화면 두 곳과 즐겨찾기 화면이 `ExchangeState.isLoading`을 넘긴다.
-  즐겨찾기 화면은 새로고침 동안 `FavoriteRateInputSnapshot`이 바뀌지 않아 실패 분기가 끝까지 유지된다.
+  즐겨찾기 화면은 새로고침이 성공하기 전까지 `FavoriteRateInput`이 바뀌지 않아(`ExchangeViewModel`이 이 값으로 다시 모을지 판단한다) 실패 분기가 끝까지 유지된다.
   `ExchangeViewModelRefreshTests`가 이것을 확인한다.
   계산기는 `CalculatorState`에 로딩 값이 없어 그대로다(Android도 같다).
   진행 표시는 버튼 밖에 둔다. 버튼 안에 두면 비활성 버튼의 회색을 따라가 `tint`가 먹지 않는다.

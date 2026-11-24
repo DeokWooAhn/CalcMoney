@@ -36,11 +36,18 @@ class ExchangeRateRepositoryImpl internal constructor(
 
     private val refreshMutex = Mutex()
 
+    /** 마지막으로 원격 조회를 시작한 시각(성공·실패 무관). [refreshMutex] 안에서만 읽고 쓴다. 앱을 다시 켜면 비운다. */
+    private var lastRemoteAttemptAt: Long? = null
+
     /**
      * 현재 사용할 환율 목록을 가져옵니다.
      *
      * 캐시가 유효하면 로컬 데이터를 사용하고, 캐시가 만료되었으면 원격 데이터를 가져와 캐시를 갱신합니다.
      * 동시에 여러 갱신 작업이 실행되지 않도록 [refreshMutex]로 보호합니다.
+     *
+     * 캐시가 만료됐어도 마지막 원격 조회에서 [REMOTE_RETRY_COOLDOWN_MS]가 지나지 않았으면 원격을 부르지 않고 캐시를 돌려줍니다.
+     * `fetchedAt`은 서버 문서가 갱신된 시각이라 원격 조회가 성공해도 만료 상태가 이어질 수 있고,
+     * 오프라인에서는 실패가 이어지기 때문입니다. 캐시가 비어 있으면 돌려줄 것이 없으므로 매번 원격을 시도합니다.
      *
      * @return 유효한 캐시 또는 새로 가져와 저장한 환율 엔티티 목록입니다.
      * @throws ExchangeRateException 원격 응답에 유효한 환율이 없고 사용할 캐시도 없을 때 발생합니다.
@@ -52,10 +59,11 @@ class ExchangeRateRepositoryImpl internal constructor(
             val cached = localDataSource.getCachedRates()
             val fetchedAt = localDataSource.getLatestFetchedAt()
 
-            if (cached.isNotEmpty() && now - fetchedAt < CACHE_TTL_MS) {
+            if (cached.isNotEmpty() && (now - fetchedAt < CACHE_TTL_MS || isInRemoteRetryCooldown(now))) {
                 return@withLock cached
             }
 
+            lastRemoteAttemptAt = now
             runCatching {
                 val valid = remoteDataSource.fetchExchangeRates()
                 localDataSource.replaceRates(valid)
@@ -96,8 +104,10 @@ class ExchangeRateRepositoryImpl internal constructor(
         return localDataSource.getLatestFetchedAt()
     }
 
+    /** 사용자가 요청한 새로고침이라 쿨다운과 관계없이 원격을 부른다. */
     override suspend fun refreshExchangeRates() {
         refreshMutex.withLock {
+            lastRemoteAttemptAt = clock.millis()
             runCatching {
                 val valid = remoteDataSource.fetchExchangeRates()
                 localDataSource.replaceRates(valid)
@@ -122,6 +132,13 @@ class ExchangeRateRepositoryImpl internal constructor(
             .distinctBy { it.code }
     }
 
+    /** 기기 시각이 뒤로 돌아간 경우(음수 경과)는 쿨다운으로 보지 않는다. */
+    private fun isInRemoteRetryCooldown(now: Long): Boolean {
+        val elapsed = now - (lastRemoteAttemptAt ?: return false)
+
+        return elapsed in 0 until REMOTE_RETRY_COOLDOWN_MS
+    }
+
     /**
      * 크래시 단서에 남길 오류 이름. release 빌드는 R8이 앱 클래스 이름을 줄이므로
      * 앱이 정의한 예외는 고정된 영어 메시지로 남긴다.
@@ -131,5 +148,8 @@ class ExchangeRateRepositoryImpl internal constructor(
 
     companion object {
         private const val CACHE_TTL_MS = 12 * 60 * 60 * 1000L
+
+        /** 캐시가 만료된 뒤 원격 조회를 다시 시도하기까지 기다리는 시간. iOS `remoteRetryCooldownMillis`와 같은 값. */
+        private const val REMOTE_RETRY_COOLDOWN_MS = 5 * 60 * 1000L
     }
 }

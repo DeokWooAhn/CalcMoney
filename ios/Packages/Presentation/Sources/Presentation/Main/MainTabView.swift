@@ -11,20 +11,17 @@ public struct MainTabView: View {
 
     private let calculatorViewModel: CalculatorViewModel
     private let exchangeViewModel: ExchangeViewModel
-    private let favoriteViewModel: FavoriteViewModel
     private let mainViewModel: MainViewModel
     private let adConsentManager: AdConsentManager
 
     public init(
         calculatorViewModel: CalculatorViewModel,
         exchangeViewModel: ExchangeViewModel,
-        favoriteViewModel: FavoriteViewModel,
         mainViewModel: MainViewModel,
         adConsentManager: AdConsentManager,
     ) {
         self.calculatorViewModel = calculatorViewModel
         self.exchangeViewModel = exchangeViewModel
-        self.favoriteViewModel = favoriteViewModel
         self.mainViewModel = mainViewModel
         self.adConsentManager = adConsentManager
     }
@@ -113,7 +110,6 @@ public struct MainTabView: View {
         case .favorite:
             FavoriteView(
                 exchangeViewModel: exchangeViewModel,
-                favoriteViewModel: favoriteViewModel,
                 canRequestAds: adConsentManager.canRequestAds,
             )
 

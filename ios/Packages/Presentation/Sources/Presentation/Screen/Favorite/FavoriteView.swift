@@ -3,17 +3,16 @@ import SwiftUI
 
 /// 즐겨찾기 화면 (Android `FavoriteScreen` 대응)
 ///
-/// 기준 금액·통화는 공유 ExchangeViewModel의 상태를 그대로 쓴다.
+/// 기준 금액·통화와 즐겨찾기 카드 모두 공유 ExchangeViewModel의 상태를 그대로 쓴다.
+/// 카드를 언제 다시 모을지는 ExchangeViewModel이 정하므로, 이 화면은 그리고 Intent를 보내기만 한다.
 struct FavoriteView: View {
     let exchangeViewModel: ExchangeViewModel
-    let favoriteViewModel: FavoriteViewModel
     let canRequestAds: Bool
 
     @State private var snackbar = SnackbarPresenter()
 
     var body: some View {
         let exchangeState = exchangeViewModel.state
-        let favoriteState = favoriteViewModel.state
 
         VStack(spacing: 16) {
             ExchangeInputContainer(
@@ -30,7 +29,6 @@ struct FavoriteView: View {
 
             FavoriteRateContent(
                 exchangeState: exchangeState,
-                favoriteState: favoriteState,
                 onRemoveFavorite: { exchangeViewModel.send(.toggleFavorite($0)) },
                 onRetry: { exchangeViewModel.send(.refreshExchangeRates) },
             )
@@ -49,18 +47,6 @@ struct FavoriteView: View {
                 }
             }
         }
-        .onChange(of: FavoriteRateInputSnapshot(exchangeState), initial: true) { _, snapshot in
-            favoriteViewModel.onExchangeStateChanged(
-                fromCurrency: snapshot.fromCurrency,
-                favoriteCurrencyCodes: snapshot.favoriteCurrencyCodes,
-                availableCurrencies: snapshot.availableCurrencies,
-                exchangeRateDate: snapshot.exchangeRateDate,
-                exchangeRateFetchedAt: snapshot.exchangeRateFetchedAt,
-            )
-        }
-        .onChange(of: exchangeState.fromAmount, initial: true) { _, fromAmount in
-            favoriteViewModel.onBaseAmountChanged(fromAmount)
-        }
         .safeAreaInset(edge: .bottom) {
             AdMobBanner(adUnitID: AdConfig.favoriteBannerUnitID, canRequestAds: canRequestAds)
         }
@@ -70,44 +56,25 @@ struct FavoriteView: View {
     }
 }
 
-/// Android `LaunchedEffect` 키 대응 — 환율 상태 중 즐겨찾기 계산에 필요한 부분만 비교한다.
-///
-/// 새로고침 동안 이 값이 바뀌지 않아야 실패 표시의 진행 상태가 끝까지 보인다.
-/// `ExchangeViewModelRefreshTests`가 그것을 이 타입으로 직접 확인하므로 `private`으로 두지 않는다.
-struct FavoriteRateInputSnapshot: Equatable {
-    let fromCurrency: CurrencyInfo?
-    let favoriteCurrencyCodes: [String]
-    let availableCurrencies: [CurrencyInfo]
-    let exchangeRateDate: String
-    let exchangeRateFetchedAt: Int
-
-    init(_ state: ExchangeState) {
-        fromCurrency = state.fromCurrency
-        favoriteCurrencyCodes = state.favoriteCurrencyCodes
-        availableCurrencies = state.availableCurrencies
-        exchangeRateDate = state.exchangeRateDate
-        exchangeRateFetchedAt = state.exchangeRateFetchedAt
-    }
-}
-
 private struct FavoriteRateContent: View {
     let exchangeState: ExchangeState
-    let favoriteState: FavoriteState
     let onRemoveFavorite: (String) -> Void
     let onRetry: () -> Void
 
     var body: some View {
-        if !favoriteState.items.isEmpty {
+        let favoriteRates = exchangeState.favoriteRates
+
+        if !favoriteRates.items.isEmpty {
             FavoriteRateGrid(
-                items: favoriteState.items,
-                isRefreshing: favoriteState.isLoading,
+                items: favoriteRates.items,
+                isRefreshing: favoriteRates.isLoading,
                 onRemoveFavorite: onRemoveFavorite,
             )
-        } else if favoriteState.isLoading {
+        } else if favoriteRates.isLoading {
             CenteredMessage { ProgressView() }
         } else if exchangeState.favoriteCurrencyCodes.isEmpty {
             CenteredMessage { Text(L("즐겨찾기한 통화가 없습니다.")).foregroundStyle(.secondary) }
-        } else if let baseCode = favoriteState.baseOnlyFavoriteCode {
+        } else if let baseCode = favoriteRates.baseOnlyFavoriteCode {
             CenteredMessage {
                 Text(L("현재 기준 통화가 \(baseCode)입니다.\n다른 통화를 즐겨찾기에 추가해 주세요."))
                     .foregroundStyle(.secondary)
@@ -115,7 +82,7 @@ private struct FavoriteRateContent: View {
             }
         } else if let failure = exchangeState.failure {
             // 새로고침은 성공하기 전까지 `isLoading` 말고는 상태를 바꾸지 않는다.
-            // 그래서 `FavoriteRateInputSnapshot`이 그대로라 위의 `favoriteState.isLoading` 분기가 끼어들지 않고,
+            // 그래서 `FavoriteRateInput`이 그대로라 위의 `favoriteRates.isLoading` 분기가 끼어들지 않고,
             // 진행 표시가 이 분기에서 끝까지 보인다.
             CenteredMessage {
                 LoadFailureMessage(message: failure.message, isRetrying: exchangeState.isLoading, onRetry: onRetry)
@@ -141,7 +108,7 @@ private struct CenteredMessage<Content: View>: View {
 }
 
 private struct FavoriteRateGrid: View {
-    let items: [FavoriteState.Item]
+    let items: [FavoriteRateItem]
     let isRefreshing: Bool
     let onRemoveFavorite: (String) -> Void
 
@@ -170,7 +137,7 @@ private struct FavoriteRateGrid: View {
 }
 
 private struct FavoriteRateCard: View {
-    let item: FavoriteState.Item
+    let item: FavoriteRateItem
     let onRemoveFavorite: () -> Void
 
     var body: some View {

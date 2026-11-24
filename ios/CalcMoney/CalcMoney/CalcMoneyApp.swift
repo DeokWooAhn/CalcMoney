@@ -10,7 +10,6 @@ struct CalcMoneyApp: App {
             MainTabView(
                 calculatorViewModel: container.calculatorViewModel,
                 exchangeViewModel: container.exchangeViewModel,
-                favoriteViewModel: container.favoriteViewModel,
                 mainViewModel: container.mainViewModel,
                 adConsentManager: container.adConsentManager,
             )

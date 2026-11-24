@@ -11,7 +11,6 @@ final class AppContainer {
     let calculatorViewModel: CalculatorViewModel
     /// Android의 activity-scoped 공유처럼 Exchange·Favorite·Setting 탭이 함께 쓴다.
     let exchangeViewModel: ExchangeViewModel
-    let favoriteViewModel: FavoriteViewModel
     let mainViewModel: MainViewModel
     let adConsentManager = AdConsentManager()
 
@@ -33,10 +32,6 @@ final class AppContainer {
             exchangeUseCases: useCases.exchange,
             favoriteUseCases: useCases.favorite,
             currencySelectionUseCases: useCases.currencySelection,
-        )
-        favoriteViewModel = FavoriteViewModel(
-            exchangeUseCases: useCases.exchange,
-            favoriteUseCases: useCases.favorite,
         )
         mainViewModel = MainViewModel(
             themeUseCases: useCases.theme,

@@ -16,6 +16,11 @@ interface ExchangeContract {
         val exchangeRateFetchedAt: Long = 0L,
         val isLoading: Boolean = false,
         val failure: Failure? = null,
+        /**
+         * 수동 새로고침이 성공한 횟수. 즐겨찾기 카드를 다시 모으는 신호로 쓴다.
+         * 서버 문서가 그대로면 환율 날짜·받은 시각이 바뀌지 않아, 이 값 없이는 다시 시도가 카드를 다시 모으지 못한다.
+         */
+        val ratesRefreshCount: Int = 0,
         val favoriteRates: FavoriteRates = FavoriteRates(),
     )
 

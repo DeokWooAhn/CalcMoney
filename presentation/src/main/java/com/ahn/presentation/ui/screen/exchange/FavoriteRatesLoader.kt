@@ -16,6 +16,8 @@ internal data class FavoriteRateInput(
     val availableCurrencies: List<CurrencyInfo>,
     val exchangeRateDate: String,
     val exchangeRateFetchedAt: Long,
+    /** 같은 서버 문서를 다시 받아도 다시 시도가 카드를 다시 모으게 한다. */
+    val ratesRefreshCount: Int = 0,
 ) {
     companion object {
         fun from(state: ExchangeContract.State) = FavoriteRateInput(
@@ -24,6 +26,7 @@ internal data class FavoriteRateInput(
             availableCurrencies = state.availableCurrencies,
             exchangeRateDate = state.exchangeRateDate,
             exchangeRateFetchedAt = state.exchangeRateFetchedAt,
+            ratesRefreshCount = state.ratesRefreshCount,
         )
     }
 }

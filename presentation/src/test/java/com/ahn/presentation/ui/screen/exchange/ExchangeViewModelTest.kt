@@ -655,6 +655,7 @@ class ExchangeViewModelTest : BehaviorSpec({
                                 exchangeRate = 1500.00,
                                 exchangeRateDate = "20260601",
                                 exchangeRateFetchedAt = refreshedAt,
+                                ratesRefreshCount = 1,
                                 toAmount = "1500.00",
                             )
                         }

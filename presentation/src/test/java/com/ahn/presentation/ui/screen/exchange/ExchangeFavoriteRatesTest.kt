@@ -370,6 +370,33 @@ class ExchangeFavoriteRatesTest : BehaviorSpec({
             }
         }
 
+        When("즐겨찾기 조회가 실패한 뒤 같은 서버 문서로 새로고침이 성공하면") {
+            Then("환율 날짜·받은 시각이 그대로여도 즐겨찾기 환율을 다시 조회해 카드를 만든다") {
+                runTest {
+                    favoritesFlow.value = listOf("JPY")
+                    coEvery { getExchangeRateUseCase("USD", "JPY") } throws Exception("JPY failed") andThen 9.5
+
+                    createViewModel().test(this) {
+                        expectInitialState()
+                        runOnCreate()
+                        // 조회 실패 뒤의 카드 상태는 기본값과 같으므로 로딩이 켜졌다 꺼지는 순서로 기다린다.
+                        awaitFavoriteRates { it.isLoading }
+                        val failed = awaitFavoriteRates { !it.isLoading }
+                        failed shouldBe ExchangeContract.FavoriteRates()
+                        coVerify(exactly = 1) { getExchangeRateUseCase("USD", "JPY") }
+
+                        // 날짜·받은 시각을 바꾸지 않는다(beforeEach의 값 그대로).
+                        containerHost.processIntent(ExchangeContract.Intent.RefreshExchangeRates)
+
+                        val refreshed = awaitFavoriteRates { it.codes() == listOf("JPY") && !it.isLoading }
+                        refreshed.items.single().convertedAmount shouldBe "9.50"
+                        coVerify(exactly = 2) { getExchangeRateUseCase("USD", "JPY") }
+                        cancelAndIgnoreRemainingItems()
+                    }
+                }
+            }
+        }
+
         When("즐겨찾기를 더해 재조회가 끝나지 않은 동안 금액을 바꾸면") {
             Then("조회가 끝나기 전에 기존 카드 금액을 새 금액으로 바꾸고, 조회가 끝나면 새 즐겨찾기까지 새 금액으로 보여 준다") {
                 runTest {

@@ -401,6 +401,7 @@ class ExchangeViewModel @Inject constructor(
                     exchangeRate = rate,
                     exchangeRateDate = rateDate,
                     exchangeRateFetchedAt = fetchedAt,
+                    ratesRefreshCount = state.ratesRefreshCount + 1,
                     isLoading = false,
                     failure = null,
                     toAmount = exchangeUseCases.exchangeAmount(state.fromAmount, rate),

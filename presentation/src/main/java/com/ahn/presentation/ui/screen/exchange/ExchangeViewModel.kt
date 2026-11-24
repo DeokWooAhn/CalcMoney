@@ -13,6 +13,13 @@ import com.ahn.presentation.util.deviceCurrencyCode
 import com.ahn.presentation.util.toExchangeRateErrorUiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.container
@@ -24,11 +31,18 @@ class ExchangeViewModel @Inject constructor(
     private val favoriteUseCases: FavoriteUseCases,
     private val currencySelectionUseCases: CurrencySelectionUseCases,
 ) : ViewModel(), ContainerHost<ExchangeContract.State, ExchangeContract.SideEffect> {
-    override val container = container(
+    private val favoriteRatesLoader = FavoriteRatesLoader(
+        exchangeUseCases = exchangeUseCases,
+        favoriteUseCases = favoriteUseCases,
+    )
+
+    // onCreate가 container.stateFlow를 읽어 타입 추론이 순환하므로 타입을 적는다.
+    override val container: Container<ExchangeContract.State, ExchangeContract.SideEffect> = container(
         initialState = ExchangeContract.State(),
     ) {
         performLoadCurrencies()
         observeFavorites()
+        observeFavoriteRates()
     }
 
     fun processIntent(intent: ExchangeContract.Intent) {
@@ -83,6 +97,82 @@ class ExchangeViewModel @Inject constructor(
     private fun observeFavorites() = intent {
         favoriteUseCases.getFavoriteCurrencies().collect { codes ->
             reduce { state.copy(favoriteCurrencyCodes = codes) }
+        }
+    }
+
+    /**
+     * 즐겨찾기 카드의 입력(기준 통화, 즐겨찾기, 통화 목록, 환율 날짜·받은 시각)이 바뀔 때마다 환율을 다시 모은다.
+     * 입력이 또 바뀌면 앞 조회와 그 조회 중의 금액 구독이 함께 취소된다.
+     * 금액만 바뀌면 다시 조회하지 않고 모은 환율로 카드만 다시 만든다. 재조회 중이면 마지막으로 조회를 마친 입력·환율로 만든다.
+     */
+    private fun observeFavoriteRates() = intent {
+        // 마지막으로 조회를 마친 입력과 그 환율. 없으면 아직 조회를 마친 적이 없거나 카드를 비운 상태다.
+        var loaded: LoadedFavoriteRates? = null
+
+        container.stateFlow
+            .map { FavoriteRateInput.from(it) }
+            .distinctUntilChanged()
+            .collectLatest { input ->
+                if (!favoriteRatesLoader.needsRates(input)) {
+                    // 비운 카드가 다음 재조회 중 금액 변경으로 되살아나지 않게 묶음도 비운다.
+                    loaded = null
+                    val emptyRates = favoriteRatesLoader.emptyRates(input)
+                    reduceFavoriteRates { emptyRates }
+                    return@collectLatest
+                }
+
+                // 새로고침 중에도 이전 카드는 그대로 둔다.
+                reduceFavoriteRates { it.copy(isLoading = true, baseOnlyFavoriteCode = null) }
+                val current = LoadedFavoriteRates(
+                    input = input,
+                    ratesByCode = loadRatesFollowingAmount(input, previous = loaded),
+                )
+
+                // 카드를 바꾸기 전에 묶음부터 바꾼다. 그 사이 입력이 바뀌어 취소돼도 묶음이 한 단계 전 조회로 남지 않는다.
+                loaded = current
+                val items = favoriteRatesLoader.buildItems(current.input, state.fromAmount, current.ratesByCode)
+                reduceFavoriteRates { it.copy(isLoading = false, items = items) }
+
+                followAmount(current)
+            }
+    }
+
+    /**
+     * 환율을 모으는 동안 금액이 바뀌면 [previous](마지막으로 조회를 마친 입력·환율)로 카드 금액을 바로 바꾼다.
+     * 새 입력에 옛 환율을 섞지 않는다. 기준 통화가 바뀐 재조회라면 옛 환율은 옛 기준 통화 대비 값이기 때문이다.
+     * [previous]가 없으면(첫 조회, 카드를 비운 뒤) 카드를 건드리지 않는다.
+     */
+    private suspend fun Syntax<ExchangeContract.State, ExchangeContract.SideEffect>.loadRatesFollowingAmount(
+        input: FavoriteRateInput,
+        previous: LoadedFavoriteRates?,
+    ): Map<String, Double> = coroutineScope {
+        val amountFollower = previous?.let { launch { followAmount(it) } }
+        val ratesByCode = favoriteRatesLoader.loadRates(input)
+        // 조회를 마친 카드가 옛 묶음으로 다시 덮이지 않게, 구독이 끝난 뒤에 돌려준다.
+        amountFollower?.cancelAndJoin()
+        ratesByCode
+    }
+
+    /** 금액이 바뀔 때마다 [source]의 입력·환율로 카드를 다시 만든다. 로딩 표시는 건드리지 않는다. */
+    private suspend fun Syntax<ExchangeContract.State, ExchangeContract.SideEffect>.followAmount(
+        source: LoadedFavoriteRates,
+    ) {
+        container.stateFlow
+            .map { it.fromAmount }
+            .distinctUntilChanged()
+            .collect { amount ->
+                val items = favoriteRatesLoader.buildItems(source.input, amount, source.ratesByCode)
+                reduceFavoriteRates { it.copy(items = items) }
+            }
+    }
+
+    /** 즐겨찾기 카드 상태가 실제로 바뀔 때만 새 상태를 만든다. */
+    private suspend fun Syntax<ExchangeContract.State, ExchangeContract.SideEffect>.reduceFavoriteRates(
+        transform: (ExchangeContract.FavoriteRates) -> ExchangeContract.FavoriteRates,
+    ) {
+        reduce {
+            val next = transform(state.favoriteRates)
+            if (next == state.favoriteRates) state else state.copy(favoriteRates = next)
         }
     }
 
@@ -311,6 +401,7 @@ class ExchangeViewModel @Inject constructor(
                     exchangeRate = rate,
                     exchangeRateDate = rateDate,
                     exchangeRateFetchedAt = fetchedAt,
+                    ratesRefreshCount = state.ratesRefreshCount + 1,
                     isLoading = false,
                     failure = null,
                     toAmount = exchangeUseCases.exchangeAmount(state.fromAmount, rate),

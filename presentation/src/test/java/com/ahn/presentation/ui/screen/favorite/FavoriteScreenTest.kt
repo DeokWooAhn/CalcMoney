@@ -36,7 +36,6 @@ class FavoriteScreenTest {
             message = UiText.StringResource(R.string.exchange_rate_network_unavailable),
         ),
     )
-    private val favoriteState = FavoriteContract.State()
 
     @Test
     fun `즐겨찾기 환율 조회가 실패하면 실패 문구가 보이고 재시도 인텐트 하나를 보낸다`() {
@@ -47,7 +46,6 @@ class FavoriteScreenTest {
             MaterialTheme {
                 FavoriteScreen(
                     exchangeState = exchangeState,
-                    favoriteState = favoriteState,
                     canRequestAds = false,
                     onExchangeIntent = { intents.add(it) },
                 )
@@ -68,10 +66,9 @@ class FavoriteScreenTest {
         val intents = mutableListOf<ExchangeContract.Intent>()
         composeRule.setContent {
             MaterialTheme {
-                // 다시 시도로 새로고침이 도는 동안: 환율 상태만 로딩이고 즐겨찾기 상태는 그대로다.
+                // 다시 시도로 새로고침이 도는 동안: 환율 상태만 로딩이고 즐겨찾기 카드 상태(favoriteRates)는 그대로다.
                 FavoriteScreen(
                     exchangeState = exchangeState.copy(isLoading = true),
-                    favoriteState = favoriteState,
                     canRequestAds = false,
                     onExchangeIntent = { intents.add(it) },
                 )
@@ -94,7 +91,6 @@ class FavoriteScreenTest {
             MaterialTheme {
                 FavoriteScreen(
                     exchangeState = exchangeState.copy(failure = null),
-                    favoriteState = favoriteState,
                     canRequestAds = false,
                     onExchangeIntent = { intents.add(it) },
                 )

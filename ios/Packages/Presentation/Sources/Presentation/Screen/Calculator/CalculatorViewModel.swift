@@ -377,6 +377,8 @@ extension CalculatorViewModel {
         state.convertedPreviewAmount = ""
         restartRateFetch()
 
+        // 통화 선택 저장은 일부러 실패를 버린다(Android `saveCalculatorSelectionBestEffort`와 같다).
+        // 화면은 이미 새 통화로 바뀌어 계산·환산에 지장이 없고, 실패해도 다음 실행 때 앞 선택으로 돌아갈 뿐이다.
         enqueuePersistence { try? await save($0.currencySelectionUseCases) }
     }
 }

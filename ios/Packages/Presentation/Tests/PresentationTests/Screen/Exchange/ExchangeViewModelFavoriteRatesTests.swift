@@ -72,8 +72,6 @@ private struct FavoriteRatesFixture {
     static let eur = CurrencyInfo(code: "EUR", displayCode: "EUR", name: "유로", flagEmoji: "🇪🇺")
     static let gbp = CurrencyInfo(code: "GBP", displayCode: "GBP", name: "파운드", flagEmoji: "🇬🇧")
     static let rateDate = "2026-08-06"
-    /// "일어나지 않아야 한다"를 검사할 때 기다리는 상한. 응답이 하나 처리되기에 넉넉하다.
-    static let settleLimit = Duration.milliseconds(200)
 
     let recorder = CalculatorTestRecorder()
     let favoriteRepository = FeedFavoriteCurrencyRepository()
@@ -260,17 +258,17 @@ struct ExchangeViewModelFavoriteRatesTests {
 
         fixture.viewModel.send(.selectFromCurrency(Fixture.eur))
         await fixture.recorder.waitUntil { $0.requestedRatePairs.contains("EUR->JPY") }
+        // 앞 조회 작업을 잡아 둔다. 문을 연 뒤 이 작업이 끝나기를 기다리면, 늦게 끝난 앞 조회가 할 일을 모두 마친 뒤다.
+        let firstTask = fixture.viewModel.favoriteRatesTask
+        #expect(firstTask != nil)
         fixture.viewModel.send(.selectFromCurrency(Fixture.gbp))
         #expect(await waitUntil { fixture.labels == ["1 GBP = 180.0000 JPY"] && !fixture.favoriteRates.isLoading })
 
         await firstGate.open()
-        await fixture.recorder.waitUntil { $0.completedRatePairs.contains("EUR->JPY") }
-        let overwritten = await waitUntil(
-            { fixture.labels != ["1 GBP = 180.0000 JPY"] || fixture.favoriteRates.isLoading },
-            within: Fixture.settleLimit,
-        )
+        await firstTask?.value
 
-        #expect(overwritten == false)
+        #expect(fixture.labels == ["1 GBP = 180.0000 JPY"])
+        #expect(fixture.favoriteRates.isLoading == false)
     }
 
     /// 옛 즐겨찾기 ViewModel 테스트의 "시작 전에 취소된 조회는 안내 상태를 덮어쓰지 않는다"를 새 구조에 맞게 옮겼다.
@@ -282,19 +280,19 @@ struct ExchangeViewModelFavoriteRatesTests {
 
         await fixture.sendFavorites(["JPY"])
         await fixture.recorder.waitUntil { $0.requestedRatePairs.contains("USD->JPY") }
+        // 앞 조회 작업을 잡아 둔다. 문을 연 뒤 이 작업이 끝나기를 기다리면, 늦게 끝난 앞 조회가 할 일을 모두 마친 뒤다.
+        let firstTask = fixture.viewModel.favoriteRatesTask
+        #expect(firstTask != nil)
         await fixture.sendFavorites(["USD"])
 
         #expect(fixture.favoriteRates.baseOnlyFavoriteCode == "USD")
         #expect(fixture.favoriteRates.isLoading == false)
 
         await gate.open()
-        await fixture.recorder.waitUntil { $0.completedRatePairs.contains("USD->JPY") }
-        let overwritten = await waitUntil(
-            { fixture.favoriteRates.baseOnlyFavoriteCode != "USD" || !fixture.favoriteRates.items.isEmpty },
-            within: Fixture.settleLimit,
-        )
+        await firstTask?.value
 
-        #expect(overwritten == false)
+        #expect(fixture.favoriteRates.baseOnlyFavoriteCode == "USD")
+        #expect(fixture.favoriteRates.items.isEmpty)
         #expect(fixture.favoriteRates.isLoading == false)
     }
 

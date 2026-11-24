@@ -51,3 +51,4 @@
 | [compose-ui-tests-robolectric.md](compose-ui-tests-robolectric.md) | Compose UI 테스트는 Robolectric으로 src/test에 두고 계측 테스트는 두지 않는다 |
 | [china-mainland-not-distributed.md](china-mainland-not-distributed.md) | iOS 앱을 중국 본토 App Store에는 내지 않는다(Google 서비스 차단, ICP·보안 평가) |
 | [exchange-rate-remote-retry-cooldown.md](exchange-rate-remote-retry-cooldown.md) | 환율 캐시가 만료돼도 원격 조회는 5분에 한 번만 다시 시도한다(캐시 없음·수동 새로고침 제외) |
+| [favorite-rates-in-exchange-viewmodel.md](favorite-rates-in-exchange-viewmodel.md) | 즐겨찾기 카드는 ExchangeViewModel이 만들고, 화면이 두 ViewModel을 잇지 않는다(공유 저장소 안은 고르지 않음) |

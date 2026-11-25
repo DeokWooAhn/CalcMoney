@@ -135,7 +135,7 @@ struct CurrencyPickerSheet: View {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .semibold))
+                            .scaledFont(size: 14, weight: .semibold)
                     }
                     .accessibilityLabel(L("닫기"))
                     .accessibilityIdentifier("currency.picker.close")
@@ -230,14 +230,14 @@ private struct CurrencyPickerRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Text(currency.flagEmoji)
-                .font(.system(size: 24))
+                .scaledFont(size: 24)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(currency.displayCode)
-                    .font(.system(size: 16, weight: .semibold))
+                    .scaledFont(size: 16, weight: .semibold)
 
                 Text(currency.localizedName)
-                    .font(.system(size: 14))
+                    .scaledFont(size: 14)
                     .foregroundStyle(.secondary)
             }
 
@@ -245,7 +245,7 @@ private struct CurrencyPickerRow: View {
 
             Button(action: onToggleFavorite) {
                 Image(systemName: isFavorite ? "heart.fill" : "heart")
-                    .font(.system(size: 18))
+                    .scaledFont(size: 18)
                     .foregroundStyle(isFavorite ? .red : .secondary)
                     // .plain 스타일은 여백을 더하지 않아 아이콘 크기가 그대로 탭 영역이 된다.
                     .frame(width: 44, height: 44)

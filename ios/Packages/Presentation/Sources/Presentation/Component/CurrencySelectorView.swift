@@ -24,20 +24,20 @@ struct CurrencySelectorView: View {
             HStack(spacing: compact ? 4 : 8) {
                 if let selectedCurrency {
                     Text(selectedCurrency.flagEmoji)
-                        .font(.system(size: compact ? 15 : 20))
+                        .scaledFont(size: compact ? 15 : 20)
 
                     Text(selectedCurrency.code)
-                        .font(.system(size: compact ? 14 : 16, weight: .semibold))
+                        .scaledFont(size: compact ? 14 : 16, weight: .semibold)
                         .foregroundStyle(Color.primary)
 
                     if !compact {
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 12, weight: .semibold))
+                            .scaledFont(size: 12, weight: .semibold)
                             .foregroundStyle(Color.primary)
                     }
                 } else {
                     Text(L("통화 선택"))
-                        .font(.system(size: compact ? 14 : 16))
+                        .scaledFont(size: compact ? 14 : 16)
                         .foregroundStyle(Color.primary)
                 }
             }

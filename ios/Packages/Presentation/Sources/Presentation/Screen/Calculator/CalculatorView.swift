@@ -8,7 +8,13 @@ struct CalculatorView: View {
     /// 인앱 리뷰를 요청했을 때 부른다. 리뷰를 부탁한 직후에는 전면 광고를 띄우지 않도록 알린다.
     var onReviewRequested: () -> Void = {}
 
+    /// 계산기 화면의 글자 크기 상한. 앱 전체 상한(accessibility2)보다 낮게 묶는다.
+    /// 키가 화면 폭에 맞춘 정사각형이라 접근성 크기에서는 키 글자가 키를 넘치고, 수식 칸이 키패드에 밀려 사라진다.
+    /// 여기서 연 통화 선택 시트도 이 상한을 물려받는다.
+    static let maxDynamicTypeSize: DynamicTypeSize = .xxxLarge
+
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.requestReview) private var requestReview
     @State private var showHistory = false
     @State private var snackbar = SnackbarPresenter()
@@ -21,13 +27,22 @@ struct CalculatorView: View {
         // iPad·가로 화면에서 정사각 키가 화면 폭만큼 커지지 않게 내용 폭을 정해 가운데에 둔다. iPhone은 화면 폭 그대로다.
         GeometryReader { geometry in
             let contentWidth = CalculatorLayout.contentWidth(for: geometry.size)
-            let failureHeight = viewModel.state.exchangeFailure == nil ? 0 : failureMessageHeight
+            let isShowingFailure = viewModel.state.exchangeFailure != nil
+            let failureHeight = isShowingFailure ? failureMessageHeight : 0
+            // 아래 `.dynamicTypeSize` 상한은 이 뷰의 자식에만 걸리므로, 여기서 읽은 값은 직접 상한으로 묶는다.
+            let textScale = CalculatorDisplayView.textScale(for: min(dynamicTypeSize, Self.maxDynamicTypeSize))
 
             calculatorContent(
                 colors: colors,
                 keypadWidth: CalculatorLayout.keypadWidth(
                     contentWidth: contentWidth,
                     height: geometry.size.height - failureHeight,
+                    textScale: textScale,
+                    // 실패 상태에서 환율이 없으면 환산 금액 두 줄이 비므로 그 높이를 키패드에 돌린다.
+                    // 정상 상태에서는 환율을 받는 중(0)에도 남겨, 통화를 바꿀 때마다 키 크기가 바뀌지 않게 한다.
+                    reservesConvertedAmounts: !isShowingFailure || viewModel.state.exchangeRate > 0,
+                    // 실패 문구가 높이를 가져가도 키가 이보다 작아지지 않게 한다. 모자란 높이는 디스플레이가 잘려 내준다.
+                    minimumKeySize: isShowingFailure ? CalculatorLayout.minimumKeySize : 0,
                 ),
             )
             .frame(width: contentWidth)
@@ -52,6 +67,7 @@ struct CalculatorView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
+        .dynamicTypeSize(...Self.maxDynamicTypeSize)
     }
 
     private func calculatorContent(colors: CalculatorColors, keypadWidth: CGFloat) -> some View {
@@ -64,7 +80,8 @@ struct CalculatorView: View {
             .padding(.top, 4)
 
             if let failure = viewModel.state.exchangeFailure {
-                LoadFailureMessage(message: failure, verticalPadding: 8) {
+                // 키패드와 높이를 나누므로 아이콘을 빼고 여백을 줄여, 큰 글자에서도 키가 덜 작아지게 한다.
+                LoadFailureMessage(message: failure, verticalPadding: 4, showsIcon: false) {
                     viewModel.send(.retryExchange)
                 }
                 .accessibilityIdentifier("calculator.failure")
@@ -122,7 +139,7 @@ private struct CalculatorCurrencySelectorRow: View {
                 onIntent(.swapExchangeCurrencies)
             } label: {
                 Image(systemName: "arrow.left.arrow.right")
-                    .font(.system(size: 14, weight: .semibold))
+                    .scaledFont(size: 14, weight: .semibold)
                     .foregroundStyle(colors.keyText)
                     .frame(width: 36, height: 36)
                     .background(colors.keyBackground)
@@ -144,122 +161,6 @@ private struct CalculatorCurrencySelectorRow: View {
             )
         }
         .frame(maxWidth: .infinity)
-    }
-}
-
-/// 환산 금액 표시 (Android `ConvertedAmountText` 대응)
-private struct ConvertedAmountText: View {
-    let amount: String
-    let currency: CurrencyInfo?
-    let colors: CalculatorColors
-
-    var body: some View {
-        if !amount.isEmpty, currency != nil {
-            Text("≈ \(CalculatorFormatting.formatWithCommas(amount))")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(colors.preview)
-                .lineLimit(1)
-        }
-    }
-}
-
-/// 수식·미리보기 표시 영역 (Android `CalculatorDisplay` 대응)
-private struct CalculatorDisplayView: View {
-    let state: CalculatorState
-    let colors: CalculatorColors
-
-    /// 수식 칸 맨 아래(환산 금액 아래)를 가리키는 스크롤 위치
-    private static let expressionBottomID = "calculator.expression.bottom"
-
-    var body: some View {
-        VStack(alignment: .trailing, spacing: 0) {
-            // 수식이 칸보다 길어지면 줄이 위로 밀려 올라가고, 지금 입력하는 끝부분이 늘 보이게 맨 아래로 스크롤한다.
-            // 스크롤 없이 두면 높이가 모자란 화면(iPhone SE)에서 끝부분이 "…"로 잘려 입력이 안 보인다.
-            // 남는 높이를 이 칸이 모두 가져가므로 미리보기는 디스플레이 맨 아래에 붙는다.
-            ScrollViewReader { proxy in
-                ScrollView(.vertical) {
-                    VStack(alignment: .trailing, spacing: 0) {
-                        HStack(alignment: .center, spacing: 2) {
-                            Spacer(minLength: 0)
-
-                            Text(expressionText)
-                                .font(.system(size: expressionFontSize, weight: .light))
-                                .foregroundStyle(state.isCalculatedResult ? colors.accent : colors.keyText)
-                                .multilineTextAlignment(.trailing)
-
-                            CursorBar(color: colors.accent, height: expressionFontSize * 1.05)
-                        }
-
-                        ConvertedAmountText(
-                            amount: state.convertedExpressionAmount,
-                            currency: state.selectedExchangeCurrency,
-                            colors: colors,
-                        )
-
-                        Color.clear
-                            .frame(height: 0)
-                            .id(Self.expressionBottomID)
-                    }
-                }
-                .scrollIndicators(.hidden)
-                .scrollBounceBehavior(.basedOnSize)
-                .onChange(of: state.expression) { proxy.scrollTo(Self.expressionBottomID, anchor: .bottom) }
-                .onChange(of: state.convertedExpressionAmount) {
-                    proxy.scrollTo(Self.expressionBottomID, anchor: .bottom)
-                }
-            }
-
-            if !state.expression.isEmpty, !state.previewResult.isEmpty {
-                Text(CalculatorFormatting.formatWithCommas(state.previewResult))
-                    .font(.system(size: 30, weight: .medium))
-                    .foregroundStyle(colors.preview)
-                    .multilineTextAlignment(.trailing)
-
-                ConvertedAmountText(
-                    amount: state.convertedPreviewAmount,
-                    currency: state.selectedExchangeCurrency,
-                    colors: colors,
-                )
-            }
-        }
-    }
-
-    private var expressionText: AttributedString {
-        CalculatorFormatting.attributedExpression(
-            state.expression,
-            operatorColor: colors.accent,
-        )
-    }
-
-    private var expressionFontSize: CGFloat {
-        switch state.expression.count {
-        case 0...11: 42
-        case 12...16: 35
-        default: 30
-        }
-    }
-}
-
-/// 수식 끝의 깜빡이는 커서
-private struct CursorBar: View {
-    let color: Color
-    let height: CGFloat
-
-    @State private var isVisible = true
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: 1.5)
-            .fill(color)
-            .frame(width: 2.5, height: height)
-            .opacity(isVisible ? 1 : 0)
-            .task {
-                while !Task.isCancelled {
-                    try? await Task.sleep(for: .milliseconds(500))
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        isVisible.toggle()
-                    }
-                }
-            }
     }
 }
 

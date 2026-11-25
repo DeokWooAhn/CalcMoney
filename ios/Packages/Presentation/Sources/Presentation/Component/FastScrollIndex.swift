@@ -114,6 +114,8 @@ struct FastScrollIndex: View {
         let isActive = label == activeLabel
         let color: Color = isActive ? .primary : .secondary
 
+        // 시스템 글자 크기를 따르지 않고 고정 크기로 둔다. 라벨 27개가 세로로 한 줄에 들어가야 하고,
+        // 스크롤하는 동안에만 잠깐 보이는 보조 조작이라 접근성 트리에서도 뺐다. 아래 미리보기도 같은 이유로 고정한다.
         if label == favoriteIndexLabel {
             Image(systemName: "star.fill")
                 .font(.system(size: 10))
@@ -173,6 +175,7 @@ struct FastScrollIndexPreview: View {
     let label: String
 
     var body: some View {
+        // 80pt 고정 틀 안에 그리는 인덱스 보조 표시라 글자 크기도 고정한다(`labelView`의 주석 참조).
         Group {
             if label == favoriteIndexLabel {
                 Image(systemName: "star.fill")

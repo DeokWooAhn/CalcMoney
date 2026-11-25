@@ -48,6 +48,9 @@ public struct MainTabView: View {
                 .frame(width: 0, height: 0)
         }
         .preferredColorScheme(mainViewModel.themeMode.colorScheme)
+        // 앱 전체 글자 크기 상한. 이보다 크면 접근성 배치(즐겨찾기 1열, 통화 칩을 금액 아래로)로도
+        // 즐겨찾기 카드와 통화 칩이 붙은 입력 칸이 깨진다. 계산기는 `CalculatorView`에서 더 낮게 묶는다.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
         .task {
             // Google 정책: 앱 시작 시마다 동의 상태를 갱신한다.
             await adConsentManager.gatherConsent()

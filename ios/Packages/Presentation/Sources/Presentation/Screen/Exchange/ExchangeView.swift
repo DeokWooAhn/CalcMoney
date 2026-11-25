@@ -108,7 +108,7 @@ private struct SwapCurrencyButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "arrow.up.arrow.down")
-                .font(.system(size: 20, weight: .semibold))
+                .scaledFont(size: 20, weight: .semibold)
                 .foregroundStyle(Color.primary)
                 .frame(width: 56, height: 56)
                 .background(AppColors.surface)
@@ -130,7 +130,7 @@ private struct ExchangeRateInfoView: View {
                     Text(L("환율 기준: \(ExchangeRateFormatters.formatRateDate(state.exchangeRateDate))"))
                 }
             }
-            .font(.system(size: 12))
+            .scaledFont(size: 12)
             .foregroundStyle(Color.secondary)
             .padding(.top, 8)
         }

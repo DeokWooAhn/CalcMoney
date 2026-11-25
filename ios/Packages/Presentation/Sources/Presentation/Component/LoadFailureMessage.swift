@@ -8,12 +8,16 @@ struct LoadFailureMessage: View {
     var isRetrying = false
     /// 위아래 여백. 키패드와 높이를 나누는 계산기는 줄여서 키가 덜 작아지게 한다.
     var verticalPadding: CGFloat = 24
+    /// 아이콘을 보일지. 키패드와 높이를 나누는 계산기는 빼서 문구를 낮춘다.
+    var showsIcon = true
     let onRetry: () -> Void
 
     var body: some View {
         VStack(spacing: 8) {
-            Image(systemName: "exclamationmark.circle")
-                .foregroundStyle(.secondary)
+            if showsIcon {
+                Image(systemName: "exclamationmark.circle")
+                    .foregroundStyle(.secondary)
+            }
 
             Text(message)
                 .font(.subheadline)

@@ -12,15 +12,26 @@ struct CalculatorView: View {
     @Environment(\.requestReview) private var requestReview
     @State private var showHistory = false
     @State private var snackbar = SnackbarPresenter()
+    /// 실패 문구가 차지하는 높이. 문구가 떠 있으면 그만큼 키패드를 줄여 키패드가 탭바 아래로 밀려나지 않게 한다.
+    @State private var failureMessageHeight: CGFloat = 0
 
     var body: some View {
         let colors = CalculatorColors.palette(for: colorScheme)
 
         // iPad·가로 화면에서 정사각 키가 화면 폭만큼 커지지 않게 내용 폭을 정해 가운데에 둔다. iPhone은 화면 폭 그대로다.
         GeometryReader { geometry in
-            calculatorContent(colors: colors)
-                .frame(width: CalculatorLayout.contentWidth(for: geometry.size))
-                .frame(maxWidth: .infinity)
+            let contentWidth = CalculatorLayout.contentWidth(for: geometry.size)
+            let failureHeight = viewModel.state.exchangeFailure == nil ? 0 : failureMessageHeight
+
+            calculatorContent(
+                colors: colors,
+                keypadWidth: CalculatorLayout.keypadWidth(
+                    contentWidth: contentWidth,
+                    height: geometry.size.height - failureHeight,
+                ),
+            )
+            .frame(width: contentWidth)
+            .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 16)
         .background(colors.background.ignoresSafeArea())
@@ -43,7 +54,7 @@ struct CalculatorView: View {
         .toolbar(.hidden, for: .navigationBar)
     }
 
-    private func calculatorContent(colors: CalculatorColors) -> some View {
+    private func calculatorContent(colors: CalculatorColors, keypadWidth: CGFloat) -> some View {
         VStack(spacing: 0) {
             CalculatorCurrencySelectorRow(
                 state: viewModel.state,
@@ -53,15 +64,19 @@ struct CalculatorView: View {
             .padding(.top, 4)
 
             if let failure = viewModel.state.exchangeFailure {
-                LoadFailureMessage(message: failure) {
+                LoadFailureMessage(message: failure, verticalPadding: 8) {
                     viewModel.send(.retryExchange)
                 }
                 .accessibilityIdentifier("calculator.failure")
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { failureMessageHeight = $0 }
             }
 
+            // 키패드가 크기를 먼저 정하고 남는 높이를 디스플레이가 쓴다(Android의 디스플레이 weight(1f) 대응).
+            // 남는 높이가 최소 높이보다 모자란 순간(실패 문구 높이를 재기 전 등)에도 위 칸을 덮지 않게 자른다.
             CalculatorDisplayView(state: viewModel.state, colors: colors)
                 .frame(maxHeight: .infinity)
                 .padding(.vertical, 16)
+                .clipped()
 
             CalculatorKeypadView(
                 colors: colors,
@@ -76,13 +91,11 @@ struct CalculatorView: View {
                     }
                 },
             )
-            // 떠 있는 탭바와 붙어 보이지 않게 띄운다. 버튼 크기는 그대로 두고 그만큼 디스플레이 높이가 준다.
+            // 크기를 화면 크기로만 정해 고정한다. 디스플레이와 높이를 나눠 가지면 수식이 길어질 때마다
+            // 키가 작아지며 자리가 움직인다(`CalculatorLayout.keypadWidth` 참조).
+            .frame(width: keypadWidth, height: keypadWidth * 5 / 4)
+            // 떠 있는 탭바와 붙어 보이지 않게 띄운다. 이 여백은 `reservedHeightOutsideKeypad`에 들어 있다.
             .padding(.bottom, 12)
-            // 키패드가 먼저 가로 폭에 맞춘 정사각 버튼 높이를 가져가고 남는 높이를 디스플레이가 쓴다
-            // (Android의 디스플레이 weight(1f) 대응). 없으면 maxHeight가 무한인 디스플레이와 높이를 나눠 가져
-            // 버튼이 높이에 맞춰 작아지고 양옆이 비어 가운데로 몰린다.
-            // padding보다 바깥에 둬야 한다. 안쪽에 두면 padding이 만든 바깥 뷰는 우선순위가 없어 같은 문제가 난다.
-            .layoutPriority(1)
         }
     }
 }
@@ -155,26 +168,46 @@ private struct CalculatorDisplayView: View {
     let state: CalculatorState
     let colors: CalculatorColors
 
+    /// 수식 칸 맨 아래(환산 금액 아래)를 가리키는 스크롤 위치
+    private static let expressionBottomID = "calculator.expression.bottom"
+
     var body: some View {
         VStack(alignment: .trailing, spacing: 0) {
-            HStack(alignment: .center, spacing: 2) {
-                Spacer(minLength: 0)
+            // 수식이 칸보다 길어지면 줄이 위로 밀려 올라가고, 지금 입력하는 끝부분이 늘 보이게 맨 아래로 스크롤한다.
+            // 스크롤 없이 두면 높이가 모자란 화면(iPhone SE)에서 끝부분이 "…"로 잘려 입력이 안 보인다.
+            // 남는 높이를 이 칸이 모두 가져가므로 미리보기는 디스플레이 맨 아래에 붙는다.
+            ScrollViewReader { proxy in
+                ScrollView(.vertical) {
+                    VStack(alignment: .trailing, spacing: 0) {
+                        HStack(alignment: .center, spacing: 2) {
+                            Spacer(minLength: 0)
 
-                Text(expressionText)
-                    .font(.system(size: expressionFontSize, weight: .light))
-                    .foregroundStyle(state.isCalculatedResult ? colors.accent : colors.keyText)
-                    .multilineTextAlignment(.trailing)
+                            Text(expressionText)
+                                .font(.system(size: expressionFontSize, weight: .light))
+                                .foregroundStyle(state.isCalculatedResult ? colors.accent : colors.keyText)
+                                .multilineTextAlignment(.trailing)
 
-                CursorBar(color: colors.accent, height: expressionFontSize * 1.05)
+                            CursorBar(color: colors.accent, height: expressionFontSize * 1.05)
+                        }
+
+                        ConvertedAmountText(
+                            amount: state.convertedExpressionAmount,
+                            currency: state.selectedExchangeCurrency,
+                            colors: colors,
+                        )
+
+                        Color.clear
+                            .frame(height: 0)
+                            .id(Self.expressionBottomID)
+                    }
+                }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
+                .onChange(of: state.expression) { proxy.scrollTo(Self.expressionBottomID, anchor: .bottom) }
+                .onChange(of: state.convertedExpressionAmount) {
+                    proxy.scrollTo(Self.expressionBottomID, anchor: .bottom)
+                }
             }
-
-            ConvertedAmountText(
-                amount: state.convertedExpressionAmount,
-                currency: state.selectedExchangeCurrency,
-                colors: colors,
-            )
-
-            Spacer(minLength: 0)
 
             if !state.expression.isEmpty, !state.previewResult.isEmpty {
                 Text(CalculatorFormatting.formatWithCommas(state.previewResult))

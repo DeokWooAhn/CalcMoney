@@ -42,6 +42,7 @@ struct CalculatorView: View {
                     // 정상 상태에서는 환율을 받는 중(0)에도 남겨, 통화를 바꿀 때마다 키 크기가 바뀌지 않게 한다.
                     reservesConvertedAmounts: !isShowingFailure || viewModel.state.exchangeRate > 0,
                     // 실패 문구가 높이를 가져가도 키가 이보다 작아지지 않게 한다. 모자란 높이는 디스플레이가 잘려 내준다.
+                    // 디스플레이를 다 내줘도 모자란 낮은 화면에서는 하한보다 화면 안에 들어가는 것을 지킨다.
                     minimumKeySize: isShowingFailure ? CalculatorLayout.minimumKeySize : 0,
                 ),
             )

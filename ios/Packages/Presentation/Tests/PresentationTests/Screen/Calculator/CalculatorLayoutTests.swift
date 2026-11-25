@@ -135,9 +135,10 @@ struct CalculatorLayoutTests {
     @Test("키 한 칸 하한을 주면 높이가 모자라도 키가 하한보다 작아지지 않는다")
     func 키_하한을_주면_높이가_모자라도_지킨다() {
         let minimumKeySize = CalculatorLayout.minimumKeySize
+        // 남는 높이로 정한 폭(160)은 하한(224)보다 작지만, 디스플레이를 내주면 하한이 들어가는 높이
         let width = CalculatorLayout.keypadWidth(
             contentWidth: Self.seWidth,
-            height: 300,
+            height: 400,
             minimumKeySize: minimumKeySize,
         )
 
@@ -148,11 +149,30 @@ struct CalculatorLayoutTests {
     func 키_하한은_내용_폭을_넘지_않는다() {
         let width = CalculatorLayout.keypadWidth(
             contentWidth: 180,
-            height: 300,
+            height: 400,
             minimumKeySize: CalculatorLayout.minimumKeySize,
         )
 
         #expect(width == 180)
+    }
+
+    @Test("디스플레이를 다 내줘도 하한이 들어가지 않는 낮은 높이에서는 키패드가 높이 안에 들어간다", arguments: [
+        CGFloat(207), // 가로 화면 높이 300에서 실패 문구 93을 뺀 값
+        CGFloat(120),
+        CGFloat(0),
+    ])
+    func 낮은_높이에서는_하한보다_높이_안에_들어가는_것을_지킨다(height: CGFloat) {
+        let width = CalculatorLayout.keypadWidth(
+            contentWidth: 180,
+            height: height,
+            minimumKeySize: CalculatorLayout.minimumKeySize,
+        )
+        // 키패드 말고 늘 자리를 차지하는 높이 중 디스플레이 글자를 뺀 것: 통화 선택 줄·디스플레이 여백·아래 여백
+        let fixedHeight = CalculatorLayout.reservedHeightOutsideKeypad - CalculatorLayout.displayTextHeight
+
+        #expect(width >= 0)
+        #expect(width < CalculatorLayout.minimumKeySize * 4)
+        #expect(width * 5 / 4 + fixedHeight <= max(height, fixedHeight) + 0.001)
     }
 
     @Test("키가 하한보다 크면 하한은 키패드 폭을 바꾸지 않는다")
@@ -168,7 +188,9 @@ struct CalculatorLayoutTests {
     }
 
     @Test("SE 실패 상태는 계산기 글자 크기 상한에서도 키 한 칸이 하한 아래로 내려가지 않는다", arguments: [
-        twoLineFailureHeight, threeLineFailureHeight, 200,
+        // 실제 실패 문구 높이(두 줄·세 줄). 이보다 훨씬 높아 하한이 화면에 들어가지 않으면 하한보다 화면 안에
+        // 들어가는 것을 지킨다(`낮은_높이에서는_하한보다_높이_안에_들어가는_것을_지킨다`).
+        twoLineFailureHeight, threeLineFailureHeight,
     ])
     func SE_실패_상태는_글자_크기_상한에서도_키_하한을_지킨다(failureHeight: CGFloat) {
         let width = failureKeypadWidth(failureHeight: failureHeight)

@@ -137,7 +137,12 @@ private struct CursorBar: View {
             .opacity(isVisible ? 1 : 0)
             .task {
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .milliseconds(500))
+                    do {
+                        try await Task.sleep(for: .milliseconds(500))
+                    } catch {
+                        // 화면이 사라져 취소되면 깜빡임을 한 번 더 바꾸지 않고 끝낸다.
+                        return
+                    }
                     withAnimation(.easeInOut(duration: 0.15)) {
                         isVisible.toggle()
                     }

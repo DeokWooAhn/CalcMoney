@@ -58,6 +58,8 @@ enum CalculatorLayout {
     ///   - reservesConvertedAmounts: 환산 금액 두 줄 몫을 남길지
     ///     (`reservedHeightOutsideKeypad(textScale:reservesConvertedAmounts:)` 참조)
     ///   - minimumKeySize: 키 한 칸의 하한. 내용 폭을 넘지 않는다. 하한이 걸리면 디스플레이가 남길 높이보다 줄어 잘린다.
+    ///     디스플레이 글자 높이를 다 내줘도 모자라면(가로 화면·작은 iPad 창처럼 낮은 높이) 하한보다 높이를 지킨다.
+    ///     키패드가 통화 선택 줄·디스플레이 여백·아래 여백과 함께 `height` 안에 들어가야 탭바 아래로 밀려나지 않는다.
     static func keypadWidth(
         contentWidth: CGFloat,
         height: CGFloat,
@@ -70,7 +72,9 @@ enum CalculatorLayout {
             reservesConvertedAmounts: reservesConvertedAmounts,
         )
         let widthForAvailableHeight = (height - reserved) * 4 / 5
+        // 디스플레이 글자 높이를 0까지 내줬을 때 키패드가 쓸 수 있는 폭. 하한도 이것을 넘지 않는다.
+        let widthForFixedHeight = (height - (reservedHeightOutsideKeypad - displayTextHeight)) * 4 / 5
 
-        return max(0, min(contentWidth, max(minimumKeySize * 4, widthForAvailableHeight)))
+        return max(0, min(contentWidth, widthForFixedHeight, max(minimumKeySize * 4, widthForAvailableHeight)))
     }
 }

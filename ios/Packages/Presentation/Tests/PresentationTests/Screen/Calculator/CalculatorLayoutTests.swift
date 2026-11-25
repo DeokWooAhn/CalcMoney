@@ -48,16 +48,20 @@ struct CalculatorLayoutTests {
         #expect(abs(width * 5 / 4 + CalculatorLayout.reservedHeightOutsideKeypad - height) < 0.001)
     }
 
-    @Test("키패드 폭은 높이와 내용 폭만으로 정해져 같은 화면에서는 늘 같다")
-    func 키패드_폭은_화면_크기만으로_정해진다() {
-        let first = CalculatorLayout.keypadWidth(contentWidth: 343, height: 561)
-        let second = CalculatorLayout.keypadWidth(contentWidth: 343, height: 561)
+    /// 키패드 밖 높이(200)의 직전·일치·직후, 0·음수 높이, 내용 폭 0, 무한 높이
+    @Test("경계 입력에서 키패드 폭은 0 아래로 내려가지 않고 내용 폭을 넘지 않는다", arguments: [
+        (contentWidth: CGFloat(343), height: CGFloat(0), expected: CGFloat(0)),
+        (contentWidth: 343, height: -50, expected: 0),
+        (contentWidth: 343, height: 199, expected: 0),
+        (contentWidth: 343, height: 200, expected: 0),
+        (contentWidth: 343, height: 201, expected: 0.8),
+        (contentWidth: 0, height: 1000, expected: 0),
+        // 무한 높이는 높이 제한이 없다는 뜻으로 보고 내용 폭을 그대로 쓴다
+        (contentWidth: 343, height: .infinity, expected: 343),
+    ])
+    func 경계_입력에서_키패드_폭(contentWidth: CGFloat, height: CGFloat, expected: CGFloat) {
+        let width = CalculatorLayout.keypadWidth(contentWidth: contentWidth, height: height)
 
-        #expect(first == second)
-    }
-
-    @Test("높이가 키패드 밖 높이보다 작아도 음수 폭을 돌려주지 않는다")
-    func 높이가_아주_작아도_음수_폭을_돌려주지_않는다() {
-        #expect(CalculatorLayout.keypadWidth(contentWidth: 343, height: 100) == 0)
+        #expect(abs(width - expected) < 0.001)
     }
 }

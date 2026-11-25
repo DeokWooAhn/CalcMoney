@@ -9,7 +9,7 @@ import Observation
 /// 핸들러가 저장·조회에서 기다리는 사이 MainActor가 풀려 다음 의도가 끼어든다. 겹쳐도 순서가 지켜지도록 일을 셋으로 나눈다.
 /// - 확정: 계산 결과·통화 선택은 `await` 전에 `state`에 반영한다. 다음 의도는 반영된 상태를 읽는다.
 /// - 저장: 로컬 저장은 `enqueuePersistence(_:)`로 탭한 순서대로 처리한다.
-/// - 조회: 환율 조회는 기다리지 않고 따로 돌린다. 마지막 요청의 응답만 반영한다(`restartRateFetch()`).
+/// - 조회: 환율 조회는 기다리지 않고 따로 돌린다. 마지막 요청의 응답만 반영한다(`restartRateFetch()`, `LatestTaskRunner`).
 ///
 /// Android `CalculatorViewModel`도 같은 동작을 지킨다. 두 플랫폼이 같은 시나리오로 검증한다
 /// (`docs/decisions/calculator-intent-ordering.md`).
@@ -32,9 +32,8 @@ public final class CalculatorViewModel {
     @ObservationIgnored private var observeFavoritesTask: Task<Void, Never>?
     @ObservationIgnored private var loadCurrenciesTask: Task<Void, Never>?
     @ObservationIgnored private var persistenceTask: Task<Void, Never>?
-    @ObservationIgnored private var rateFetchTask: Task<Void, Never>?
-    /// 가장 최근 환율 조회의 번호. 이 번호와 다른 요청의 응답은 버린다.
-    @ObservationIgnored private var latestRateRequestID = 0
+    /// 환율 조회. 새 조회를 시작하면 진행 중인 조회를 취소하고, 그 응답은 버린다.
+    @ObservationIgnored private let rateFetchRunner = LatestTaskRunner()
 
     public init(
         calculatorUseCases: CalculatorUseCases,
@@ -69,7 +68,6 @@ public final class CalculatorViewModel {
         observeFavoritesTask?.cancel()
         loadCurrenciesTask?.cancel()
         persistenceTask?.cancel()
-        rateFetchTask?.cancel()
     }
 
     /// 화면이 구독하는 일회성 이벤트 스트림. 구독마다 새 스트림을 반환한다.
@@ -286,17 +284,12 @@ extension CalculatorViewModel {
             let deviceCurrencyCode = Locale.current.currency?.identifier ?? "KRW"
             let savedSelection = try? await currencySelectionUseCases.getCalculatorSelection()
 
-            let mainCurrency = resolveCalculatorMainCurrency(
+            let (mainCurrency, subCurrency) = resolveCalculatorCurrencies(
                 currencies: currencies,
-                currentCurrency: state.mainExchangeCurrency,
+                currentMain: state.mainExchangeCurrency,
+                currentSub: state.selectedExchangeCurrency,
                 savedSelection: savedSelection,
                 deviceCurrencyCode: deviceCurrencyCode,
-            )
-            let subCurrency = resolveCalculatorSubCurrency(
-                currencies: currencies,
-                currentCurrency: state.selectedExchangeCurrency,
-                savedSelection: savedSelection,
-                mainCurrency: mainCurrency,
             )
 
             state.availableCurrencies = currencies
@@ -309,48 +302,43 @@ extension CalculatorViewModel {
         }
     }
 
-    /// 지금 통화쌍의 환율 조회를 새로 시작한다. 진행 중인 조회는 취소하고 요청 번호를 올린다.
+    /// 지금 통화쌍의 환율 조회를 새로 시작한다. 진행 중인 조회는 취소하고, 그 응답은 반영하지 않는다
+    /// (`LatestTaskRunner`).
     ///
-    /// 조회를 기다리지 않고 돌아오므로 계산·저장이 네트워크 응답에 묶이지 않는다. Firestore 요청은 취소돼도
-    /// 끝까지 응답할 수 있지만, 요청 번호가 달라 반영하지 않는다. 통화쌍이 같아도(USD → EUR → USD) 번호로 구별한다.
+    /// 조회를 기다리지 않고 돌아오므로 계산·저장이 네트워크 응답에 묶이지 않는다.
     private func restartRateFetch() {
-        latestRateRequestID += 1
-        let requestID = latestRateRequestID
-        rateFetchTask?.cancel()
-
         guard let from = state.mainExchangeCurrency, let to = state.selectedExchangeCurrency else {
-            rateFetchTask = nil
+            rateFetchRunner.cancel()
             return
         }
 
-        rateFetchTask = Task { [weak self] in
-            await self?.performFetchExchangeRate(requestID: requestID, from: from, to: to)
+        rateFetchRunner.restart { [weak self] isLatest in
+            await self?.performFetchExchangeRate(from: from, to: to, isLatest: isLatest)
         }
     }
 
-    private func performFetchExchangeRate(requestID: Int, from: CurrencyInfo, to: CurrencyInfo) async {
+    private func performFetchExchangeRate(from: CurrencyInfo, to: CurrencyInfo, isLatest: () -> Bool) async {
         do {
             let rate: Double = if from.code == to.code {
                 1.0
             } else {
                 try await exchangeUseCases.getExchangeRate(from: from.code, to: to.code)
             }
-            guard isLatestRateRequest(requestID, from: from, to: to) else { return }
+            guard isLatestRateRequest(isLatest, from: from, to: to) else { return }
 
             var newState = state
             newState.exchangeRate = rate
             newState.exchangeFailure = nil
             state = reducer.withConvertedAmounts(newState)
         } catch {
-            guard isLatestRateRequest(requestID, from: from, to: to) else { return }
+            guard isLatestRateRequest(isLatest, from: from, to: to) else { return }
             state.exchangeFailure = error.exchangeRateErrorMessage
         }
     }
 
-    /// 응답이 가장 최근 요청의 것이고, 취소되지 않았고, 그사이 통화쌍도 바뀌지 않았는지 본다.
-    private func isLatestRateRequest(_ requestID: Int, from: CurrencyInfo, to: CurrencyInfo) -> Bool {
-        !Task.isCancelled
-            && requestID == latestRateRequestID
+    /// 응답이 가장 최근 요청의 것이고, 취소되지 않았고(`isLatest()`), 그사이 통화쌍도 바뀌지 않았는지 본다.
+    private func isLatestRateRequest(_ isLatest: () -> Bool, from: CurrencyInfo, to: CurrencyInfo) -> Bool {
+        isLatest()
             && state.mainExchangeCurrency?.code == from.code
             && state.selectedExchangeCurrency?.code == to.code
     }
@@ -358,43 +346,39 @@ extension CalculatorViewModel {
     private func handleSwapExchangeCurrencies() {
         guard let from = state.mainExchangeCurrency, let to = state.selectedExchangeCurrency else { return }
 
-        state.mainExchangeCurrency = to
-        state.selectedExchangeCurrency = from
-        state.exchangeRate = 0.0
-        state.convertedExpressionAmount = ""
-        state.convertedPreviewAmount = ""
-        restartRateFetch()
-
-        enqueuePersistence {
-            try? await $0.currencySelectionUseCases.saveCalculatorSelection(mainCode: to.code, subCode: from.code)
+        applyCurrencies(main: to, sub: from) {
+            try await $0.saveCalculatorSelection(mainCode: to.code, subCode: from.code)
         }
     }
 
     private func handleSelectMainExchangeCurrency(_ currency: CurrencyInfo) {
         guard currency.code != state.mainExchangeCurrency?.code else { return }
 
-        state.mainExchangeCurrency = currency
-        state.exchangeRate = 0.0
-        state.convertedExpressionAmount = ""
-        state.convertedPreviewAmount = ""
-        restartRateFetch()
-
-        enqueuePersistence {
-            try? await $0.currencySelectionUseCases.saveCalculatorMainCurrency(currency.code)
-        }
+        applyCurrencies(main: currency) { try await $0.saveCalculatorMainCurrency(currency.code) }
     }
 
     private func handleSelectExchangeCurrency(_ currency: CurrencyInfo) {
         guard currency.code != state.selectedExchangeCurrency?.code else { return }
 
-        state.selectedExchangeCurrency = currency
+        applyCurrencies(sub: currency) { try await $0.saveCalculatorSubCurrency(currency.code) }
+    }
+
+    /// 통화를 바꾸고 환율·환산 금액을 비운 뒤 환율 조회를 새로 시작하고, 선택 저장을 저장 순서에 넣는다.
+    /// `nil`로 넘긴 쪽 통화는 그대로 둔다.
+    private func applyCurrencies(
+        main: CurrencyInfo? = nil,
+        sub: CurrencyInfo? = nil,
+        save: @escaping (CurrencySelectionUseCases) async throws -> Void,
+    ) {
+        if let main { state.mainExchangeCurrency = main }
+        if let sub { state.selectedExchangeCurrency = sub }
         state.exchangeRate = 0.0
         state.convertedExpressionAmount = ""
         state.convertedPreviewAmount = ""
         restartRateFetch()
 
-        enqueuePersistence {
-            try? await $0.currencySelectionUseCases.saveCalculatorSubCurrency(currency.code)
-        }
+        // 통화 선택 저장은 일부러 실패를 버린다(Android `saveCalculatorSelectionBestEffort`와 같다).
+        // 화면은 이미 새 통화로 바뀌어 계산·환산에 지장이 없고, 실패해도 다음 실행 때 앞 선택으로 돌아갈 뿐이다.
+        enqueuePersistence { try? await save($0.currencySelectionUseCases) }
     }
 }

@@ -45,6 +45,32 @@ struct ConvertExchangeAmountUseCaseTests {
             #expect(useCase.convertExpression("100+200", rate: 0.01, currencyCode: nil) == "")
         }
 
+        @Test("지수 표기 계산 결과는 지수부까지 한 숫자로 환산한다")
+        func 지수_표기_한_숫자() {
+            #expect(
+                useCase.convertExpression("1.2193263111E+17", rate: 1.0, currencyCode: "USD")
+                    == "121932631110000000.00 USD",
+            )
+        }
+
+        @Test("음수 지수도 한 숫자로 환산한다")
+        func 음수_지수_한_숫자() {
+            #expect(useCase.convertExpression("2.5000000000E-11", rate: 1e12, currencyCode: "USD") == "25.00 USD")
+        }
+
+        @Test("지수 표기 결과 뒤에 이어 쓴 연산은 연산자로 나눈다")
+        func 지수_표기_뒤_연산() {
+            #expect(
+                useCase.convertExpression("1.2193263111E+17+5", rate: 2.0, currencyCode: "USD")
+                    == "243865262220000000.00 USD + 10.00 USD",
+            )
+        }
+
+        @Test("E 뒤에 지수 숫자가 없으면 E를 숫자에 붙이지 않는다")
+        func 지수_숫자_없음() {
+            #expect(useCase.convertExpression("5E+", rate: 1.0, currencyCode: "USD") == "5.00 USD E +")
+        }
+
         @Test("환산 결과가 무한대면 원본 숫자를 유지한다")
         func 무한대_결과() {
             #expect(useCase.convertExpression("100+200", rate: .infinity, currencyCode: "USD") == "100 + 200")

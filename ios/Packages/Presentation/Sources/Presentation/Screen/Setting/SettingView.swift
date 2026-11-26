@@ -89,7 +89,7 @@ private struct SettingSection<Content: View>: View {
 
     var body: some View {
         Text(title)
-            .font(.system(size: 13, weight: .semibold))
+            .scaledFont(size: 13, weight: .semibold)
             .foregroundStyle(Color.secondary)
             .padding(.leading, 4)
             .padding(.top, 18)
@@ -106,6 +106,8 @@ private struct ExpandableSettingCard<Content: View>: View {
     @Binding var isExpanded: Bool
     @ViewBuilder let expandedContent: Content
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
         VStack(spacing: 0) {
             Button {
@@ -114,20 +116,24 @@ private struct ExpandableSettingCard<Content: View>: View {
                 }
             } label: {
                 HStack {
-                    Text(title)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(Color.primary)
+                    if dynamicTypeSize.isAccessibilitySize {
+                        // 접근성 글자 크기에서는 제목과 요약이 한 줄에 들어가지 않아 요약을 제목 아래로 내린다.
+                        VStack(alignment: .leading, spacing: 4) {
+                            titleText
+                            summaryText
+                        }
 
-                    Spacer()
+                        Spacer()
+                    } else {
+                        titleText
 
-                    if let summary {
-                        Text(summary)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color.secondary)
+                        Spacer()
+
+                        summaryText
                     }
 
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 13, weight: .semibold))
+                        .scaledFont(size: 13, weight: .semibold)
                         .foregroundStyle(Color.secondary)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }
@@ -148,6 +154,23 @@ private struct ExpandableSettingCard<Content: View>: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .padding(.bottom, 8)
     }
+
+    private var titleText: some View {
+        Text(title)
+            .scaledFont(size: 15, weight: .medium)
+            .foregroundStyle(Color.primary)
+            .multilineTextAlignment(.leading)
+    }
+
+    @ViewBuilder
+    private var summaryText: some View {
+        if let summary {
+            Text(summary)
+                .scaledFont(size: 13)
+                .foregroundStyle(Color.secondary)
+                .multilineTextAlignment(.leading)
+        }
+    }
 }
 
 private struct ThemeSettingCard: View {
@@ -167,11 +190,11 @@ private struct ThemeSettingCard: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: mode == selectedThemeMode ? "largecircle.fill.circle" : "circle")
-                            .font(.system(size: 18))
+                            .scaledFont(size: 18)
                             .foregroundStyle(mode == selectedThemeMode ? Color.accentColor : .secondary)
 
                         Text(mode.label)
-                            .font(.system(size: 15))
+                            .scaledFont(size: 15)
                             .foregroundStyle(Color.primary)
 
                         Spacer()
@@ -202,12 +225,12 @@ private struct ExchangeRateInfoCard: View {
                 LabeledInfoRow(label: L("마지막 갱신"), value: lastUpdated)
 
                 Text(L("환율 정보는 하루 한 번 갱신되는 국제 시장 환율을 사용합니다.\n외환시장이 쉬는 주말에는 환율이 거의 바뀌지 않습니다."))
-                    .font(.system(size: 12))
+                    .scaledFont(size: 12)
                     .foregroundStyle(Color.secondary)
                     .padding(.top, 4)
 
                 Text(L("제공되는 환율은 참고용이며 실제 거래 환율과 다를 수 있습니다."))
-                    .font(.system(size: 12))
+                    .scaledFont(size: 12)
                     .foregroundStyle(Color.secondary)
             }
         }
@@ -218,15 +241,23 @@ private struct LabeledInfoRow: View {
     let label: String
     let value: String
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
-        HStack(alignment: .top) {
+        // 접근성 글자 크기에서는 80pt 이름 칸에 이름이 한두 글자씩 끊겨 들어가므로 값을 이름 아래로 내린다.
+        let isStacked = dynamicTypeSize.isAccessibilitySize
+        let layout = isStacked
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
+            : AnyLayout(HStackLayout(alignment: .top))
+
+        layout {
             Text(label)
-                .font(.system(size: 13))
+                .scaledFont(size: 13)
                 .foregroundStyle(Color.secondary)
-                .frame(width: 80, alignment: .leading)
+                .frame(width: isStacked ? nil : 80, alignment: .leading)
 
             Text(value)
-                .font(.system(size: 13, weight: .medium))
+                .scaledFont(size: 13, weight: .medium)
                 .foregroundStyle(Color.primary)
         }
     }
@@ -288,12 +319,12 @@ private struct SettingActionRow: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.system(size: 15, weight: .medium))
+                    .scaledFont(size: 15, weight: .medium)
                     .foregroundStyle(Color.primary)
 
                 if let summary {
                     Text(summary)
-                        .font(.system(size: 12))
+                        .scaledFont(size: 12)
                         .foregroundStyle(Color.secondary)
                 }
             }
@@ -301,7 +332,7 @@ private struct SettingActionRow: View {
             Spacer()
 
             Image(systemName: systemImage)
-                .font(.system(size: 16))
+                .scaledFont(size: 16)
                 .foregroundStyle(Color.secondary)
         }
         .padding(.horizontal, 16)
@@ -318,12 +349,12 @@ private struct SettingInfoCard: View {
     var body: some View {
         HStack {
             Text(title)
-                .font(.system(size: 15, weight: .medium))
+                .scaledFont(size: 15, weight: .medium)
 
             Spacer()
 
             Text(value)
-                .font(.system(size: 13))
+                .scaledFont(size: 13)
                 .foregroundStyle(Color.secondary)
         }
         .padding(.horizontal, 16)

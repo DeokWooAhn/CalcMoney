@@ -112,7 +112,16 @@ private struct FavoriteRateGrid: View {
     let isRefreshing: Bool
     let onRemoveFavorite: (String) -> Void
 
-    private let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// 기본은 2열이다. 글자를 기본보다 키우면 1열로 둔다.
+    /// 반 폭 카드는 국기와 하트 버튼(44pt) 사이 이름 칸이 iPhone SE에서 45pt 안팎이라, 한 단계(xLarge)만 키워도
+    /// "호주 달러"가 한 줄에 들지 않고, 두 줄로 늘려도 "아랍에미리트 디르함"은 잘린다.
+    private var columns: [GridItem] {
+        let columnCount = dynamicTypeSize >= .xLarge ? 1 : 2
+
+        return Array(repeating: GridItem(.flexible(), spacing: 8), count: columnCount)
+    }
 
     var body: some View {
         ScrollView {
@@ -144,25 +153,26 @@ private struct FavoriteRateCard: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Text(item.currency.flagEmoji)
-                    .font(.system(size: 22))
+                    .scaledFont(size: 22)
                     // 바로 옆 통화 코드·이름과 같은 정보라 스크린 리더가 이모지 이름까지 읽을 필요가 없다.
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 0) {
                     Text(item.currency.code)
-                        .font(.system(size: 15, weight: .semibold))
+                        .scaledFont(size: 15, weight: .semibold)
 
                     Text(item.currency.localizedName)
-                        .font(.system(size: 12))
+                        .scaledFont(size: 12)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        // 짧은 이름은 한 줄 그대로이고, 칸보다 긴 이름은 "…"로 자르지 않고 두 줄까지 보인다.
+                        .lineLimit(2)
                 }
 
                 Spacer()
 
                 Button(action: onRemoveFavorite) {
                     Image(systemName: "heart.fill")
-                        .font(.system(size: 18))
+                        .scaledFont(size: 18)
                         .foregroundStyle(.red)
                         // Android 대응 구현은 requiredSize(48.dp). iOS HIG 최소치는 44pt다.
                         .frame(width: 44, height: 44)
@@ -173,12 +183,12 @@ private struct FavoriteRateCard: View {
             }
 
             Text(item.convertedAmount)
-                .font(.system(size: 20, weight: .bold))
+                .scaledFont(size: 20, weight: .bold)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
 
             Text(item.rateLabel)
-                .font(.system(size: 11))
+                .scaledFont(size: 11)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)

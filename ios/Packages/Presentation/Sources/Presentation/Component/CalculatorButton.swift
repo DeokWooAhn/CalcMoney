@@ -19,7 +19,7 @@ struct CalculatorButton: View {
     var body: some View {
         Button(action: action) {
             Text(text)
-                .font(.system(size: 30, weight: .medium))
+                .scaledFont(size: 30, weight: .medium)
                 // 키가 작아지는 화면(iPhone SE에서 실패 문구가 뜬 경우)에서 "AC"가 "A…"로 잘리지 않고 줄어들게 한다.
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
@@ -40,7 +40,7 @@ struct CalculatorIconButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 24, weight: .medium))
+                .scaledFont(size: 24, weight: .medium)
         }
         .buttonStyle(CalculatorKeyButtonStyle(appearance: appearance))
         .aspectRatio(1, contentMode: .fit)
@@ -59,7 +59,7 @@ struct DeleteCalculatorButton: View {
 
     var body: some View {
         CalculatorKeyBody(
-            label: Text("⌫").font(.system(size: 31, weight: .medium)),
+            label: Text("⌫").scaledFont(size: 31, weight: .medium),
             isPressed: isPressed,
             appearance: appearance,
         )

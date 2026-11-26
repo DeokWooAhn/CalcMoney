@@ -6,7 +6,7 @@ struct SnackbarView: View {
 
     var body: some View {
         Text(message)
-            .font(.system(size: 14, weight: .medium))
+            .scaledFont(size: 14, weight: .medium)
             .foregroundStyle(.white)
             .padding(.horizontal, 20)
             .padding(.vertical, 12)

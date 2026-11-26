@@ -3,6 +3,7 @@ package com.ahn.presentation.ui.screen.exchange
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.domain.exchange.usecase.ExchangeUseCases
 import com.ahn.domain.favorite.usecase.FavoriteUseCases
+import com.ahn.presentation.util.formatNumberWithCommas
 import kotlinx.coroutines.CancellationException
 import java.util.Locale
 
@@ -110,7 +111,8 @@ internal class FavoriteRatesLoader(
         return favoriteRates.map { rateInfo ->
             ExchangeContract.FavoriteRateItem(
                 currency = rateInfo.currency,
-                convertedAmount = String.format(Locale.US, "%.2f", rateInfo.convertedAmount),
+                // 화면에 그대로 보이는 값이라 계산기처럼 천 단위 쉼표를 넣는다. 다른 계산에는 쓰지 않는다.
+                convertedAmount = formatNumberWithCommas(String.format(Locale.US, "%.2f", rateInfo.convertedAmount)),
                 rateLabel = "1 ${rateInfo.baseCurrencyCode} = ${
                     String.format(Locale.US, "%.4f", rateInfo.rate)
                 } ${rateInfo.currency.code}",

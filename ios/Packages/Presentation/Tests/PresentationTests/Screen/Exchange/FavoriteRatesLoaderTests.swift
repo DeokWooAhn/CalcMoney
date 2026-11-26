@@ -88,7 +88,7 @@ struct FavoriteRatesLoaderTests {
         let items = loader.buildItems(input: input, baseAmount: "2", ratesByCode: rates)
 
         #expect(items.map(\.currency.code) == ["KRW", "JPY"])
-        #expect(items.map(\.convertedAmount) == ["2600.00", "301.00"])
+        #expect(items.map(\.convertedAmount) == ["2,600.00", "301.00"])
         #expect(items.map(\.rateLabel) == ["1 USD = 1300.0000 KRW", "1 USD = 150.5000 JPY"])
         let requestedRatePairs = await recorder.requestedRatePairs
         #expect(requestedRatePairs == ["USD->KRW", "USD->JPY"])

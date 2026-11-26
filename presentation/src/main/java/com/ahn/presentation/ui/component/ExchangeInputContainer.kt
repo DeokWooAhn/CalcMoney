@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ahn.domain.currency.model.CurrencyInfo
 import com.ahn.presentation.R
+import com.ahn.presentation.util.formatNumberWithCommas
 
 @Composable
 fun ExchangeInputContainer(
@@ -77,7 +78,8 @@ fun ExchangeInputContainer(
                 )
             } else {
                 Text(
-                    text = amount.ifEmpty { "0" },
+                    // 쉼표는 표시에만 넣는다. 상태의 금액은 통화를 바꿀 때 기준 금액으로 그대로 옮겨 숫자로 읽으므로 쉼표가 없어야 한다.
+                    text = formatNumberWithCommas(amount.ifEmpty { "0" }),
                     fontSize = 28.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,

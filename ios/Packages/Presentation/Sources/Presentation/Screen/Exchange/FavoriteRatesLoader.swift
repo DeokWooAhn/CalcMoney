@@ -110,9 +110,12 @@ struct FavoriteRatesLoader {
         )
 
         return favoriteRates.map { rateInfo in
-            FavoriteRateItem(
+            // 화면에 그대로 보이는 값이라 계산기처럼 천 단위 쉼표를 넣는다. 다른 계산에는 쓰지 않는다.
+            let convertedAmount = String(format: "%.2f", rateInfo.convertedAmount)
+
+            return FavoriteRateItem(
                 currency: rateInfo.currency,
-                convertedAmount: String(format: "%.2f", rateInfo.convertedAmount),
+                convertedAmount: CalculatorFormatting.formatWithCommas(convertedAmount),
                 rateLabel: "1 \(rateInfo.baseCurrencyCode) = "
                     + String(format: "%.4f", rateInfo.rate)
                     + " \(rateInfo.currency.code)",

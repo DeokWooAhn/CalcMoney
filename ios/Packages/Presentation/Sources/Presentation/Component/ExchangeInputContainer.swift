@@ -40,7 +40,8 @@ struct ExchangeInputContainer: View {
                     .keyboardType(.decimalPad)
                     .accessibilityIdentifier(amountTestID)
                 } else {
-                    Text(amount.isEmpty ? "0" : amount)
+                    // 쉼표는 표시에만 넣는다. 상태의 금액은 통화를 바꿀 때 기준 금액으로 그대로 옮겨 숫자로 읽으므로 쉼표가 없어야 한다.
+                    Text(CalculatorFormatting.formatWithCommas(amount.isEmpty ? "0" : amount))
                         .accessibilityIdentifier(amountTestID)
                         .scaledFont(size: 28, weight: .semibold)
                         .lineLimit(1)

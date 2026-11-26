@@ -108,7 +108,7 @@ class FavoriteRatesLoaderTest : BehaviorSpec({
                     val items = loader.buildItems(favorites, baseAmount = "1", ratesByCode = rates)
 
                     items.map { it.currency.code } shouldContainExactly listOf("KRW", "JPY")
-                    items[0].convertedAmount shouldBe "1500.00"
+                    items[0].convertedAmount shouldBe "1,500.00"
                     items[0].rateLabel shouldBe "1 USD = 1500.0000 KRW"
                     items[1].convertedAmount shouldBe "9.50"
                     items[1].rateLabel shouldBe "1 USD = 9.5000 JPY"
@@ -129,7 +129,7 @@ class FavoriteRatesLoaderTest : BehaviorSpec({
                     val items = loader.buildItems(mixed, baseAmount = "1", ratesByCode = rates)
 
                     items.map { it.currency.code } shouldContainExactly listOf("KRW")
-                    items.single().convertedAmount shouldBe "1500.00"
+                    items.single().convertedAmount shouldBe "1,500.00"
                     coVerify(exactly = 0) { getExchangeRateUseCase("USD", "USD") }
                     coVerify(exactly = 1) { getExchangeRateUseCase("USD", "KRW") }
                     coVerify(exactly = 1) { getExchangeRateUseCase("USD", "JPY") }

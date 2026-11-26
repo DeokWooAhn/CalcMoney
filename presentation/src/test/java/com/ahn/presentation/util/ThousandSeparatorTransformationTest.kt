@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import java.util.Locale
 
 class ThousandSeparatorTransformationTest : BehaviorSpec({
 
@@ -43,6 +44,33 @@ class ThousandSeparatorTransformationTest : BehaviorSpec({
 
                 text.text shouldBe "5\u200B-3"
                 text.spanStyles.map { it.start to it.end } shouldBe listOf(2 to 3)
+            }
+        }
+    }
+
+    given("환율 화면 받을 금액·즐겨찾기 카드 금액처럼 소수 둘째 자리 금액을 표시할 때") {
+        `when`("천 단위 쉼표를 넣으면") {
+            then("정수부에만 세 자리마다 쉼표를 넣고 소수부는 그대로 둔다") {
+                formatNumberWithCommas("1343.87") shouldBe "1,343.87"
+                formatNumberWithCommas("1000000.00") shouldBe "1,000,000.00"
+            }
+
+            then("기기 로케일이 독일어여도 정수부 구분 기호는 쉼표다") {
+                val original = Locale.getDefault()
+                try {
+                    Locale.setDefault(Locale.GERMANY)
+
+                    formatNumberWithCommas("1500.00") shouldBe "1,500.00"
+                    formatNumberWithCommas("12000") shouldBe "12,000"
+                } finally {
+                    Locale.setDefault(original)
+                }
+            }
+
+            then("천 미만 금액과 빈 금액 대신 쓰는 0은 그대로 둔다") {
+                formatNumberWithCommas("999.99") shouldBe "999.99"
+                formatNumberWithCommas("0") shouldBe "0"
+                formatNumberWithCommas("") shouldBe ""
             }
         }
     }

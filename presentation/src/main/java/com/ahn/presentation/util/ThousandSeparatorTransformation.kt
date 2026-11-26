@@ -7,6 +7,8 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
 
 class ThousandSeparatorTransformation(
     private val operatorColor: Color = Color.Unspecified,
@@ -129,18 +131,24 @@ private fun Char.isCalculatorOperator(): Boolean {
     return this == '+' || this == '-' || this == '×' || this == '÷'
 }
 
+/**
+ * 정수부 천 단위 구분 기호를 기기 로케일과 상관없이 쉼표로 고정한다.
+ * 기본 로케일을 따르면 독일어 기기에서 "1.500.00"처럼 소수점과 헷갈린다(`docs/decisions/amount-thousand-separator.md`).
+ */
+private fun groupedIntegerFormat(): DecimalFormat = DecimalFormat("#,###", DecimalFormatSymbols(Locale.US))
+
 private fun formatNumber(numberString: String): String {
     return try {
         // 소수점 처리
         if (numberString.contains(".")) {
             val parts = numberString.split(".")
             val intPart = parts[0].toLongOrNull()?.let {
-                DecimalFormat("#,###").format(it)
+                groupedIntegerFormat().format(it)
             } ?: parts[0]
             if (parts.size > 1) "$intPart.${parts[1]}" else intPart
         } else {
             numberString.toLongOrNull()?.let {
-                DecimalFormat("#,###").format(it)
+                groupedIntegerFormat().format(it)
             } ?: numberString
         }
     } catch (_: Exception) {

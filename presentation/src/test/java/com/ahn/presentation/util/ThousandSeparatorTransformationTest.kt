@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import java.util.Locale
 
 class ThousandSeparatorTransformationTest : BehaviorSpec({
 
@@ -52,6 +53,18 @@ class ThousandSeparatorTransformationTest : BehaviorSpec({
             then("정수부에만 세 자리마다 쉼표를 넣고 소수부는 그대로 둔다") {
                 formatNumberWithCommas("1343.87") shouldBe "1,343.87"
                 formatNumberWithCommas("1000000.00") shouldBe "1,000,000.00"
+            }
+
+            then("기기 로케일이 독일어여도 정수부 구분 기호는 쉼표다") {
+                val original = Locale.getDefault()
+                try {
+                    Locale.setDefault(Locale.GERMANY)
+
+                    formatNumberWithCommas("1500.00") shouldBe "1,500.00"
+                    formatNumberWithCommas("12000") shouldBe "12,000"
+                } finally {
+                    Locale.setDefault(original)
+                }
             }
 
             then("천 미만 금액과 빈 금액 대신 쓰는 0은 그대로 둔다") {

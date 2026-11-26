@@ -23,6 +23,7 @@
 ## 코드
 
 - Android: `presentation/.../ui/component/ExchangeInputContainer.kt`(읽기 전용 금액), `ui/screen/exchange/FavoriteRatesLoader.kt`(`convertedAmount`)
+- Android 공통 형식: `presentation/.../util/ThousandSeparatorTransformation.kt`의 `groupedIntegerFormat`(US 기호로 고정). 이전에는 `DecimalFormat("#,###")`이 기기 로케일을 따라 독일어 기기에서 계산기까지 "1.500.00"으로 보였다
 - iOS: `Presentation/Component/ExchangeInputContainer.swift`, `Presentation/Screen/Exchange/FavoriteRatesLoader.swift`
 
 ## 확인 방법

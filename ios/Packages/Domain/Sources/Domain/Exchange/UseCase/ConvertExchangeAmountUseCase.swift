@@ -34,12 +34,23 @@ public struct ConvertExchangeAmountUseCase: Sendable {
             number = ""
         }
 
-        for char in expression {
+        let chars = Array(expression)
+        var index = 0
+        while index < chars.count {
+            let char = chars[index]
+
             if char.isNumber || char == "." {
                 number.append(char)
+                index += 1
+            } else if char == "E", !number.isEmpty, let end = Self.exponentEnd(chars, start: index) {
+                // 큰·작은 계산 결과(1.2193263111E+17)는 지수부까지 한 숫자다. 지수의 부호를 연산자로 나누면
+                // "0.00 USD E + 0.01 USD"처럼 조각마다 환산한다.
+                number += String(chars[index..<end])
+                index = end
             } else {
                 flushNumber()
                 result += " " + String(char) + " "
+                index += 1
             }
         }
 
@@ -48,6 +59,17 @@ public struct ConvertExchangeAmountUseCase: Sendable {
         return result
             .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespaces)
+    }
+
+    /// `start`의 `E`부터 지수 숫자 끝까지의 끝 위치. 지수 숫자가 없으면 nil.
+    /// 계산 엔진(`CalculateExpressionUseCase`의 `parseExponent`)과 같은 규칙이다: `E`, 부호(선택), 숫자 한 자리 이상.
+    private static func exponentEnd(_ chars: [Character], start: Int) -> Int? {
+        var index = start + 1
+        if index < chars.count, chars[index] == "+" || chars[index] == "-" { index += 1 }
+        let digitsStart = index
+        while index < chars.count, chars[index].isNumber { index += 1 }
+
+        return index > digitsStart ? index : nil
     }
 
     /// 단일 금액(또는 계산식) 텍스트를 환율로 환산한 문자열을 반환합니다.

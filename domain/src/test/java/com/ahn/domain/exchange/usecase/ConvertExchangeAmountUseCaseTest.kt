@@ -61,6 +61,38 @@ class ConvertExchangeAmountUseCaseTest :
                 ) shouldBe ""
             }
 
+            it("지수 표기 계산 결과는 지수부까지 한 숫자로 환산한다") {
+                useCase.convertExpression(
+                    expression = "1.2193263111E+17",
+                    rate = 1.0,
+                    currencyCode = "USD",
+                ) shouldBe "121932631110000000.00 USD"
+            }
+
+            it("음수 지수도 한 숫자로 환산한다") {
+                useCase.convertExpression(
+                    expression = "2.5000000000E-11",
+                    rate = 1e12,
+                    currencyCode = "USD",
+                ) shouldBe "25.00 USD"
+            }
+
+            it("지수 표기 결과 뒤에 이어 쓴 연산은 연산자로 나눈다") {
+                useCase.convertExpression(
+                    expression = "1.2193263111E+17+5",
+                    rate = 2.0,
+                    currencyCode = "USD",
+                ) shouldBe "243865262220000000.00 USD + 10.00 USD"
+            }
+
+            it("E 뒤에 지수 숫자가 없으면 E를 숫자에 붙이지 않는다") {
+                useCase.convertExpression(
+                    expression = "5E+",
+                    rate = 1.0,
+                    currencyCode = "USD",
+                ) shouldBe "5.00 USD E +"
+            }
+
             it("환산 결과가 무한대면 원본 숫자를 유지한다") {
                 useCase.convertExpression(
                     expression = "100+200",
